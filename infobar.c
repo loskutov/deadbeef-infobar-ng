@@ -1050,7 +1050,7 @@ static DB_misc_t plugin = {
         "along with this program; if not, write to the Free Software\n"
         "Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.\n"
     ,
-    .plugin.website = "",
+    .plugin.website = "https://bitbucket.org/Not_eXist/deadbeef-infobar/overview",
     .plugin.start = infobar_start,
     .plugin.stop = infobar_stop,
     .plugin.connect	= infobar_connect,
