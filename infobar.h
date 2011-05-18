@@ -62,7 +62,6 @@ static ddb_gtkui_t *gtkui_plugin;
 #define CONF_INFOBAR_WIDTH "infobar.width"
 #define CONF_UPDATE_PERIOD "infobar.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
-#define CONF_GTKUI_TABS_VISIBLE "gtkui.tabs.visible"
 
 DB_FILE *infobar_cnt;
 

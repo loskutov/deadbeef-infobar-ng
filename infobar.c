@@ -763,7 +763,6 @@ create_infobar_interface(void) {
 
 	int res = -1;
 	int ret_value = 0;
-	gboolean state = FALSE;
 
 	gdk_threads_enter();
 
@@ -804,7 +803,7 @@ create_infobar_interface(void) {
 	gtk_widget_show(ddb_main_new);
 	gtk_widget_show(playlist_box);
 
-	state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
+	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
 	gtk_widget_set_visible(infobar, state);
 
 end:
