@@ -763,6 +763,7 @@ create_infobar_interface(void) {
 
 	int res = -1;
 	int ret_value = 0;
+	gboolean state = FALSE;
 
 	gdk_threads_enter();
 
@@ -799,10 +800,11 @@ create_infobar_interface(void) {
 	gtk_container_add(GTK_CONTAINER(ddb_main), ddb_main_new);
 
 	gtk_box_reorder_child(GTK_BOX(ddb_main), ddb_main_new, 2);
+	
+	gtk_widget_show(ddb_main_new);
+	gtk_widget_show(playlist_box);
 
-	gtk_widget_show_all (ddb_main_new);
-
-	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0);
+	state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
 	gtk_widget_set_visible(infobar, state);
 
 end:
