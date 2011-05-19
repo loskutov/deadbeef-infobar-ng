@@ -129,6 +129,7 @@ static char *convert_to_utf8(const char *str, int size);
 
 static gboolean is_old_cache(const char *cache_file);
 static gboolean is_exists(const char *obj);
+static int is_dir(const char *dir, mode_t mode);
 
 DB_plugin_t *infobar_load (DB_functions_t *ddb);
 

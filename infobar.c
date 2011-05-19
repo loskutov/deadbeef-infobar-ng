@@ -58,6 +58,38 @@ uri_encode(char *out, int outl, const char *str, char space) {
     return l - outl;
 }
 
+static int
+is_dir(const char *dir, mode_t mode)
+{
+	int res = -1;
+	
+    char *tmp = strdup(dir);
+    char *slash = tmp;
+    struct stat st;
+    
+    do {
+        slash = strstr(slash + 1, "/");
+        if(slash)
+			*slash = 0;
+            
+        res = stat(tmp, &st);
+        if(res == -1) {
+            res = mkdir(tmp, mode);
+            if(res != 0) {
+                trace("Failed to create %s\n", tmp);
+                free(tmp);
+                return -1;
+            }
+        }
+        if(slash)
+			*slash = '/';
+			
+    } while(slash);
+    
+    free(tmp);
+    return 0;
+}
+
 static gboolean
 is_exists(const char *obj) {
 	struct stat st;
@@ -333,7 +365,7 @@ retrieve_artist_bio(void) {
 	}
 
 	if(!is_exists(cache_path)) {
-		res = mkdir(cache_path, 0755);
+		res = is_dir(cache_path, 0755);
 		if(res < 0) {
 			trace("failed to create bio cache dir\n");
 			ret_value = -1;
@@ -521,7 +553,7 @@ retrieve_track_lyrics(void) {
 	}
 
 	if(!is_exists(cache_path)) {
-		res = mkdir(cache_path, 0755);
+		res = is_dir(cache_path, 0755);
 		if(res < 0) {
 			trace("failed to create lyrics cache dir\n");
 			ret_value = -1;
