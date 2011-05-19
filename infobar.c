@@ -881,7 +881,7 @@ create_infobar(void) {
 	lyrics_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
 	bio_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
 
-	bio_tab = gtk_vbox_new(FALSE, 0);
+	bio_tab = gtk_vpaned_new();
 	bio_image = gtk_image_new();
 
 	gtk_text_buffer_create_tag(lyrics_buffer, "title_name",
@@ -906,8 +906,8 @@ create_infobar(void) {
 	gtk_container_add(GTK_CONTAINER(lyrics_tab), lyrics_view);
 	gtk_container_add(GTK_CONTAINER(bio_scroll), bio_view);
 
-	gtk_box_pack_start(GTK_BOX(bio_tab), bio_image, FALSE, FALSE, 1);
-	gtk_box_pack_start(GTK_BOX(bio_tab), bio_scroll, TRUE, TRUE, 1);
+	gtk_paned_pack1(GTK_PANED(bio_tab), bio_image, FALSE, TRUE);
+	gtk_paned_pack2(GTK_PANED(bio_tab), bio_scroll, TRUE, TRUE);
 
 	gtk_box_pack_start(GTK_BOX(infobar_toggles), lyrics_toggle, FALSE, FALSE, 1);
 	gtk_box_pack_start(GTK_BOX(infobar_toggles), bio_toggle, FALSE, FALSE, 1);
