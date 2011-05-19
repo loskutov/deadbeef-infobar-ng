@@ -12,7 +12,6 @@ find_package(LibXml2 REQUIRED)
 include_directories(${GTK2_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
 
 set (HEADERS 
-     infobar.h
      support.h)
  
 set (SOURCES 

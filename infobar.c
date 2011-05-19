@@ -17,7 +17,73 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "infobar.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <gtk/gtk.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/parser.h>
+#include <libxml/HTMLparser.h>
+#include <deadbeef/deadbeef.h>
+#include <deadbeef/gtkui_api.h>
+
+#include "support.h"
+
+#define trace(fmt,...)
+
+typedef enum {
+	HTML = 1,
+	XML = 2,
+} ContentType;
+
+typedef enum {
+	LYRICS = 1,
+	BIO = 2,
+} CacheType;
+
+static DB_misc_t plugin;
+static DB_functions_t *deadbeef;
+static ddb_gtkui_t *gtkui_plugin;
+
+#define TXT_MAX 100000
+
+#define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
+#define CONF_LYRICSMANIA_ENABLED "infobar.lyrics.lyricsmania"
+#define CONF_LYRICSTIME_ENABLED "infobar.lyrics.lyricstime"
+#define CONF_MEGALYRICS_ENABLED "infobar.lyrics.megalyrics"
+#define CONF_BIO_ENABLED "infobar.bio.enabled"
+#define CONF_BIO_LOCALE "infobar.bio.locale"
+#define CONF_INFOBAR_WIDTH "infobar.width"
+#define CONF_UPDATE_PERIOD "infobar.cache.period"
+#define CONF_INFOBAR_VISIBLE "infobar.visible"
+
+DB_FILE *infobar_cnt;
+
+static char artist[100];
+static char title[100];
+static char eartist[300];
+static char etitle[300];
+static char eartist_lfm[300];
+static char old_locale[5];
+
+static uintptr_t infobar_mutex;
+static uintptr_t infobar_cond;
+static intptr_t infobar_tid;
+static gboolean infobar_stopped;
+
+static GtkWidget *infobar;
+static GtkWidget *infobar_tabs;
+static GtkWidget *lyrics_toggle;
+static GtkWidget *bio_toggle;
+static GtkWidget *lyrics_tab;
+static GtkWidget *bio_tab;
+static GtkWidget *bio_image;
+
+static GtkTextBuffer *lyrics_buffer;
+static GtkTextBuffer *bio_buffer;
 
 static int
 uri_encode(char *out, int outl, const char *str, char space) {
@@ -137,6 +203,66 @@ convert_to_utf8(const char *str, int size) {
 	}
 
 	return str_cnv;
+}
+
+static void
+update_bio_view(const char *bio, int size, const char *img_file) {
+    GtkTextIter begin, end;
+
+    gdk_threads_enter();
+
+    if(bio_image)
+    	gtk_image_set_from_file(GTK_IMAGE(bio_image), img_file);
+
+    if(bio_buffer) {
+    	gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
+    	gtk_text_buffer_get_end_iter (bio_buffer, &end);
+    	gtk_text_buffer_delete (bio_buffer, &begin, &end);
+
+    	if(bio && size > 0) {
+    		gtk_text_buffer_insert_with_tags_by_name(bio_buffer,
+    				&begin, bio, -1, "text", NULL);
+    	} else {
+    		gtk_text_buffer_insert_with_tags_by_name(bio_buffer,
+    				&begin, "Biography not found.", -1, "text", NULL);
+    	}
+    }
+
+    gdk_threads_leave();
+}
+
+static void
+update_lyrics_view(const char *lyrics, int size) {
+    GtkTextIter begin, end;
+
+    gdk_threads_enter ();
+
+    if(lyrics_buffer) {
+    	gtk_text_buffer_get_iter_at_line (lyrics_buffer, &begin, 0);
+    	gtk_text_buffer_get_end_iter (lyrics_buffer, &end);
+    	gtk_text_buffer_delete (lyrics_buffer, &begin, &end);
+
+
+    	gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
+    			&begin, title, -1, "title_name", NULL);
+
+    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
+
+    	gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
+    			&begin, artist, -1, "title_artist", NULL);
+
+    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
+
+    	if(lyrics && size > 0) {
+    		gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
+    				&begin, lyrics, -1, "text", NULL);
+    	} else {
+    		gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
+    				&begin, "Lyrics not found.", -1, "text", NULL);
+    	}
+    }
+
+    gdk_threads_leave ();
 }
 
 static char*
@@ -699,6 +825,17 @@ infobar_thread(void *ctx) {
 }
 
 static void
+set_tab_visible(GtkWidget *toggle, GtkWidget *item, gboolean visible) {
+	if(visible) {
+		gtk_widget_show(toggle);
+		gtk_widget_show(item);
+	} else {
+		gtk_widget_hide(toggle);
+		gtk_widget_hide(item);
+	}
+}
+
+static void
 infobar_config_changed(void) {
 	gboolean state = FALSE;
 
@@ -716,77 +853,6 @@ infobar_config_changed(void) {
 }
 
 static void
-update_bio_view(const char *bio, int size, const char *img_file) {
-    GtkTextIter begin, end;
-
-    gdk_threads_enter();
-
-    if(bio_image)
-    	gtk_image_set_from_file(GTK_IMAGE(bio_image), img_file);
-
-    if(bio_buffer) {
-    	gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
-    	gtk_text_buffer_get_end_iter (bio_buffer, &end);
-    	gtk_text_buffer_delete (bio_buffer, &begin, &end);
-
-    	if(bio && size > 0) {
-    		gtk_text_buffer_insert_with_tags_by_name(bio_buffer,
-    				&begin, bio, -1, "text", NULL);
-    	} else {
-    		gtk_text_buffer_insert_with_tags_by_name(bio_buffer,
-    				&begin, "Biography not found.", -1, "text", NULL);
-    	}
-    }
-
-    gdk_threads_leave();
-}
-
-static void
-update_lyrics_view(const char *lyrics, int size) {
-    GtkTextIter begin, end;
-
-    gdk_threads_enter ();
-
-    if(lyrics_buffer) {
-    	gtk_text_buffer_get_iter_at_line (lyrics_buffer, &begin, 0);
-    	gtk_text_buffer_get_end_iter (lyrics_buffer, &end);
-    	gtk_text_buffer_delete (lyrics_buffer, &begin, &end);
-
-
-    	gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    			&begin, title, -1, "title_name", NULL);
-
-    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
-
-    	gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    			&begin, artist, -1, "title_artist", NULL);
-
-    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
-
-    	if(lyrics && size > 0) {
-    		gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    				&begin, lyrics, -1, "text", NULL);
-    	} else {
-    		gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    				&begin, "Lyrics not found.", -1, "text", NULL);
-    	}
-    }
-
-    gdk_threads_leave ();
-}
-
-static void
-set_tab_visible(GtkWidget *toggle, GtkWidget *item, gboolean visible) {
-	if(visible) {
-		gtk_widget_show(toggle);
-		gtk_widget_show(item);
-	} else {
-		gtk_widget_hide(toggle);
-		gtk_widget_hide(item);
-	}
-}
-
-static void
 infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
     gboolean state = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item));
     gtk_widget_set_visible(infobar, state);
@@ -797,81 +863,6 @@ static void
 infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
 	gint index = gtk_notebook_page_num(GTK_NOTEBOOK(infobar_tabs), widget);
 	gtk_notebook_set_current_page(GTK_NOTEBOOK(infobar_tabs), index);
-}
-
-static int
-create_infobar_interface(void) {
-	trace("modifying player's inteface\n");
-
-	int res = -1;
-	int ret_value = 0;
-
-	gdk_threads_enter();
-
-	res = create_infobar();
-	if(res < 0) {
-		trace("failed to create infobar\n");
-		ret_value = -1;
-		goto end;
-	}
-
-	GtkWidget *ddb_main = lookup_widget(gtkui_plugin->get_mainwin(), "vbox1");
-	GtkWidget *ddb_tabs= lookup_widget(gtkui_plugin->get_mainwin(), "tabstrip");
-	GtkWidget *ddb_playlist = lookup_widget(gtkui_plugin->get_mainwin(), "frame1");
-
-	g_object_ref(ddb_tabs);
-	g_object_ref(ddb_playlist);
-
-	GtkWidget *playlist_box = gtk_vbox_new(FALSE, 0);
-
-	gtk_container_remove(GTK_CONTAINER(ddb_main), ddb_tabs);
-	gtk_container_remove(GTK_CONTAINER(ddb_main), ddb_playlist);
-
-	gtk_box_pack_start(GTK_BOX(playlist_box), ddb_tabs, FALSE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX(playlist_box), ddb_playlist, TRUE, TRUE, 0);
-
-	g_object_unref(ddb_tabs);
-	g_object_unref(ddb_playlist);
-
-	GtkWidget *ddb_main_new = gtk_hpaned_new();
-
-	gtk_paned_pack1(GTK_PANED(ddb_main_new), playlist_box, TRUE, TRUE);
-	gtk_paned_pack2(GTK_PANED(ddb_main_new), infobar, FALSE, TRUE);
-
-	gtk_container_add(GTK_CONTAINER(ddb_main), ddb_main_new);
-
-	gtk_box_reorder_child(GTK_BOX(ddb_main), ddb_main_new, 2);
-	
-	gtk_widget_show(ddb_main_new);
-	gtk_widget_show(playlist_box);
-
-	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
-	gtk_widget_set_visible(infobar, state);
-
-end:
-	gdk_threads_leave();
-	return ret_value;
-}
-
-static int
-create_infobar_menu_entry(void) {
-    trace("creating infobar menu entry\n");
-
-    GtkWidget *menu_item = gtk_check_menu_item_new_with_mnemonic ("_Infobar");
-    if(!menu_item)
-    	return -1;
-
-    GtkWidget *view_menu = lookup_widget(gtkui_plugin->get_mainwin(), "View_menu");
-
-    gtk_container_add(GTK_CONTAINER(view_menu), menu_item);
-
-    gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0);
-    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_item), state);
-
-    g_signal_connect(menu_item, "activate", G_CALLBACK(infobar_menu_toggle), NULL);
-    gtk_widget_show(menu_item);
-
-	return 0;
 }
 
 static int
@@ -957,6 +948,81 @@ create_infobar(void) {
 	gtk_widget_set_size_request(infobar, width, -1);
 
 	gtk_widget_show_all(infobar);
+	return 0;
+}
+
+static int
+create_infobar_interface(void) {
+	trace("modifying player's inteface\n");
+
+	int res = -1;
+	int ret_value = 0;
+
+	gdk_threads_enter();
+
+	res = create_infobar();
+	if(res < 0) {
+		trace("failed to create infobar\n");
+		ret_value = -1;
+		goto cleanup;
+	}
+
+	GtkWidget *ddb_main = lookup_widget(gtkui_plugin->get_mainwin(), "vbox1");
+	GtkWidget *ddb_tabs= lookup_widget(gtkui_plugin->get_mainwin(), "tabstrip");
+	GtkWidget *ddb_playlist = lookup_widget(gtkui_plugin->get_mainwin(), "frame1");
+
+	g_object_ref(ddb_tabs);
+	g_object_ref(ddb_playlist);
+
+	GtkWidget *playlist_box = gtk_vbox_new(FALSE, 0);
+
+	gtk_container_remove(GTK_CONTAINER(ddb_main), ddb_tabs);
+	gtk_container_remove(GTK_CONTAINER(ddb_main), ddb_playlist);
+
+	gtk_box_pack_start(GTK_BOX(playlist_box), ddb_tabs, FALSE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(playlist_box), ddb_playlist, TRUE, TRUE, 0);
+
+	g_object_unref(ddb_tabs);
+	g_object_unref(ddb_playlist);
+
+	GtkWidget *ddb_main_new = gtk_hpaned_new();
+
+	gtk_paned_pack1(GTK_PANED(ddb_main_new), playlist_box, TRUE, TRUE);
+	gtk_paned_pack2(GTK_PANED(ddb_main_new), infobar, FALSE, TRUE);
+
+	gtk_container_add(GTK_CONTAINER(ddb_main), ddb_main_new);
+
+	gtk_box_reorder_child(GTK_BOX(ddb_main), ddb_main_new, 2);
+	
+	gtk_widget_show(ddb_main_new);
+	gtk_widget_show(playlist_box);
+
+	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
+	gtk_widget_set_visible(infobar, state);
+
+cleanup:
+	gdk_threads_leave();
+	return ret_value;
+}
+
+static int
+create_infobar_menu_entry(void) {
+    trace("creating infobar menu entry\n");
+
+    GtkWidget *menu_item = gtk_check_menu_item_new_with_mnemonic ("_Infobar");
+    if(!menu_item)
+    	return -1;
+
+    GtkWidget *view_menu = lookup_widget(gtkui_plugin->get_mainwin(), "View_menu");
+
+    gtk_container_add(GTK_CONTAINER(view_menu), menu_item);
+
+    gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0);
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_item), state);
+
+    g_signal_connect(menu_item, "activate", G_CALLBACK(infobar_menu_toggle), NULL);
+    gtk_widget_show(menu_item);
+
 	return 0;
 }
 
