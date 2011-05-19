@@ -52,11 +52,12 @@ static DB_misc_t plugin;
 static DB_functions_t *deadbeef;
 static ddb_gtkui_t *gtkui_plugin;
 
-#define TXT_MAX 30000
+#define TXT_MAX 100000
 
 #define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
 #define CONF_LYRICSMANIA_ENABLED "infobar.lyrics.lyricsmania"
 #define CONF_LYRICSTIME_ENABLED "infobar.lyrics.lyricstime"
+#define CONF_MEGALYRICS_ENABLED "infobar.lyrics.megalyrics"
 #define CONF_BIO_ENABLED "infobar.bio.enabled"
 #define CONF_BIO_LOCALE "infobar.bio.locale"
 #define CONF_INFOBAR_WIDTH "infobar.width"

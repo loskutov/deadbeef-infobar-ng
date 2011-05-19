@@ -508,6 +508,7 @@ retrieve_track_lyrics(void) {
 
 	gboolean time = FALSE;
 	gboolean mania = FALSE;
+	gboolean mega = FALSE;
 
 	deadbeef->mutex_lock(infobar_mutex);
 
@@ -549,6 +550,15 @@ retrieve_track_lyrics(void) {
 	if(time && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
 				eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]");
+		if(lyrics) {
+			lyrics_size = strlen(lyrics);
+		}
+	}
+	
+	mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
+	if(mega && !lyrics && lyrics_size == 0) {
+		lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
+				eartist, etitle, cache_file, "//pre[@class=\"lyric\"]");
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
 		}
@@ -1017,7 +1027,8 @@ infobar_stop(void) {
 static const char settings_dlg[] =
     "property \"Enable lyrics\" checkbox infobar.lyrics.enabled 1;"
 	"property \"Fetch from lyricsmania\" checkbox infobar.lyrics.lyricsmania 1;"
-	"property \"Fetch from lyrics.time\" checkbox infobar.lyrics.lyricstime 1;"
+	"property \"Fetch from lyricstime\" checkbox infobar.lyrics.lyricstime 1;"
+	"property \"Fetch from megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
 	"property \"Enable biography\" checkbox infobar.bio.enabled 1;"
 	"property \"Biography locale\" entry infobar.bio.locale \"en\";"
 	"property \"Cache update period (hr)\" entry infobar.cache.period 24;"
