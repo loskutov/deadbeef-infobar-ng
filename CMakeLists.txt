@@ -4,7 +4,7 @@ set (PROJECT infobar)
  
 project (${PROJECT}) 
 
-set(CMAKE_C_FLAGS "-std=c99 -D_GNU_SOURCE")
+set(CMAKE_C_FLAGS "-std=c99 -D_GNU_SOURCE -g")
 
 find_package(GTK2 REQUIRED)
 find_package(LibXml2 REQUIRED)
