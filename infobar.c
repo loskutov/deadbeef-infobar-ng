@@ -957,12 +957,15 @@ infobar_songstarted(ddb_event_track_t *ev) {
 		deadbeef->fabort(infobar_cnt);
 		infobar_cnt = NULL;
 	}
+	
+	if(!ev->track)
+		return;
+		
+	if(!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
+		return;
 		
 	if(!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
 			!deadbeef->conf_get_int(CONF_BIO_ENABLED, 1))
-		return;
-	
-	if(!ev->track)
 		return;
 
 	deadbeef->mutex_lock(infobar_mutex);
