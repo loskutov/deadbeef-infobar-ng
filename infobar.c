@@ -44,6 +44,17 @@ typedef enum {
 	BIO = 2,
 } CacheType;
 
+typedef struct {
+	char *txt;
+	int size;
+} LyricsViewData;
+
+typedef struct {
+	char *txt;
+	char *img;
+	int size;
+}BioViewData;
+
 static DB_misc_t plugin;
 static DB_functions_t *deadbeef;
 static ddb_gtkui_t *gtkui_plugin;
@@ -56,6 +67,7 @@ static ddb_gtkui_t *gtkui_plugin;
 #define CONF_MEGALYRICS_ENABLED "infobar.lyrics.megalyrics"
 #define CONF_BIO_ENABLED "infobar.bio.enabled"
 #define CONF_BIO_LOCALE "infobar.bio.locale"
+#define CONF_BIO_LOCALE_OLD "infobar.bio.oldlocale"
 #define CONF_INFOBAR_WIDTH "infobar.width"
 #define CONF_UPDATE_PERIOD "infobar.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
@@ -67,7 +79,6 @@ static char title[100];
 static char eartist[300];
 static char etitle[300];
 static char eartist_lfm[300];
-static char old_locale[5];
 
 static uintptr_t infobar_mutex;
 static uintptr_t infobar_cond;
@@ -80,76 +91,70 @@ static GtkWidget *lyrics_toggle;
 static GtkWidget *bio_toggle;
 static GtkWidget *lyrics_tab;
 static GtkWidget *bio_tab;
+static GtkWidget *lyrics_view;
+static GtkWidget *bio_view;
 static GtkWidget *bio_image;
-
-static GtkTextBuffer *lyrics_buffer;
-static GtkTextBuffer *bio_buffer;
 
 static gboolean
 update_bio_view(gpointer data) {
     GtkTextIter begin, end;
+	GtkTextBuffer *buffer = NULL;
 	
-	int size = 0;
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
 	
-	char *bio = (char*) data;
-	if(bio)
-		size = strlen(bio);
+	BioViewData *bio_data = (BioViewData*) data;
 
-//    if(bio_image)
- //   	gtk_image_set_from_file(GTK_IMAGE(bio_image), img_file);
+    if(bio_image)
+    	gtk_image_set_from_file(GTK_IMAGE(bio_image), bio_data->img);
 
-    if(bio_buffer) {
-    	gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
-    	gtk_text_buffer_get_end_iter (bio_buffer, &end);
-    	gtk_text_buffer_delete (bio_buffer, &begin, &end);
+    if(buffer) {
+    	gtk_text_buffer_get_iter_at_line (buffer, &begin, 0);
+    	gtk_text_buffer_get_end_iter (buffer, &end);
+    	gtk_text_buffer_delete (buffer, &begin, &end);
 
-    	if(bio && size > 0) {
-    		gtk_text_buffer_insert_with_tags_by_name(bio_buffer,
-    				&begin, bio, -1, "text", NULL);
+    	if(bio_data->txt && bio_data->size > 0) {
+    		gtk_text_buffer_insert(buffer, &begin, 
+				bio_data->txt, bio_data->size);
     	} else {
-    		gtk_text_buffer_insert_with_tags_by_name(bio_buffer,
-    				&begin, "Biography not found.", -1, "text", NULL);
+    		gtk_text_buffer_insert(buffer, &begin,
+				"Biography not found.", -1);
     	}
     }
-    free(bio);
+    if(bio_data->txt) free(bio_data->txt);
+    if(bio_data->img) free(bio_data->img);
+    if(bio_data) free(bio_data);
     return FALSE;
 }
 
 static gboolean
 update_lyrics_view(gpointer data) {
     GtkTextIter begin, end;
+    GtkTextBuffer *buffer = NULL;
 	
-	int size = 0;
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
 	
-	char *lyrics = (char*) data;
-	if(lyrics)
-		size = strlen(lyrics);
+	LyricsViewData *lyr_data = (LyricsViewData*) data;
 
-    if(lyrics_buffer) {
-    	gtk_text_buffer_get_iter_at_line (lyrics_buffer, &begin, 0);
-    	gtk_text_buffer_get_end_iter (lyrics_buffer, &end);
-    	gtk_text_buffer_delete (lyrics_buffer, &begin, &end);
+    if(buffer) {
+    	gtk_text_buffer_get_iter_at_line (buffer, &begin, 0);
+    	gtk_text_buffer_get_end_iter (buffer, &end);
+    	gtk_text_buffer_delete (buffer, &begin, &end);
 
+    	gtk_text_buffer_insert(buffer, &begin, title, -1);
+    	gtk_text_buffer_insert(buffer, &begin, "\n", -1);
+    	gtk_text_buffer_insert(buffer, &begin, artist, -1);
+    	gtk_text_buffer_insert(buffer, &begin, "\n", -1);
 
-    	gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    			&begin, title, -1, "title_name", NULL);
-
-    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
-
-    	gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    			&begin, artist, -1, "title_artist", NULL);
-
-    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
-
-    	if(lyrics && size > 0) {
-    		gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    				&begin, lyrics, -1, "text", NULL);
+    	if(lyr_data->txt && lyr_data->size > 0) {
+    		gtk_text_buffer_insert(buffer, &begin, 
+				lyr_data->txt, lyr_data->size);
     	} else {
-    		gtk_text_buffer_insert_with_tags_by_name(lyrics_buffer,
-    				&begin, "Lyrics not found.", -1, "text", NULL);
+    		gtk_text_buffer_insert(buffer, &begin, 
+				"Lyrics not found.", -1);
     	}
     }
-    free(lyrics);
+    if(lyr_data->txt) free(lyr_data->txt);
+    if(lyr_data) free(lyr_data);
     return FALSE;
 }
 
@@ -164,7 +169,7 @@ set_tab_visible(GtkWidget *toggle, GtkWidget *item, gboolean visible) {
 	}
 }
 
-static void
+static gboolean
 infobar_config_changed(void) {
 	gboolean state = FALSE;
 
@@ -175,6 +180,7 @@ infobar_config_changed(void) {
 	state = deadbeef->conf_get_int(CONF_BIO_ENABLED, 1);
 	if(bio_toggle && bio_tab)
 		set_tab_visible(bio_toggle, bio_tab, state);
+	return FALSE;
 }
 
 static void
@@ -218,38 +224,16 @@ create_infobar(void) {
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bio_scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
-	GtkWidget *lyrics_view = gtk_text_view_new();
+	lyrics_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(lyrics_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyrics_view), GTK_WRAP_WORD);
 
-	GtkWidget *bio_view = gtk_text_view_new();
+	bio_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(bio_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(bio_view), GTK_WRAP_WORD);
 
-	lyrics_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
-	bio_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
-
 	bio_tab = gtk_vpaned_new();
 	bio_image = gtk_image_new();
-
-	gtk_text_buffer_create_tag(lyrics_buffer, "title_name",
-							   "weight", PANGO_WEIGHT_BOLD,
-							   "font", "11",
-			 	 	 	 	   "left_margin", 5,
-			 	 	 	 	   NULL);
-
-	gtk_text_buffer_create_tag(lyrics_buffer, "title_artist",
-	 			 	 	 	 	"style", PANGO_STYLE_ITALIC,
-	 			 	 	 	 	"left_margin", 5,
-	 			 	 	 	 	NULL);
-
-	gtk_text_buffer_create_tag(lyrics_buffer, "text",
-			 	 	 	 	   "left_margin", 5,
-			 	 	 	 	   NULL);
-
-	gtk_text_buffer_create_tag(bio_buffer, "text",
-	 			 	 	 	   "left_margin", 5,
-	 			 	 	 	   NULL);
 
 	gtk_container_add(GTK_CONTAINER(lyrics_tab), lyrics_view);
 	gtk_container_add(GTK_CONTAINER(bio_scroll), bio_view);
@@ -549,8 +533,6 @@ parser_errors_handler(void *ctx, const char *msg, ...) {}
 
 static char*
 parse_content(const char *cnt, int size, const char *pattern, ContentType type) {
-	int res = -1;
-
 	xmlDocPtr doc = NULL;
 	xmlXPathContextPtr ctx = NULL;
 	xmlXPathObjectPtr obj = NULL;
@@ -627,7 +609,6 @@ cleanup:
 
 static int
 retrieve_img_content(const char *url, const char *img) {
-	int res = -1;
 	int ret_value  = 0;
 
 	infobar_cnt = NULL;
@@ -673,13 +654,15 @@ retrieve_artist_bio(void) {
 	int ret_value = 0;
 
 	char *bio = NULL;
-	char *img_url = NULL;
 	char *cnt = NULL;
-	char *bio_cpy = NULL;
+	char *img_url = NULL;
+	char *img_file = NULL;
 
 	int bio_size = 0;
 	int img_size = 0;
 	int cnt_size = 0;
+	
+	BioViewData *data = malloc(sizeof(BioViewData));
 
 	deadbeef->mutex_lock(infobar_mutex);
 
@@ -708,23 +691,22 @@ retrieve_artist_bio(void) {
 		goto cleanup;
 	}
 
-	char cache_img[512] = {0};
-	res = snprintf(cache_img, sizeof(cache_img), "%s/%s_img", cache_path, eartist_lfm);
-	if(res == 0) {
+	res = asprintf(&img_file, "%s/%s_img", cache_path, eartist_lfm);
+	if(res == -1) {
 		trace("failed to form a path to the bio image file\n");
 		ret_value = -1;
 		goto cleanup;
 	}
 
-	deadbeef->conf_lock();
+	char cur_locale[5] = {0};
+	char old_locale[5] = {0};
 	
-	const char *locale = deadbeef->conf_get_str_fast(CONF_BIO_LOCALE, "en");
-	
-	deadbeef->conf_unlock();
+	deadbeef->conf_get_str(CONF_BIO_LOCALE, "en", cur_locale, sizeof(cur_locale));
+	deadbeef->conf_get_str(CONF_BIO_LOCALE_OLD, "en", old_locale, sizeof(old_locale));
 
 	char track_url[512] = {0};
 	res = snprintf(track_url, sizeof(track_url), "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026",
-			eartist_lfm, locale);
+			eartist_lfm, cur_locale);
 	if(res == 0) {
 		trace("failed to form bio download url\n");
 		ret_value = -1;
@@ -732,9 +714,8 @@ retrieve_artist_bio(void) {
 	}
 
 	if(!is_exists(cache_file) ||
-			is_old_cache(cache_file) ||
-			(strcmp(old_locale, locale) != 0 &&
-			 strcmp(old_locale, "") != 0)) {
+		is_old_cache(cache_file) ||
+		strcmp(old_locale, cur_locale) != 0) {
 		cnt = retrieve_txt_content(track_url, TXT_MAX);
 		if(!cnt) {
 			trace("failed to download artist's bio\n");
@@ -768,8 +749,7 @@ retrieve_artist_bio(void) {
 		}
 	}
 
-	memset(old_locale, 0, sizeof(old_locale));
-	strncpy(old_locale, locale, sizeof(old_locale));
+	deadbeef->conf_set_str(CONF_BIO_LOCALE_OLD, cur_locale);
 
 	if(!cnt) {
 		cnt = retrieve_txt_content(track_url, TXT_MAX);
@@ -787,8 +767,8 @@ retrieve_artist_bio(void) {
 	}
 
 	if(img_url && img_size > 0) {
-		if(!is_exists(cache_img)) {
-			res = retrieve_img_content(img_url, cache_img);
+		if(!is_exists(img_file)) {
+			res = retrieve_img_content(img_url, img_file);
 			if(res < 0) {
 				trace("failed to download artist's image\n");
 				ret_value = -1;
@@ -798,13 +778,16 @@ retrieve_artist_bio(void) {
 	}
 
 cleanup:
-	if(bio) bio_cpy = strdup(bio);
-	g_idle_add((GSourceFunc)update_bio_view, bio_cpy);
-
-	if(cnt) free(cnt);
-	if(bio) free(bio);
-	if(img_url) free(img_url);
 	deadbeef->mutex_unlock(infobar_mutex);
+	
+	data->txt = bio;
+	data->img = img_file;
+	data->size = bio_size;
+	
+	g_idle_add((GSourceFunc)update_bio_view, data);
+	
+	if(cnt) free(cnt);
+	if(img_url) free(img_url);
 	return ret_value;
 }
 
@@ -867,11 +850,12 @@ retrieve_track_lyrics(void) {
 	int lyrics_size = 0;
 
 	char *lyrics = NULL;
-	char *lyr_copy = NULL;
 
 	gboolean time = FALSE;
 	gboolean mania = FALSE;
 	gboolean mega = FALSE;
+	
+	LyricsViewData *data = malloc(sizeof(LyricsViewData));
 
 	deadbeef->mutex_lock(infobar_mutex);
 
@@ -935,12 +919,32 @@ retrieve_track_lyrics(void) {
 	}
 
 cleanup:
-	if(lyrics) lyr_copy = strdup(lyrics);
-	g_idle_add((GSourceFunc)update_lyrics_view, lyr_copy);
-
-	if(lyrics) free(lyrics);
 	deadbeef->mutex_unlock(infobar_mutex);
+	
+	data->txt = lyrics;
+	data->size = lyrics_size;
+	
+	g_idle_add((GSourceFunc)update_lyrics_view, data);
 	return ret_value;
+}
+
+static int 
+get_track_info(DB_playItem_t *track, char *artist, int asize, char *title, int tsize) {
+	deadbeef->pl_lock();
+
+	const char *cur_artist = deadbeef->pl_find_meta(track, "artist");
+	const char *cur_title =  deadbeef->pl_find_meta(track, "title");
+	
+	if(!cur_artist || !cur_title) {
+		deadbeef->pl_unlock();
+		return -1;
+	}
+	
+	strncpy(artist, cur_artist, asize);
+	strncpy(title, cur_title, tsize);
+
+	deadbeef->pl_unlock();
+	return 0;
 }
 
 static void
@@ -960,24 +964,17 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	
 	if(!ev->track)
 		return;
-		
-	deadbeef->pl_lock();
-
-	const char *cur_artist = deadbeef->pl_find_meta(ev->track, "artist");
-	const char *cur_title =  deadbeef->pl_find_meta(ev->track, "title");
-	
-	deadbeef->pl_unlock();
-
-	if(!cur_artist || !cur_title)
-		return;
 
 	deadbeef->mutex_lock(infobar_mutex);
-
+		
 	memset(artist, 0, sizeof(artist));
-	strncpy(artist, cur_artist, sizeof(artist));
-
 	memset(title, 0, sizeof(title));
-	strncpy(title, cur_title, sizeof(title));
+	
+	res = get_track_info(ev->track, artist, sizeof(artist), title, sizeof(title));
+	if(res == -1) {
+	    deadbeef->mutex_unlock(infobar_mutex);
+    	return;
+	}
 
 	memset(eartist, 0, sizeof(eartist));
     res = uri_encode(eartist, sizeof(eartist), artist, '_');
@@ -999,7 +996,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 		deadbeef->mutex_unlock(infobar_mutex);
 		return;
 	}
-
+	
 	deadbeef->mutex_unlock(infobar_mutex);
 	deadbeef->cond_signal(infobar_cond);
 }
@@ -1007,42 +1004,36 @@ infobar_songstarted(ddb_event_track_t *ev) {
 static void
 infobar_thread(void *ctx) {
 	for(;;) {
-		trace("infobar_thread started\n");
+        trace("infobar_thread started\n");
 
-		if(infobar_stopped) {
-			deadbeef->mutex_unlock(infobar_mutex);
-			return;
-		}
+        deadbeef->cond_wait(infobar_cond, infobar_mutex);
+        deadbeef->mutex_unlock(infobar_mutex);
 
-		deadbeef->cond_wait(infobar_cond, infobar_mutex);
-		if(infobar_stopped) {
-			deadbeef->mutex_unlock(infobar_mutex);
-			return;
-		}
+        if(infobar_stopped) {
+            return;
+        }
 
-		deadbeef->mutex_unlock(infobar_mutex);
+        if(deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
+            trace("retrieving song's lyrics...\n");
+            retrieve_track_lyrics();
+        }
 
-		if(deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
-			trace("retrieving song's lyrics...\n");
-			retrieve_track_lyrics();
-		}
-
-		if(deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
-			trace("retrieving artist's bio...\n");
-			retrieve_artist_bio();
-		}
-	}
+        if(deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
+            trace("retrieving artist's bio...\n");
+            retrieve_artist_bio();
+        }
+    }
 }
 
 static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	switch(id) {
 	case DB_EV_SONGSTARTED:
-	//case DB_EV_TRACKINFOCHANGED:
+	case DB_EV_TRACKINFOCHANGED:
 		infobar_songstarted((ddb_event_track_t*) ctx);
 		break;
 	case DB_EV_CONFIGCHANGED:
-		infobar_config_changed();
+		g_idle_add((GSourceFunc)infobar_config_changed, NULL);
 		break;
 	}
 	return 0;
