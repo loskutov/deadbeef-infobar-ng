@@ -1032,7 +1032,7 @@ static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	switch(id) {
 	case DB_EV_SONGSTARTED:
-	case DB_EV_TRACKINFOCHANGED:
+	//case DB_EV_TRACKINFOCHANGED:
 		infobar_songstarted((ddb_event_track_t*) ctx);
 		break;
 	case DB_EV_CONFIGCHANGED:
