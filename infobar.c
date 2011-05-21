@@ -95,6 +95,25 @@ static GtkWidget *lyrics_view;
 static GtkWidget *bio_view;
 static GtkWidget *bio_image;
 
+static int
+get_cache_path(char *cache_path, int size, ContentType type) {
+	int res = -1;
+
+	const char *home_cache = getenv("XDG_CACHE_HOME");
+
+	switch(type) {
+	case LYRICS:
+		res = snprintf(cache_path, size, home_cache ? "%s/deadbeef/lyrics" : "%s/.cache/deadbeef/lyrics",
+				home_cache ? home_cache : getenv("HOME"));
+		break;
+	case BIO:
+		res = snprintf(cache_path, size, home_cache ? "%s/deadbeef/bio" : "%s/.cache/deadbeef/bio",
+				home_cache ? home_cache : getenv("HOME"));
+		break;
+	}
+	return res;
+}
+
 static gboolean
 update_bio_view(gpointer data) {
     GtkTextIter begin, end;
@@ -156,6 +175,59 @@ update_lyrics_view(gpointer data) {
     if(lyr_data->txt) free(lyr_data->txt);
     if(lyr_data) free(lyr_data);
     return FALSE;
+}
+
+static void
+delete_cache_clicked(void) {
+	int res = -1;
+	
+	char lyrics_path[512] = {0};
+	char lyrics_file[512] = {0};
+	
+	char bio_path[512] = {0};
+	char bio_file[512] = {0};
+	
+	char bio_img[512] = {0};
+	
+	GtkWidget *main_wnd = gtkui_plugin->get_mainwin();
+	GtkWidget *dlt_dlg = gtk_message_dialog_new(GTK_WINDOW(main_wnd), GTK_DIALOG_MODAL, 
+			GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, "Cache files for the current track wiil be removed. Continue?");
+	
+	gint choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
+	switch(choise) {
+	case GTK_RESPONSE_YES:
+		res = get_cache_path(lyrics_path, sizeof(lyrics_path), LYRICS);
+		if(res > 0) {
+			res = snprintf(lyrics_file, sizeof(lyrics_file), "%s/%s-%s", lyrics_path, eartist, etitle);
+			if(res > 0) {
+				res = remove(lyrics_file);
+				if(res != 0) {
+					trace("failed to remove lyrics cache file\n");
+				}
+			} 
+		}
+		res = get_cache_path(bio_path, sizeof(bio_path), BIO);
+		if(res > 0) {
+			res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, eartist);
+			if(res > 0) {
+				res = remove(bio_file);
+				if(res != 0) {
+					trace("failed to remove bio cache file\n");
+				}
+			}
+			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, eartist);
+			if(res > 0) {
+				res = remove(bio_img);
+				if(res != 0) {
+					trace("failed to remove bio image file\n");
+				}
+			}
+		}
+		break;
+	case GTK_RESPONSE_NO:
+		break;
+	}
+	gtk_widget_destroy(dlt_dlg);
 }
 
 static void
@@ -234,6 +306,11 @@ create_infobar(void) {
 
 	bio_tab = gtk_vpaned_new();
 	bio_image = gtk_image_new();
+	
+	GtkWidget *dlt_btn = gtk_button_new();
+	GtkWidget *dlt_img = gtk_image_new_from_stock(GTK_STOCK_REFRESH, GTK_ICON_SIZE_SMALL_TOOLBAR); 
+	gtk_button_set_image(GTK_BUTTON(dlt_btn), dlt_img);
+	g_signal_connect(dlt_btn, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
 
 	gtk_container_add(GTK_CONTAINER(lyrics_tab), lyrics_view);
 	gtk_container_add(GTK_CONTAINER(bio_scroll), bio_view);
@@ -243,6 +320,7 @@ create_infobar(void) {
 
 	gtk_box_pack_start(GTK_BOX(infobar_toggles), lyrics_toggle, FALSE, FALSE, 1);
 	gtk_box_pack_start(GTK_BOX(infobar_toggles), bio_toggle, FALSE, FALSE, 1);
+	gtk_box_pack_start(GTK_BOX(infobar_toggles), dlt_btn, FALSE, FALSE, 1);
 
 	gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), lyrics_tab, NULL);
 	gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), bio_tab, NULL);
@@ -395,7 +473,7 @@ is_dir(const char *dir, mode_t mode)
 			*slash = '/';
 			
     } while(slash);
-    
+
     free(tmp);
     return 0;
 }
@@ -507,25 +585,6 @@ save_content(const char *cache_file, const char *buffer, int size) {
 cleanup:
 	if(out_file) fclose(out_file);
 	return ret_value;
-}
-
-static int
-get_cache_path(char *cache_path, int size, ContentType type) {
-	int res = -1;
-
-	const char *home_cache = getenv("XDG_CACHE_HOME");
-
-	switch(type) {
-	case LYRICS:
-		res = snprintf(cache_path, size, home_cache ? "%s/deadbeef/lyrics" : "%s/.cache/deadbeef/lyrics",
-				home_cache ? home_cache : getenv("HOME"));
-		break;
-	case BIO:
-		res = snprintf(cache_path, size, home_cache ? "%s/deadbeef/bio" : "%s/.cache/deadbeef/bio",
-				home_cache ? home_cache : getenv("HOME"));
-		break;
-	}
-	return res;
 }
 
 static void
@@ -778,8 +837,10 @@ retrieve_artist_bio(void) {
 	}
 
 cleanup:
-	deadbeef->mutex_unlock(infobar_mutex);
-	
+	if(infobar_mutex) {
+		deadbeef->mutex_unlock(infobar_mutex);
+	}
+
 	data->txt = bio;
 	data->img = img_file;
 	data->size = bio_size;
@@ -919,7 +980,9 @@ retrieve_track_lyrics(void) {
 	}
 
 cleanup:
-	deadbeef->mutex_unlock(infobar_mutex);
+	if(infobar_mutex) {
+		deadbeef->mutex_unlock(infobar_mutex);
+	}
 	
 	data->txt = lyrics;
 	data->size = lyrics_size;
@@ -952,11 +1015,6 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	trace("infobar song started\n");
 
 	int res = -1;
-
-	if(infobar_cnt) {
-		deadbeef->fabort(infobar_cnt);
-		infobar_cnt = NULL;
-	}
 	
 	if(!ev->track)
 		return;
@@ -1005,6 +1063,17 @@ infobar_songstarted(ddb_event_track_t *ev) {
 }
 
 static void
+infobar_songchanged(void) {
+	if(infobar_cnt) {
+		if(infobar_mutex) {
+			deadbeef->mutex_unlock(infobar_mutex);
+		}
+		deadbeef->fabort(infobar_cnt);
+		infobar_cnt = NULL;
+	}
+}
+
+static void
 infobar_thread(void *ctx) {
 	for(;;) {
         trace("infobar_thread started\n");
@@ -1034,6 +1103,9 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	case DB_EV_SONGSTARTED:
 	//case DB_EV_TRACKINFOCHANGED:
 		infobar_songstarted((ddb_event_track_t*) ctx);
+		break;
+	case DB_EV_SONGCHANGED:
+		infobar_songchanged();
 		break;
 	case DB_EV_CONFIGCHANGED:
 		g_idle_add((GSourceFunc)infobar_config_changed, NULL);
