@@ -1291,7 +1291,7 @@ static DB_misc_t plugin = {
     .plugin.message = infobar_message,
 };
 
-DB_plugin_t *infobar_load (DB_functions_t *ddb) {
+DB_plugin_t *ddb_infobar_load (DB_functions_t *ddb) {
     deadbeef = ddb;
     return DB_PLUGIN(&plugin);
 }
