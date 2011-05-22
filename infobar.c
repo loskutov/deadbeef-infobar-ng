@@ -796,12 +796,23 @@ retrieve_artist_bio(void) {
 		bio = parse_content(cnt, cnt_size, "/lfm/artist/bio/content", XML);
 		if(bio) {
 			bio_size = strlen(bio);
+			
+			char *tmp = NULL;
 
-			char *tmp = parse_content(bio, bio_size, "/html/body", HTML);
+			tmp = parse_content(bio, bio_size, "/html/body", HTML);
 			if(tmp) {
 				free(bio);
 				bio = tmp;
 				bio_size = strlen(bio);
+			}
+			
+			if(deadbeef->junk_detect_charset(bio)) {
+				tmp = convert_to_utf8(bio, bio_size);
+				if(tmp) {
+					free(bio);
+					bio = tmp;
+					bio_size = strlen(bio);
+				}
 			}
 
 			res = save_content(cache_file, bio, bio_size);
@@ -894,12 +905,13 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		lyrics = parse_content(cnt, cnt_size, pattern, HTML);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
-
-			char *tmp = convert_to_utf8(lyrics, lyrics_size);
-			if(tmp) {
-				free(lyrics);
-				lyrics = tmp;
-				lyrics_size = strlen(lyrics);
+			if(deadbeef->junk_detect_charset(lyrics)) {
+				char *tmp = convert_to_utf8(lyrics, lyrics_size);
+				if(tmp) {
+					free(lyrics);
+					lyrics = tmp;
+					lyrics_size = strlen(lyrics);
+				}
 			}
 
 			res = save_content(cache_file, lyrics, lyrics_size);
