@@ -1145,6 +1145,8 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	case DB_EV_SONGSTARTED:
 	{
 		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
+		if(!event->track) 
+			return 0;
 		if(deadbeef->pl_get_item_duration(event->track) > 0.000000)
 			infobar_songstarted(event);
 	}
@@ -1152,6 +1154,8 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	case DB_EV_TRACKINFOCHANGED:
 	{
 		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
+		if(!event->track) 
+			return 0;
 		if(deadbeef->pl_get_item_duration(event->track) <= 0.000000)
 			infobar_songstarted(event);
 	}
