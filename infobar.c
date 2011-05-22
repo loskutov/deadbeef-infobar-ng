@@ -76,9 +76,16 @@ DB_FILE *infobar_cnt;
 
 static char artist[100];
 static char title[100];
+
+static char old_artist[100];
+static char old_title[100];
+
 static char eartist[300];
 static char etitle[300];
+
 static char eartist_lfm[300];
+
+gboolean artist_changed = TRUE;
 
 static uintptr_t infobar_mutex;
 static uintptr_t infobar_cond;
@@ -258,7 +265,7 @@ infobar_config_changed(void) {
 static void
 infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
     gboolean state = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item));
-    gtk_widget_set_visible(infobar, state);
+	state ? gtk_widget_show(infobar) : gtk_widget_hide(infobar); 
     deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, state);
 }
 
@@ -381,7 +388,7 @@ create_infobar_interface(void) {
 	gtk_widget_show(playlist_box);
 
 	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
-	gtk_widget_set_visible(infobar, state);
+	state ? gtk_widget_show(infobar) : gtk_widget_hide(infobar); 
 
 	return 0;
 }
@@ -724,6 +731,9 @@ retrieve_artist_bio(void) {
 	BioViewData *data = malloc(sizeof(BioViewData));
 
 	deadbeef->mutex_lock(infobar_mutex);
+	
+	if(!artist_changed) 
+		goto cleanup;
 
 	char cache_path[512] = {0};
 	res = get_cache_path(cache_path, sizeof(cache_path), BIO);
@@ -810,23 +820,24 @@ retrieve_artist_bio(void) {
 
 	deadbeef->conf_set_str(CONF_BIO_LOCALE_OLD, cur_locale);
 
-	if(!cnt) {
-		cnt = retrieve_txt_content(track_url, TXT_MAX);
+	if(!is_exists(img_file) || 
+		is_old_cache(img_file)) {
 		if(!cnt) {
-			trace("failed to download artist's bio\n");
-			ret_value = -1;
-			goto cleanup;
+			cnt = retrieve_txt_content(track_url, TXT_MAX);
+			if(!cnt) {
+				trace("failed to download artist's bio\n");
+				ret_value = -1;
+				goto cleanup;
+			}
 		}
-	}
 
-	cnt_size = strlen(cnt);
-	img_url = parse_content(cnt, cnt_size, "//image[@size=\"extralarge\"]", XML);
-	if(img_url) {
-		img_size = strlen(img_url);
-	}
+		cnt_size = strlen(cnt);
+		img_url = parse_content(cnt, cnt_size, "//image[@size=\"extralarge\"]", XML);
+		if(img_url) {
+			img_size = strlen(img_url);
+		}	
 
-	if(img_url && img_size > 0) {
-		if(!is_exists(img_file)) {
+		if(img_url && img_size > 0) {
 			res = retrieve_img_content(img_url, img_file);
 			if(res < 0) {
 				trace("failed to download artist's image\n");
@@ -845,7 +856,9 @@ cleanup:
 	data->img = img_file;
 	data->size = bio_size;
 	
-	g_idle_add((GSourceFunc)update_bio_view, data);
+	if(artist_changed) {
+		g_idle_add((GSourceFunc)update_bio_view, data);
+	}
 	
 	if(cnt) free(cnt);
 	if(img_url) free(img_url);
@@ -1019,6 +1032,16 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	if(!ev->track)
 		return;
 		
+	DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
+	if(!pl_track)
+		return;
+		
+	if(ev->track != pl_track) {
+		deadbeef->pl_item_unref(pl_track);
+		return;
+	} 
+	deadbeef->pl_item_unref(pl_track);
+		
 	if(!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
 		return;
 		
@@ -1036,6 +1059,25 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	    deadbeef->mutex_unlock(infobar_mutex);
     	return;
 	}
+	
+	if(strcmp(old_artist, artist) == 0 && 
+			strcmp(old_title, title) == 0) {
+		deadbeef->mutex_unlock(infobar_mutex);
+		return;
+	}
+	
+	res = strcmp(old_artist, artist);
+	if(res == 0) {
+		artist_changed = FALSE;
+	} else {
+		artist_changed = TRUE;
+	}
+	
+	memset(old_artist, 0, sizeof(old_artist));
+	strncpy(old_artist, artist, sizeof(old_artist));
+	
+	memset(old_title, 0, sizeof(old_title));
+	strncpy(old_title, title, sizeof(old_title));
 
 	memset(eartist, 0, sizeof(eartist));
     res = uri_encode(eartist, sizeof(eartist), artist, '_');
@@ -1101,8 +1143,18 @@ static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	switch(id) {
 	case DB_EV_SONGSTARTED:
-	//case DB_EV_TRACKINFOCHANGED:
-		infobar_songstarted((ddb_event_track_t*) ctx);
+	{
+		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
+		if(deadbeef->pl_get_item_duration(event->track) > 0.000000)
+			infobar_songstarted(event);
+	}
+		break;
+	case DB_EV_TRACKINFOCHANGED:
+	{
+		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
+		if(deadbeef->pl_get_item_duration(event->track) <= 0.000000)
+			infobar_songstarted(event);
+	}
 		break;
 	case DB_EV_SONGCHANGED:
 		infobar_songchanged();
@@ -1129,7 +1181,6 @@ infobar_init(void) {
 		return TRUE;
 
 	infobar_config_changed();
-
 	return FALSE;
 }
 
@@ -1190,7 +1241,6 @@ infobar_stop(void) {
 		deadbeef->cond_free(infobar_cond);
 		infobar_cond = 0;
 	}
-
 	return 0;
 }
 
@@ -1206,8 +1256,8 @@ static const char settings_dlg[] =
 ;
 
 static DB_misc_t plugin = {
-	.plugin.api_vmajor = DB_API_VERSION_MAJOR,
-    .plugin.api_vminor = DB_API_VERSION_MINOR,
+	.plugin.api_vmajor = 1,
+    .plugin.api_vminor = 0,
     .plugin.version_major = 1,
     .plugin.version_minor = 0,
     .plugin.type = DB_PLUGIN_MISC,
