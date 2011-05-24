@@ -195,14 +195,6 @@ static void
 delete_cache_clicked(void) {
 	int res = -1;
 	
-	char lyrics_path[512] = {0};
-	char lyrics_file[512] = {0};
-	
-	char bio_path[512] = {0};
-	char bio_file[512] = {0};
-	
-	char bio_img[512] = {0};
-	
 	GtkWidget *main_wnd = gtkui_plugin->get_mainwin();
 	GtkWidget *dlt_dlg = gtk_message_dialog_new(GTK_WINDOW(main_wnd), GTK_DIALOG_MODAL, 
 			GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, "Cache files for the current track wiil be removed. Continue?");
@@ -210,8 +202,11 @@ delete_cache_clicked(void) {
 	gint choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
 	switch(choise) {
 	case GTK_RESPONSE_YES:
+	{
+		char lyrics_path[512] = {0};
 		res = get_cache_path(lyrics_path, sizeof(lyrics_path), LYRICS);
 		if(res > 0) {
+			char lyrics_file[512] = {0};
 			res = snprintf(lyrics_file, sizeof(lyrics_file), "%s/%s-%s", lyrics_path, eartist, etitle);
 			if(res > 0) {
 				res = remove(lyrics_file);
@@ -220,8 +215,11 @@ delete_cache_clicked(void) {
 				}
 			} 
 		}
+		
+		char bio_path[512] = {0};
 		res = get_cache_path(bio_path, sizeof(bio_path), BIO);
 		if(res > 0) {
+			char bio_file[512] = {0};
 			res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, eartist);
 			if(res > 0) {
 				res = remove(bio_file);
@@ -229,6 +227,8 @@ delete_cache_clicked(void) {
 					trace("infobar: failed to remove bio cache file\n");
 				}
 			}
+			
+			char bio_img[512] = {0};
 			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, eartist);
 			if(res > 0) {
 				res = remove(bio_img);
@@ -237,6 +237,9 @@ delete_cache_clicked(void) {
 				}
 			}
 		}
+		memset(old_artist, 0, sizeof(old_artist));
+		memset(old_title, 0, sizeof(old_title));
+	}
 		break;
 	case GTK_RESPONSE_NO:
 		break;
@@ -313,6 +316,7 @@ create_infobar(void) {
 	lyrics_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(lyrics_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyrics_view), GTK_WRAP_WORD);
+	gtk_text_view_set_justification(GTK_TEXT_VIEW(lyrics_view), GTK_JUSTIFY_CENTER);
 
 	bio_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(bio_view), FALSE);
@@ -620,7 +624,7 @@ parse_content(const char *cnt, int size, const char *pattern, ContentType type) 
 		doc = htmlReadMemory(cnt, size, NULL, "utf-8", (HTML_PARSE_RECOVER | HTML_PARSE_NONET));
 		break;
 	case XML:
-		doc = xmlReadMemory(cnt, size, NULL, "utf-8", XML_PARSE_RECOVER | XML_PARSE_NONET);
+		doc = xmlReadMemory(cnt, size, NULL, "utf-8", (XML_PARSE_RECOVER | XML_PARSE_NONET));
 		break;
 	default:
 		goto cleanup;
