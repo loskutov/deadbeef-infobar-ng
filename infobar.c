@@ -32,8 +32,8 @@
 
 #include "support.h"
 
-#define trace(...) { fprintf(stderr, __VA_ARGS__); }
-//#define trace(fmt,...)
+//#define trace(...) { fprintf(stderr, __VA_ARGS__); }
+#define trace(fmt,...)
 
 typedef enum {
 	HTML = 1,
@@ -1201,6 +1201,14 @@ infobar_thread(void *ctx) {
     }
 }
 
+static gboolean 
+is_stream(DB_playItem_t *track) {
+	if(deadbeef->pl_get_item_duration(track) <= 0.000000) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
 static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	switch(id) {
@@ -1210,7 +1218,7 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
 		if(!event->track) 
 			return 0;
-		if(deadbeef->pl_get_item_duration(event->track) > 0.000000)
+		if(!is_stream(event->track))
 			infobar_songstarted(event);
 	}
 		break;
@@ -1220,7 +1228,7 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
 		if(!event->track) 
 			return 0;
-		if(deadbeef->pl_get_item_duration(event->track) <= 0.000000)
+		if(is_stream(event->track))
 			infobar_songstarted(event);
 	}
 		break;
