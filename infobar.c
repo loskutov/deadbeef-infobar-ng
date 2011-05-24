@@ -32,7 +32,8 @@
 
 #include "support.h"
 
-#define trace(fmt,...)
+#define trace(...) { fprintf(stderr, __VA_ARGS__); }
+//#define trace(fmt,...)
 
 typedef enum {
 	HTML = 1,
@@ -123,6 +124,8 @@ get_cache_path(char *cache_path, int size, ContentType type) {
 
 static gboolean
 update_bio_view(gpointer data) {
+	trace("infobar: update bio view started\n");
+	
     GtkTextIter begin, end;
 	GtkTextBuffer *buffer = NULL;
 	
@@ -134,6 +137,7 @@ update_bio_view(gpointer data) {
     	gtk_image_set_from_file(GTK_IMAGE(bio_image), bio_data->img);
 
     if(buffer) {
+		trace("infobar: inserting bio data to the buffer\n");
     	gtk_text_buffer_get_iter_at_line (buffer, &begin, 0);
     	gtk_text_buffer_get_end_iter (buffer, &end);
     	gtk_text_buffer_delete (buffer, &begin, &end);
@@ -154,6 +158,8 @@ update_bio_view(gpointer data) {
 
 static gboolean
 update_lyrics_view(gpointer data) {
+	trace("infobar: update lyrics view started\n");
+	
     GtkTextIter begin, end;
     GtkTextBuffer *buffer = NULL;
 	
@@ -162,6 +168,7 @@ update_lyrics_view(gpointer data) {
 	LyricsViewData *lyr_data = (LyricsViewData*) data;
 
     if(buffer) {
+		trace("infobar: inserting lyrics data to the buffer\n");
     	gtk_text_buffer_get_iter_at_line (buffer, &begin, 0);
     	gtk_text_buffer_get_end_iter (buffer, &end);
     	gtk_text_buffer_delete (buffer, &begin, &end);
@@ -209,7 +216,7 @@ delete_cache_clicked(void) {
 			if(res > 0) {
 				res = remove(lyrics_file);
 				if(res != 0) {
-					trace("failed to remove lyrics cache file\n");
+					trace("infobar: failed to remove lyrics cache file\n");
 				}
 			} 
 		}
@@ -219,14 +226,14 @@ delete_cache_clicked(void) {
 			if(res > 0) {
 				res = remove(bio_file);
 				if(res != 0) {
-					trace("failed to remove bio cache file\n");
+					trace("infobar: failed to remove bio cache file\n");
 				}
 			}
 			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, eartist);
 			if(res > 0) {
 				res = remove(bio_img);
 				if(res != 0) {
-					trace("failed to remove bio image file\n");
+					trace("infobar: failed to remove bio image file\n");
 				}
 			}
 		}
@@ -277,7 +284,7 @@ infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
 
 static int
 create_infobar(void) {
-	trace("creating infobar\n");
+	trace("infobar: creating infobar\n");
 
 	if(infobar)
 		return 0;
@@ -347,13 +354,13 @@ create_infobar(void) {
 
 static int
 create_infobar_interface(void) {
-	trace("modifying player's inteface\n");
+	trace("infobar: modifying player's inteface\n");
 
 	int res = -1;
 
 	res = create_infobar();
 	if(res < 0) {
-		trace("failed to create infobar\n");
+		trace("infobar: failed to create infobar\n");
 		return -1;
 	}
 
@@ -395,7 +402,7 @@ create_infobar_interface(void) {
 
 static int
 create_infobar_menu_entry(void) {
-    trace("creating infobar menu entry\n");
+    trace("infobar: creating infobar menu entry\n");
 
     GtkWidget *menu_item = gtk_check_menu_item_new_with_mnemonic ("_Infobar");
     if(!menu_item)
@@ -471,7 +478,7 @@ is_dir(const char *dir, mode_t mode)
         if(res == -1) {
             res = mkdir(tmp, mode);
             if(res != 0) {
-                trace("Failed to create %s\n", tmp);
+                trace("infobar: failed to create %s\n", tmp);
                 free(tmp);
                 return -1;
             }
@@ -544,7 +551,7 @@ load_content(const char *cache_file) {
 
 	in_file = fopen(cache_file, "r");
 	if(!in_file) {
-		trace("failed to open content the %s\n", cache_file);
+		trace("infobar: failed to open content file %s\n", cache_file);
 		goto cleanup;
 	}
 
@@ -561,7 +568,7 @@ load_content(const char *cache_file) {
 
 	res = fread(cnt, 1, cnt_size, in_file);
 	if(res != cnt_size) {
-		trace("failed to read the %s\n", cache_file);
+		trace("infobar: failed to read content file %s\n", cache_file);
 	}
 
 cleanup:
@@ -578,14 +585,14 @@ save_content(const char *cache_file, const char *buffer, int size) {
 
 	out_file = fopen(cache_file, "w+");
 	if(!out_file) {
-		trace("failed to open content file %s\n", cache_file);
+		trace("infobar: failed to open content file %s\n", cache_file);
 		ret_value = -1;
 		goto cleanup;
 	}
 
 	res = fwrite(buffer, 1, size, out_file);
 	if(res <= 0) {
-		trace("failed to write content %s\n", cache_file);
+		trace("infobar: failed to write to the content %s\n", cache_file);
 		ret_value = -1;
 	}
 
@@ -654,7 +661,7 @@ retrieve_txt_content(const char *url, int size) {
 
     infobar_cnt = deadbeef->fopen(url);
     if(!infobar_cnt) {
-    	trace("failed to open the %s\n", url);
+    	trace("infobar: failed to open %s\n", url);
     	goto cleanup;
     }
 
@@ -664,7 +671,7 @@ retrieve_txt_content(const char *url, int size) {
 
     res = deadbeef->fread(txt, 1, size, infobar_cnt);
     if(res <= 0) {
-    	trace("failed to retrieve a content from %s\n", url);
+    	trace("infobar: failed to retrieve a content from %s\n", url);
     }
 
 cleanup:
@@ -682,14 +689,14 @@ retrieve_img_content(const char *url, const char *img) {
 
 	infobar_cnt = deadbeef->fopen(url);
 	if(!infobar_cnt) {
-		trace("failed to open the %s\n", url);
+		trace("infobar: failed to open %s\n", url);
 		ret_value = -1;
 		goto cleanup;
 	}
 
 	out_file = fopen(img, "wb+");
 	if(!out_file) {
-		trace("failed to open the %s", img);
+		trace("infobar: failed to open %s", img);
 		ret_value = -1;
 		goto cleanup;
 	}
@@ -699,7 +706,7 @@ retrieve_img_content(const char *url, const char *img) {
 
 	while((len = deadbeef->fread(tmp, 1, sizeof(tmp), infobar_cnt)) > 0) {
 		if(fwrite(tmp, 1, len, out_file) != len) {
-			trace ("failed to write to the %s\n", img);
+			trace ("infobar: failed to write to the %s\n", img);
 			ret_value = -1;
 			break;
 		}
@@ -714,7 +721,7 @@ cleanup:
 
 static int
 retrieve_artist_bio(void) {
-	trace("retrieving artist's bio\n");
+	trace("infobar: retrieve artist bio started\n");
 
 	int res = -1;
 	int ret_value = 0;
@@ -732,37 +739,42 @@ retrieve_artist_bio(void) {
 
 	deadbeef->mutex_lock(infobar_mutex);
 	
+	trace("infobar: checking if the artist is the same\n");
 	if(!artist_changed) 
 		goto cleanup;
 
+	trace("infobar: retrieving bio cache path\n");
 	char cache_path[512] = {0};
 	res = get_cache_path(cache_path, sizeof(cache_path), BIO);
 	if(res == 0) {
-		trace("failed to retrieve bio cache dir\n");
+		trace("infobar: failed to retrieve bio cache dir\n");
 		ret_value = -1;
 		goto cleanup;
 	}
 
+	trace("infobar: creating bio cache dir\n");
 	if(!is_exists(cache_path)) {
 		res = is_dir(cache_path, 0755);
 		if(res < 0) {
-			trace("failed to create bio cache dir\n");
+			trace("infobar: failed to create bio cache dir\n");
 			ret_value = -1;
 			goto cleanup;
 		}
 	}
 
+	trace("infobar: forming a path to the bio cache file\n");
 	char cache_file[512] = {0};
 	res = snprintf(cache_file, sizeof(cache_file), "%s/%s", cache_path, eartist_lfm);
 	if(res == 0) {
-		trace("failed to form a path to the bio cache file\n");
+		trace("infobar: failed to form a path to the bio cache file\n");
 		ret_value = -1;
 		goto cleanup;
 	}
 
+	trace("infobar: forming a path to the bio image file\n");
 	res = asprintf(&img_file, "%s/%s_img", cache_path, eartist_lfm);
 	if(res == -1) {
-		trace("failed to form a path to the bio image file\n");
+		trace("infobar: failed to form a path to the bio image file\n");
 		ret_value = -1;
 		goto cleanup;
 	}
@@ -773,21 +785,24 @@ retrieve_artist_bio(void) {
 	deadbeef->conf_get_str(CONF_BIO_LOCALE, "en", cur_locale, sizeof(cur_locale));
 	deadbeef->conf_get_str(CONF_BIO_LOCALE_OLD, "en", old_locale, sizeof(old_locale));
 
+	trace("infobar: forming bio download url\n");
 	char track_url[512] = {0};
 	res = snprintf(track_url, sizeof(track_url), "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026",
 			eartist_lfm, cur_locale);
 	if(res == 0) {
-		trace("failed to form bio download url\n");
+		trace("infobar: failed to form bio download url\n");
 		ret_value = -1;
 		goto cleanup;
 	}
 
+	
 	if(!is_exists(cache_file) ||
 		is_old_cache(cache_file) ||
 		strcmp(old_locale, cur_locale) != 0) {
+		trace("infobar: trying to download artist's bio\n");
 		cnt = retrieve_txt_content(track_url, TXT_MAX);
 		if(!cnt) {
-			trace("failed to download artist's bio\n");
+			trace("infobar: failed to download artist's bio\n");
 			ret_value = -1;
 			goto cleanup;
 		}
@@ -807,6 +822,7 @@ retrieve_artist_bio(void) {
 			}
 			
 			if(deadbeef->junk_detect_charset(bio)) {
+				trace("infobar: converting bio to the utf-8\n");
 				tmp = convert_to_utf8(bio, bio_size);
 				if(tmp) {
 					free(bio);
@@ -814,15 +830,17 @@ retrieve_artist_bio(void) {
 					bio_size = strlen(bio);
 				}
 			}
-
+	
+			trace("infobar: saving retrieved bio to the cache file\n");
 			res = save_content(cache_file, bio, bio_size);
 			if(res < 0) {
-				trace("failed to save retrieved bio\n");
+				trace("infobar: failed to save retrieved bio\n");
 				ret_value = -1;
 				goto cleanup;
 			}
 		}
 	} else {
+		trace("infobar: trying to load bio from the cache file\n");
 		bio = load_content(cache_file);
 		if(bio) {
 			bio_size = strlen(bio);
@@ -836,7 +854,7 @@ retrieve_artist_bio(void) {
 		if(!cnt) {
 			cnt = retrieve_txt_content(track_url, TXT_MAX);
 			if(!cnt) {
-				trace("failed to download artist's bio\n");
+				trace("infobar: failed to download artist's bio\n");
 				ret_value = -1;
 				goto cleanup;
 			}
@@ -849,9 +867,10 @@ retrieve_artist_bio(void) {
 		}	
 
 		if(img_url && img_size > 0) {
+			trace("infobar: trying to download artist's image\n");
 			res = retrieve_img_content(img_url, img_file);
 			if(res < 0) {
-				trace("failed to download artist's image\n");
+				trace("infobar: failed to download artist's image\n");
 				ret_value = -1;
 				goto cleanup;
 			}
@@ -868,6 +887,7 @@ cleanup:
 	data->size = bio_size;
 	
 	if(artist_changed) {
+		trace("infobar: starting bio view update\n");
 		g_idle_add((GSourceFunc)update_bio_view, data);
 	}
 	
@@ -886,10 +906,11 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 	int cnt_size = 0;
 	int lyrics_size = 0;
 
+	trace("infobar: forming lyrics download url\n");
 	char track_url[512] = {0};
 	res = snprintf(track_url, sizeof(track_url), url, artist, title);
 	if(res == 0) {
-		trace("failed to form lyrics download url\n");
+		trace("infobar: failed to form lyrics download url\n");
 		goto cleanup;
 	}
 
@@ -897,7 +918,7 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 			is_old_cache(cache_file)) {
 		cnt = retrieve_txt_content(track_url, TXT_MAX);
 		if(!cnt) {
-			trace("failed to download a track's lyrics\n");
+			trace("infobar: failed to download a track's lyrics\n");
 			goto cleanup;
 		}
 
@@ -905,7 +926,9 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		lyrics = parse_content(cnt, cnt_size, pattern, HTML);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
+			
 			if(deadbeef->junk_detect_charset(lyrics)) {
+				trace("infobar: converting lyrics to the utf-8\n");
 				char *tmp = convert_to_utf8(lyrics, lyrics_size);
 				if(tmp) {
 					free(lyrics);
@@ -914,9 +937,10 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 				}
 			}
 
+			trace("infobar: trying to save track's lyrics to the cache file\n");
 			res = save_content(cache_file, lyrics, lyrics_size);
 			if(res < 0) {
-				trace("failed to save retrieved lyrics\n");
+				trace("infobar: failed to save retrieved track's lyrics\n");
 				goto cleanup;
 			}
 		}
@@ -929,7 +953,7 @@ cleanup:
 
 static int
 retrieve_track_lyrics(void) {
-	trace("retrieving track's lyrics\n");
+	trace("infobar: retrieve track lyrics started\n");
 
 	int res = -1;
 	int ret_value = 0;
@@ -945,31 +969,35 @@ retrieve_track_lyrics(void) {
 
 	deadbeef->mutex_lock(infobar_mutex);
 
+	trace("infobar: retrieving lyrics cache path\n");
 	char cache_path[512] = {0};
 	res = get_cache_path(cache_path, sizeof(cache_path), LYRICS);
 	if(res == 0) {
-		trace("failed to retrieve lyrics cache dir\n");
+		trace("infobar: failed to retrieve lyrics cache path\n");
 		ret_value = -1;
 		goto cleanup;
 	}
 
+	trace("infobar: creating cache dir\n");
 	if(!is_exists(cache_path)) {
 		res = is_dir(cache_path, 0755);
 		if(res < 0) {
-			trace("failed to create lyrics cache dir\n");
+			trace("infobar: failed to create lyrics cache dir\n");
 			ret_value = -1;
 			goto cleanup;
 		}
 	}
 
+	trace("infobar: forming a path to the lyrics cache file\n")
 	char cache_file[512] = {0};
 	res = snprintf(cache_file, sizeof(cache_file), "%s/%s-%s", cache_path, eartist, etitle);
 	if(res == 0) {
-		trace("failed to form a path to the lyrics cache file\n");
+		trace("infobar: failed to form a path to the lyrics cache file\n");
 		ret_value = -1;
 		goto cleanup;
 	}
 
+	trace("infobar: trying to fetch lyrics from the lyricsmania\n");
 	mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
 	if(mania && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
@@ -978,7 +1006,8 @@ retrieve_track_lyrics(void) {
 			lyrics_size = strlen(lyrics);
 		}
 	}
-
+	
+	trace("infobar: trying to fetch lyrics from the lyricstime\n");
 	time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
 	if(time && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
@@ -988,6 +1017,7 @@ retrieve_track_lyrics(void) {
 		}
 	}
 	
+	trace("infobar: trying to fetch lyrics from the megalyrics\n");
 	mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
 	if(mega && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
@@ -997,6 +1027,7 @@ retrieve_track_lyrics(void) {
 		}
 	}
 
+	trace("infobar: trying to load lyrics from the cache file\n");
 	if(!lyrics && lyrics_size == 0) {
 		lyrics = load_content(cache_file);
 		if(lyrics) {
@@ -1012,6 +1043,7 @@ cleanup:
 	data->txt = lyrics;
 	data->size = lyrics_size;
 	
+	trace("infobar: starting lyrics view update\n");
 	g_idle_add((GSourceFunc)update_lyrics_view, data);
 	return ret_value;
 }
@@ -1037,18 +1069,20 @@ get_track_info(DB_playItem_t *track, char *artist, int asize, char *title, int t
 
 static void
 infobar_songstarted(ddb_event_track_t *ev) {
-	trace("infobar song started\n");
+	trace("infobar: infobar song started\n");
 
 	int res = -1;
 	
 	if(!ev->track)
 		return;
-		
+	
+	trace("infobar: retrieving playing track\n");
 	DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
 	if(!pl_track)
 		return;
 		
 	if(ev->track != pl_track) {
+		trace("infobar: event track is not the same as the current playing track\n");
 		deadbeef->pl_item_unref(pl_track);
 		return;
 	} 
@@ -1071,6 +1105,8 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	    deadbeef->mutex_unlock(infobar_mutex);
     	return;
 	}
+	
+	trace("infobar: current playing artist: %s, title, %s\n", artist, title);
 	
 	if(strcmp(old_artist, artist) == 0 && 
 			strcmp(old_title, title) == 0) {
@@ -1112,6 +1148,8 @@ infobar_songstarted(ddb_event_track_t *ev) {
 		return;
 	}
 	
+	trace("infobar: encoded artist: %s, title: %s\n", eartist, etitle);
+	
 	deadbeef->mutex_unlock(infobar_mutex);
 	deadbeef->cond_signal(infobar_cond);
 }
@@ -1130,22 +1168,23 @@ infobar_songchanged(void) {
 static void
 infobar_thread(void *ctx) {
 	for(;;) {
-        trace("infobar_thread started\n");
+        trace("infobar: infobar thread started\n");
 
         deadbeef->cond_wait(infobar_cond, infobar_mutex);
         deadbeef->mutex_unlock(infobar_mutex);
 
+		trace("infobar: condition signaled\n");
         if(infobar_stopped) {
             return;
         }
 
         if(deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
-            trace("retrieving song's lyrics...\n");
+            trace("infobar: retrieving song's lyrics...\n");
             retrieve_track_lyrics();
         }
 
         if(deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
-            trace("retrieving artist's bio...\n");
+            trace("infobar: retrieving artist's bio...\n");
             retrieve_artist_bio();
         }
     }
@@ -1156,6 +1195,7 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 	switch(id) {
 	case DB_EV_SONGSTARTED:
 	{
+		trace("infobar: recieved songstarted message\n");
 		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
 		if(!event->track) 
 			return 0;
@@ -1165,6 +1205,7 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 		break;
 	case DB_EV_TRACKINFOCHANGED:
 	{
+		trace("infobar: recieved trackinfochanged message\n");
 		ddb_event_track_t* event = (ddb_event_track_t*) ctx;
 		if(!event->track) 
 			return 0;
@@ -1184,7 +1225,7 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 
 static gboolean
 infobar_init(void) {
-	trace("starting up infobar plugin\n");
+	trace("infobar: starting up infobar plugin\n");
 
 	int res = -1;
 
@@ -1202,7 +1243,7 @@ infobar_init(void) {
 
 static int
 infobar_connect(void) {
-	trace("connecting infobar plugin\n");
+	trace("infobar: connecting infobar plugin\n");
 
 	gtkui_plugin = (ddb_gtkui_t*)deadbeef->plug_get_for_id("gtkui");
 	if(!gtkui_plugin)
@@ -1214,14 +1255,14 @@ infobar_connect(void) {
 
 static int
 infobar_disconnect(void) {
-	trace("disconnecting infobar plugin\n");
+	trace("infobar: disconnecting infobar plugin\n");
 	gtkui_plugin = NULL;
 	return 0;
 }
 
 static int
 infobar_start(void) {
-	trace("starting infobar plugin\n");
+	trace("infobar: starting infobar plugin\n");
 
 	infobar_stopped = FALSE;
 
@@ -1233,7 +1274,7 @@ infobar_start(void) {
 
 static int
 infobar_stop(void) {
-	trace("stopping infobar plugin\n");
+	trace("infobar: stopping infobar plugin\n");
 
 	infobar_stopped = TRUE;
 
