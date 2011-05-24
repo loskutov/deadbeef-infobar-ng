@@ -1078,8 +1078,10 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	
 	trace("infobar: retrieving playing track\n");
 	DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
-	if(!pl_track)
+	if(!pl_track) {
+		trace("infobar: playing track is null\n");
 		return;
+	}	
 		
 	if(ev->track != pl_track) {
 		trace("infobar: event track is not the same as the current playing track\n");
@@ -1088,12 +1090,16 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	} 
 	deadbeef->pl_item_unref(pl_track);
 		
-	if(!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
+	if(!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0)) {
+		trace("infobar: infobar is set tot non visible\n");
 		return;
+	}
 		
 	if(!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
-			!deadbeef->conf_get_int(CONF_BIO_ENABLED, 1))
+			!deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
+		trace("infobar: lyrics and bio are disabled\n");		
 		return;
+	}
 
 	deadbeef->mutex_lock(infobar_mutex);
 		
@@ -1102,6 +1108,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	
 	res = get_track_info(ev->track, artist, sizeof(artist), title, sizeof(title));
 	if(res == -1) {
+		trace("infobar: failed to get track info\n");
 	    deadbeef->mutex_unlock(infobar_mutex);
     	return;
 	}
@@ -1110,6 +1117,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	
 	if(strcmp(old_artist, artist) == 0 && 
 			strcmp(old_title, title) == 0) {
+		trace("infobar: same artist and title\n");
 		deadbeef->mutex_unlock(infobar_mutex);
 		return;
 	}
@@ -1130,6 +1138,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	memset(eartist, 0, sizeof(eartist));
     res = uri_encode(eartist, sizeof(eartist), artist, '_');
     if(res == -1) {
+		trace("infobar: failed to encode artist's name\n");
     	deadbeef->mutex_unlock(infobar_mutex);
     	return;
     }
@@ -1137,6 +1146,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	memset(etitle, 0, sizeof(etitle));
 	res = uri_encode(etitle, sizeof (etitle), title, '_');
 	if(res == -1) {
+		trace("infobar: failed to encode song's title\n")
 		deadbeef->mutex_unlock(infobar_mutex);
 		return;
 	}
@@ -1144,6 +1154,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	memset(eartist_lfm, 0, sizeof(eartist_lfm));
 	res = uri_encode(eartist_lfm, sizeof(eartist_lfm), artist, '+');
 	if(res == - 1) {
+		trace("failed to encode artist's name for last.fm\n");
 		deadbeef->mutex_unlock(infobar_mutex);
 		return;
 	}
