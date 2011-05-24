@@ -273,7 +273,7 @@ static void
 infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
     gboolean state = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item));
 	state ? gtk_widget_show(infobar) : gtk_widget_hide(infobar); 
-    deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, state);
+    deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, (gint) state);
 }
 
 static void
@@ -394,7 +394,7 @@ create_infobar_interface(void) {
 	gtk_widget_show(ddb_main_new);
 	gtk_widget_show(playlist_box);
 
-	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 1);
+	gboolean state = deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0);
 	state ? gtk_widget_show(infobar) : gtk_widget_hide(infobar); 
 
 	return 0;
@@ -1091,7 +1091,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	deadbeef->pl_item_unref(pl_track);
 		
 	if(!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0)) {
-		trace("infobar: infobar is set tot non visible\n");
+		trace("infobar: infobar is set to non visible\n");
 		return;
 	}
 		
