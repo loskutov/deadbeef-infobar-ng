@@ -231,7 +231,7 @@ delete_cache_clicked(void) {
 		res = get_cache_path(bio_path, sizeof(bio_path), BIO);
 		if(res > 0) {
 			char bio_file[512] = {0};
-			res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, eartist);
+			res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, eartist_lfm);
 			if(res > 0) {
 				res = remove(bio_file);
 				if(res != 0) {
@@ -240,7 +240,7 @@ delete_cache_clicked(void) {
 			}
 			
 			char bio_img[512] = {0};
-			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, eartist);
+			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, eartist_lfm);
 			if(res > 0) {
 				res = remove(bio_img);
 				if(res != 0) {
