@@ -1385,7 +1385,7 @@ static DB_misc_t plugin = {
     .plugin.descr = "Fetches and shows song's lyrics and artist's biography.\n\n"
     				"To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
     				"See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"
-    				"Lyrics alignmet types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)",
+    				"Lyrics alignment types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)",
     .plugin.copyright =
         "Copyright (C) 2011 Dmitriy Simbiriatin <slpiv@mail.ru>\n"
         "\n"
