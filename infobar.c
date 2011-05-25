@@ -32,7 +32,6 @@
 
 #include "support.h"
 
-
 //#define trace(...) { fprintf(stderr, __VA_ARGS__); }
 #define trace(fmt,...)
 
@@ -67,6 +66,7 @@ static ddb_gtkui_t *gtkui_plugin;
 #define CONF_LYRICSMANIA_ENABLED "infobar.lyrics.lyricsmania"
 #define CONF_LYRICSTIME_ENABLED "infobar.lyrics.lyricstime"
 #define CONF_MEGALYRICS_ENABLED "infobar.lyrics.megalyrics"
+#define CONF_LYRICS_ALIGNMENT "infobar.lyrics.alignment"
 #define CONF_BIO_ENABLED "infobar.bio.enabled"
 #define CONF_BIO_LOCALE "infobar.bio.locale"
 #define CONF_BIO_LOCALE_OLD "infobar.bio.oldlocale"
@@ -130,11 +130,13 @@ update_bio_view(gpointer data) {
     GtkTextIter begin, end;
 	GtkTextBuffer *buffer = NULL;
 	
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
-	
 	BioViewData *bio_data = (BioViewData*) data;
+	
+	gdk_threads_enter();
+	
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
 
-    if(bio_image)
+    if(bio_image && bio_data->img)
     	gtk_image_set_from_file(GTK_IMAGE(bio_image), bio_data->img);
 
     if(buffer) {
@@ -151,6 +153,9 @@ update_bio_view(gpointer data) {
 				"Biography not found.", -1);
     	}
     }
+    
+    gdk_threads_leave();
+    
     if(bio_data->txt) free(bio_data->txt);
     if(bio_data->img) free(bio_data->img);
     if(bio_data) free(bio_data);
@@ -164,9 +169,11 @@ update_lyrics_view(gpointer data) {
     GtkTextIter begin, end;
     GtkTextBuffer *buffer = NULL;
 	
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
-	
 	LyricsViewData *lyr_data = (LyricsViewData*) data;
+	
+	gdk_threads_enter();
+	
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
 
     if(buffer) {
 		trace("infobar: inserting lyrics data to the buffer\n");
@@ -187,6 +194,9 @@ update_lyrics_view(gpointer data) {
 				"Lyrics not found.", -1);
     	}
     }
+    
+    gdk_threads_leave();
+    
     if(lyr_data->txt) free(lyr_data->txt);
     if(lyr_data) free(lyr_data);
     return FALSE;
@@ -263,6 +273,8 @@ static gboolean
 infobar_config_changed(void) {
 	gboolean state = FALSE;
 
+	gdk_threads_enter();
+
 	state = deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1);
 	if(lyrics_toggle && lyrics_tab)
 		set_tab_visible(lyrics_toggle, lyrics_tab, state);
@@ -270,6 +282,9 @@ infobar_config_changed(void) {
 	state = deadbeef->conf_get_int(CONF_BIO_ENABLED, 1);
 	if(bio_toggle && bio_tab)
 		set_tab_visible(bio_toggle, bio_tab, state);
+		
+	gdk_threads_leave();
+		
 	return FALSE;
 }
 
@@ -317,7 +332,21 @@ create_infobar(void) {
 	lyrics_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(lyrics_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyrics_view), GTK_WRAP_WORD);
-	gtk_text_view_set_justification(GTK_TEXT_VIEW(lyrics_view), GTK_JUSTIFY_CENTER);
+	
+	int just_type = 0;
+	int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 2);
+	
+	switch(align) {
+	case 1: just_type = GTK_JUSTIFY_LEFT; 
+		break;
+	case 2: just_type = GTK_JUSTIFY_CENTER; 
+		break;
+	case 3: just_type = GTK_JUSTIFY_RIGHT; 
+		break;
+	default:
+		just_type = GTK_JUSTIFY_CENTER;
+	}
+	gtk_text_view_set_justification(GTK_TEXT_VIEW(lyrics_view), just_type);
 
 	bio_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(bio_view), FALSE);
@@ -741,6 +770,8 @@ retrieve_artist_bio(void) {
 	int cnt_size = 0;
 	
 	BioViewData *data = malloc(sizeof(BioViewData));
+	if(!data)
+		goto cleanup;
 
 	deadbeef->mutex_lock(infobar_mutex);
 	
@@ -887,9 +918,11 @@ cleanup:
 		deadbeef->mutex_unlock(infobar_mutex);
 	}
 
-	data->txt = bio;
-	data->img = img_file;
-	data->size = bio_size;
+	if(data) {
+		data->txt = bio;
+		data->img = img_file;
+		data->size = bio_size;
+	}
 	
 	if(artist_changed) {
 		trace("infobar: starting bio view update\n");
@@ -971,6 +1004,8 @@ retrieve_track_lyrics(void) {
 	gboolean mega = FALSE;
 	
 	LyricsViewData *data = malloc(sizeof(LyricsViewData));
+	if(!data)
+		goto cleanup;
 
 	deadbeef->mutex_lock(infobar_mutex);
 
@@ -1045,8 +1080,10 @@ cleanup:
 		deadbeef->mutex_unlock(infobar_mutex);
 	}
 	
-	data->txt = lyrics;
-	data->size = lyrics_size;
+	if(data) {
+		data->txt = lyrics;
+		data->size = lyrics_size;
+	}
 	
 	trace("infobar: starting lyrics view update\n");
 	g_idle_add((GSourceFunc)update_lyrics_view, data);
@@ -1314,6 +1351,7 @@ infobar_stop(void) {
 	}
 
 	if(infobar_mutex) {
+		deadbeef->mutex_unlock(infobar_mutex);
 		deadbeef->mutex_free(infobar_mutex);
 		infobar_mutex = 0;
 	}
@@ -1332,6 +1370,7 @@ static const char settings_dlg[] =
 	"property \"Fetch from megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
 	"property \"Enable biography\" checkbox infobar.bio.enabled 1;"
 	"property \"Biography locale\" entry infobar.bio.locale \"en\";"
+	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 2;"
 	"property \"Cache update period (hr)\" entry infobar.cache.period 24;"
 	"property \"Default sidebar width (px)\" entry infobar.width 250;"
 ;
@@ -1345,7 +1384,8 @@ static DB_misc_t plugin = {
     .plugin.name = "Infobar plugin",
     .plugin.descr = "Fetches and shows song's lyrics and artist's biography.\n\n"
     				"To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
-    				"See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.",
+    				"See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"
+    				"Lyrics alignmet types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)",
     .plugin.copyright =
         "Copyright (C) 2011 Dmitriy Simbiriatin <slpiv@mail.ru>\n"
         "\n"
