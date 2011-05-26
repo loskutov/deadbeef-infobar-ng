@@ -939,7 +939,7 @@ is_redirect(const char* lyrics) {
 	}
 	tmp[9] = '\0';
 		
-	if(strcmp(tmp, "#REDIRECT") == 0) {
+	if(strcasecmp(tmp, "#REDIRECT") == 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -1087,6 +1087,7 @@ retrieve_track_lyrics(void) {
 				lyrics_size = strlen(lyrics);
 				
 				if(is_redirect(lyrics)) {
+					trace("infobar: lyrics was redirected\n");
 					char new_artist[100] = {0};
 					char new_title[100] = {0};
 					
@@ -1099,6 +1100,7 @@ retrieve_track_lyrics(void) {
 						   uri_encode(new_etitle, sizeof(new_etitle), new_title, '_') != -1) {
 							free(lyrics);		
 								
+							trace("infobar: trying to fetch lyrics with new eartist and etitile\n");
 							lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
 									new_eartist, new_etitle, cache_file, "//rev", XML);
 							if(lyrics) {
