@@ -54,7 +54,7 @@ typedef struct {
 	char *txt;
 	char *img;
 	int size;
-}BioViewData;
+} BioViewData;
 
 static DB_misc_t plugin;
 static DB_functions_t *deadbeef;
@@ -468,9 +468,7 @@ uri_encode(char *out, int outl, const char *str, char space) {
             (*str >= '0' && *str <= '9') ||
             (*str >= 'a' && *str <= 'z') ||
             (*str >= 'A' && *str <= 'Z') ||
-            (*str == ' ') ||
-            (*str == '\'') ||
-            (*str == '/')
+            (*str == ' ')
         ))
         {
             if (outl <= 3)
@@ -480,10 +478,7 @@ uri_encode(char *out, int outl, const char *str, char space) {
             outl -= 3; str++; out += 3;
         }
         else {
-        	if(*str == ' ' ||
-        	   *str == '\''||
-        	   *str == '/'
-        	) {
+        	if(*str == ' ') {
         		*out = space;
         	} else {
         		*out = *str;
@@ -935,6 +930,58 @@ cleanup:
 	return ret_value;
 }
 
+static gboolean
+is_redirect(const char* lyrics) {
+	char tmp[9] = {0};
+	
+	for(int i = 0; i < sizeof(tmp); ++i) {
+		tmp[i] = lyrics[i];
+	}
+	tmp[9] = '\0';
+		
+	if(strcmp(tmp, "#REDIRECT") == 0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+		
+static int 
+get_redirect_info(const char *lyrics, int size, char *new_artist, int asize, char *new_title, int tsize) {
+	int begin = 0, mid = 0, end = 0;
+	
+	for(int i = 0; i < size; ++i) {
+		if(lyrics[i] == '[') {
+			if(lyrics[++i] == '[')
+				begin = i + 1;
+		}
+		if(lyrics[i] == ':') {
+			mid = i;
+		}
+		if(lyrics[i] == ']') {
+			end = i - 1;
+		}
+	}
+	int red_asize = 0, red_tsize = 0;
+	
+	red_asize = mid - begin;
+	red_tsize = end - mid;
+	
+	if(asize < red_asize || tsize < red_tsize) {
+		return -1;
+	}
+	int i = 0, j = 0;
+	
+	for(i = begin; i < mid; ++i) {
+		new_artist[j++] = lyrics[i];
+	}	
+	
+	j = 0;	
+	for(i = mid + 1; i < end; ++i) {
+		new_title[j++] = lyrics[i];
+	}
+	return 0;
+}
+
 static char*
 fetch_lyrics_from(const char *url, const char *artist, const char *title, const char *cache_file, const char *pattern, ContentType type) {
 	int res = -1;
@@ -1038,12 +1085,36 @@ retrieve_track_lyrics(void) {
 					eartist, etitle, cache_file, "//rev", XML);
 			if(lyrics) {
 				lyrics_size = strlen(lyrics);
-			
-				char *tmp = parse_content(lyrics, lyrics_size, "//lyrics", HTML);
-				if(tmp) {
-					free(lyrics);
-					lyrics = tmp;
-					lyrics_size = strlen(lyrics);
+				
+				if(is_redirect(lyrics)) {
+					char new_artist[100] = {0};
+					char new_title[100] = {0};
+					
+					res = get_redirect_info(lyrics, lyrics_size, new_artist, sizeof(new_artist), new_title, sizeof(new_title));
+					if(res == 0) {					
+						char new_eartist[300] = {0};
+						char new_etitle[300] = {0};
+						
+						if(uri_encode(new_eartist, sizeof(new_eartist), new_artist, '_') != -1 &&
+						   uri_encode(new_etitle, sizeof(new_etitle), new_title, '_') != -1) {
+							free(lyrics);		
+								
+							lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
+									new_eartist, new_etitle, cache_file, "//rev", XML);
+							if(lyrics) {
+								lyrics_size = strlen(lyrics);
+							}
+						}
+					}
+				}
+				
+				if(lyrics && lyrics_size > 0) {
+					char *tmp = parse_content(lyrics, lyrics_size, "//lyrics", HTML);
+					if(tmp) {
+						free(lyrics);
+						lyrics = tmp;
+						lyrics_size = strlen(lyrics);
+					}
 				}
 			}
 		}
