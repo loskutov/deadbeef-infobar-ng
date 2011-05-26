@@ -1052,6 +1052,12 @@ retrieve_track_lyrics(void) {
 				free(lyrics);
 				lyrics = tmp;
 				lyrics_size = strlen(lyrics);
+				
+				res = save_content(cache_file, lyrics, lyrics_size);
+				if(res < 0) {
+					trace("infobar: failed to save retrieved track's lyrics\n");
+					goto cleanup;
+				}
 			}
 		}
 	}
