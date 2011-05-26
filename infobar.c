@@ -868,7 +868,7 @@ retrieve_artist_bio(void) {
 				}
 			}
 	
-			trace("infobar: saving retrieved bio to the cache file\n");
+			trace("infobar: trying to save retrieved bio to the cache file\n");
 			res = save_content(cache_file, bio, bio_size);
 			if(res < 0) {
 				trace("infobar: failed to save retrieved bio\n");
@@ -953,34 +953,24 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		goto cleanup;
 	}
 
-	if(!is_exists(cache_file) ||
-			is_old_cache(cache_file)) {
-		cnt = retrieve_txt_content(track_url, TXT_MAX);
-		if(!cnt) {
-			trace("infobar: failed to download a track's lyrics\n");
-			goto cleanup;
-		}
+	cnt = retrieve_txt_content(track_url, TXT_MAX);
+	if(!cnt) {
+		trace("infobar: failed to download a track's lyrics\n");
+		goto cleanup;
+	}
 
-		cnt_size = strlen(cnt);
-		lyrics = parse_content(cnt, cnt_size, pattern, type);
-		if(lyrics) {
+	cnt_size = strlen(cnt);
+	lyrics = parse_content(cnt, cnt_size, pattern, type);
+	if(lyrics) {
+		if(deadbeef->junk_detect_charset(lyrics)) {
 			lyrics_size = strlen(lyrics);
-			
-			if(deadbeef->junk_detect_charset(lyrics)) {
-				trace("infobar: converting lyrics to the utf-8\n");
-				char *tmp = convert_to_utf8(lyrics, lyrics_size);
-				if(tmp) {
-					free(lyrics);
-					lyrics = tmp;
-					lyrics_size = strlen(lyrics);
-				}
-			}
-
-			trace("infobar: trying to save track's lyrics to the cache file\n");
-			res = save_content(cache_file, lyrics, lyrics_size);
-			if(res < 0) {
-				trace("infobar: failed to save retrieved track's lyrics\n");
-				goto cleanup;
+				
+			trace("infobar: converting lyrics to the utf-8\n");
+			char *tmp = convert_to_utf8(lyrics, lyrics_size);
+			if(tmp) {
+				free(lyrics);
+				lyrics = tmp;
+				lyrics_size = strlen(lyrics);
 			}
 		}
 	}
@@ -1039,61 +1029,65 @@ retrieve_track_lyrics(void) {
 		goto cleanup;
 	}
 	
-	trace("infobar: trying to fetch lyrics ftom lyricswikia\n");
-	wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
-	if(wikia && !lyrics && lyrics_size == 0) {
-		lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
-				eartist, etitle, cache_file, "//rev", XML);
-		if(lyrics) {
-			lyrics_size = strlen(lyrics);
-			
-			char *tmp = parse_content(lyrics, lyrics_size, "//lyrics", HTML);
-			if(tmp) {
-				free(lyrics);
-				lyrics = tmp;
+	if(!is_exists(cache_file) ||
+		is_old_cache(cache_file)) {
+		trace("infobar: trying to fetch lyrics ftom lyricswikia\n");
+		wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
+		if(wikia && !lyrics && lyrics_size == 0) {
+			lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
+					eartist, etitle, cache_file, "//rev", XML);
+			if(lyrics) {
 				lyrics_size = strlen(lyrics);
-				
-				res = save_content(cache_file, lyrics, lyrics_size);
-				if(res < 0) {
-					trace("infobar: failed to save retrieved track's lyrics\n");
-					goto cleanup;
+			
+				char *tmp = parse_content(lyrics, lyrics_size, "//lyrics", HTML);
+				if(tmp) {
+					free(lyrics);
+					lyrics = tmp;
+					lyrics_size = strlen(lyrics);
 				}
 			}
 		}
-	}
 
-	trace("infobar: trying to fetch lyrics from the lyricsmania\n");
-	mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
-	if(mania && !lyrics && lyrics_size == 0) {
-		lyrics = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
-				etitle, eartist, cache_file, "//*[@id=\"songlyrics_h\"]", HTML);
-		if(lyrics) {
-			lyrics_size = strlen(lyrics);
+		trace("infobar: trying to fetch lyrics from the lyricsmania\n");
+		mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
+		if(mania && !lyrics && lyrics_size == 0) {
+			lyrics = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
+					etitle, eartist, cache_file, "//*[@id=\"songlyrics_h\"]", HTML);
+			if(lyrics) {
+				lyrics_size = strlen(lyrics);
+			}
 		}
-	}
 	
-	trace("infobar: trying to fetch lyrics from the lyricstime\n");
-	time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
-	if(time && !lyrics && lyrics_size == 0) {
-		lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
-				eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]", HTML);
-		if(lyrics) {
-			lyrics_size = strlen(lyrics);
+		trace("infobar: trying to fetch lyrics from the lyricstime\n");
+		time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
+		if(time && !lyrics && lyrics_size == 0) {
+			lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
+					eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]", HTML);
+			if(lyrics) {
+				lyrics_size = strlen(lyrics);
+			}
 		}
-	}
 	
-	trace("infobar: trying to fetch lyrics from the megalyrics\n");
-	mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
-	if(mega && !lyrics && lyrics_size == 0) {
-		lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
-				eartist, etitle, cache_file, "//pre[@class=\"lyric\"]", HTML);
-		if(lyrics) {
-			lyrics_size = strlen(lyrics);
+		trace("infobar: trying to fetch lyrics from the megalyrics\n");
+		mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
+		if(mega && !lyrics && lyrics_size == 0) {
+			lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
+					eartist, etitle, cache_file, "//pre[@class=\"lyric\"]", HTML);
+			if(lyrics) {
+				lyrics_size = strlen(lyrics);
+			}
 		}
-	}
-
-	trace("infobar: trying to load lyrics from the cache file\n");
-	if(!lyrics && lyrics_size == 0) {
+	
+		trace("infobar: trying to save retrieved lyrics to the cache file\n");
+		if(lyrics && lyrics_size > 0) {
+			res = save_content(cache_file, lyrics, lyrics_size);
+			if(res < 0) {
+				trace("infobar: failed to save retrieved track's lyrics\n");
+				goto cleanup;
+			}
+		}
+	} else {
+		trace("infobar: trying to load lyrics from the cache file\n");
 		lyrics = load_content(cache_file);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
