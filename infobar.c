@@ -63,6 +63,7 @@ static ddb_gtkui_t *gtkui_plugin;
 #define TXT_MAX 100000
 
 #define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
+#define CONF_LYRICSWIKIA_ENABLED "infobar.lyrics.lyricswikia"
 #define CONF_LYRICSMANIA_ENABLED "infobar.lyrics.lyricsmania"
 #define CONF_LYRICSTIME_ENABLED "infobar.lyrics.lyricstime"
 #define CONF_MEGALYRICS_ENABLED "infobar.lyrics.megalyrics"
@@ -935,7 +936,7 @@ cleanup:
 }
 
 static char*
-fetch_lyrics_from(const char *url, const char *artist, const char *title, const char *cache_file, const char *pattern) {
+fetch_lyrics_from(const char *url, const char *artist, const char *title, const char *cache_file, const char *pattern, ContentType type) {
 	int res = -1;
 
 	char *cnt = NULL;
@@ -961,7 +962,7 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		}
 
 		cnt_size = strlen(cnt);
-		lyrics = parse_content(cnt, cnt_size, pattern, HTML);
+		lyrics = parse_content(cnt, cnt_size, pattern, type);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
 			
@@ -999,6 +1000,7 @@ retrieve_track_lyrics(void) {
 
 	char *lyrics = NULL;
 
+	gboolean wikia = FALSE;
 	gboolean time = FALSE;
 	gboolean mania = FALSE;
 	gboolean mega = FALSE;
@@ -1036,12 +1038,29 @@ retrieve_track_lyrics(void) {
 		ret_value = -1;
 		goto cleanup;
 	}
+	
+	trace("infobar: trying to fetch lyrics ftom lyricswikia\n");
+	wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
+	if(wikia && !lyrics && lyrics_size == 0) {
+		lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
+				eartist, etitle, cache_file, "//rev", XML);
+		if(lyrics) {
+			lyrics_size = strlen(lyrics);
+			
+			char *tmp = parse_content(lyrics, lyrics_size, "//lyrics", HTML);
+			if(tmp) {
+				free(lyrics);
+				lyrics = tmp;
+				lyrics_size = strlen(lyrics);
+			}
+		}
+	}
 
 	trace("infobar: trying to fetch lyrics from the lyricsmania\n");
 	mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
 	if(mania && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
-				etitle, eartist, cache_file, "//*[@id=\"songlyrics_h\"]");
+				etitle, eartist, cache_file, "//*[@id=\"songlyrics_h\"]", HTML);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
 		}
@@ -1051,7 +1070,7 @@ retrieve_track_lyrics(void) {
 	time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
 	if(time && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
-				eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]");
+				eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]", HTML);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
 		}
@@ -1061,7 +1080,7 @@ retrieve_track_lyrics(void) {
 	mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
 	if(mega && !lyrics && lyrics_size == 0) {
 		lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
-				eartist, etitle, cache_file, "//pre[@class=\"lyric\"]");
+				eartist, etitle, cache_file, "//pre[@class=\"lyric\"]", HTML);
 		if(lyrics) {
 			lyrics_size = strlen(lyrics);
 		}
@@ -1365,9 +1384,10 @@ infobar_stop(void) {
 
 static const char settings_dlg[] =
     "property \"Enable lyrics\" checkbox infobar.lyrics.enabled 1;"
-	"property \"Fetch from lyricsmania\" checkbox infobar.lyrics.lyricsmania 1;"
-	"property \"Fetch from lyricstime\" checkbox infobar.lyrics.lyricstime 1;"
-	"property \"Fetch from megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
+    "property \"Fetch from Lyricswikia\" checkbox infobar.lyrics.lyricswikia 1;"
+	"property \"Fetch from Lyricsmania\" checkbox infobar.lyrics.lyricsmania 1;"
+	"property \"Fetch from Lyricstime\" checkbox infobar.lyrics.lyricstime 1;"
+	"property \"Fetch from Megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
 	"property \"Enable biography\" checkbox infobar.bio.enabled 1;"
 	"property \"Biography locale\" entry infobar.bio.locale \"en\";"
 	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 2;"
