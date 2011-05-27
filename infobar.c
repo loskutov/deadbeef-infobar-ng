@@ -978,9 +978,7 @@ is_redirect(const char* lyrics) {
 	}
 	char tmp[9] = {0};
 	
-	for(int i = 0; i < sizeof(tmp); ++i) {
-		tmp[i] = lyrics[i];
-	}
+	strncpy(tmp, lyrics, sizeof(tmp));
 	tmp[9] = '\0';
 		
 	if(strcasecmp(tmp, "#REDIRECT") == 0) {
@@ -994,9 +992,10 @@ get_redirect_info(const char *lyrics, int size, char *new_artist, int asize, cha
 	int begin = 0, mid = 0, end = 0;
 	
 	for(int i = 0; i < size; ++i) {
-		if(lyrics[i] == '[') {
-			if(lyrics[++i] == '[')
-				begin = i + 1;
+		if(lyrics[i] == '[' &&
+		   lyrics[++i] == '[')
+		{
+			begin = i + 1;
 		}
 		if(lyrics[i] == ':') {
 			mid = i;
@@ -1026,6 +1025,35 @@ get_redirect_info(const char *lyrics, int size, char *new_artist, int asize, cha
 	return 0;
 }
 
+static int
+get_new_lines_count(const char *buf) {
+	int nlnum = 0;
+	
+	while(*buf) {
+		if(*buf == '\n' ||
+		  (*buf == '\r' &&
+		   *(buf + 1) == '\n')) 
+		{
+			++nlnum;
+		} else { 
+			break;
+		}
+		++buf;
+	}
+	return nlnum;
+}
+
+static char*
+cleanup_new_lines(const char *buf, int size, int nlnum) {
+	char *cld_buf = NULL;
+	cld_buf = calloc(size + 1, sizeof(char));
+	if(!cld_buf) {
+		return NULL;
+	}
+	memcpy(cld_buf, buf + nlnum, size - nlnum + 1);
+	return cld_buf;
+}
+
 static char*
 fetch_lyrics_from(const char *url, const char *artist, const char *title, const char *cache_file, const char *pattern, ContentType type) {
 	int res = -1;
@@ -1041,34 +1069,30 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 	res = snprintf(track_url, sizeof(track_url), url, artist, title);
 	if(res == 0) {
 		trace("infobar: failed to form lyrics download url\n");
-		goto cleanup;
+		return NULL;
 	}
 
 	cnt = retrieve_txt_content(track_url, TXT_MAX);
 	if(!cnt) {
 		trace("infobar: failed to download a track's lyrics\n");
-		goto cleanup;
+		return NULL;
 	}
 
 	cnt_size = strlen(cnt);
-	
 	trace("infobar: parsing retrieved lyrics\n");
 	lyrics = parse_content(cnt, cnt_size, pattern, type, 0);
 	if(lyrics) {
-		lyrics_size = strlen(lyrics);
 		if(deadbeef->junk_detect_charset(lyrics)) {
+			lyrics_size = strlen(lyrics);
 			trace("infobar: converting lyrics to the utf-8\n");
 			char *tmp = convert_to_utf8(lyrics, lyrics_size);
 			if(tmp) {
 				free(lyrics);
 				lyrics = tmp;
-				lyrics_size = strlen(lyrics);
 			}
 		}
 	}
-
-cleanup:
-	if(cnt) free(cnt);
+	free(cnt);
 	return lyrics;
 }
 
@@ -1197,7 +1221,7 @@ retrieve_track_lyrics(void) {
 			}
 		}
 
-		trace("infobar: trying to fetch lyrics from the lyricsmania\n");
+		trace("infobar: trying to fetch lyrics from lyricsmania\n");
 		mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
 		if(mania && !lyrics && lyrics_size == 0) {
 			memset(eartist, 0, sizeof(eartist));
@@ -1214,7 +1238,7 @@ retrieve_track_lyrics(void) {
 			}
 		}
 	
-		trace("infobar: trying to fetch lyrics from the lyricstime\n");
+		trace("infobar: trying to fetch lyrics from lyricstime\n");
 		time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
 		if(time && !lyrics && lyrics_size == 0) {
 			memset(eartist, 0, sizeof(eartist));
@@ -1231,7 +1255,7 @@ retrieve_track_lyrics(void) {
 			}
 		}
 	
-		trace("infobar: trying to fetch lyrics from the megalyrics\n");
+		trace("infobar: trying to fetch lyrics from megalyrics\n");
 		mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
 		if(mega && !lyrics && lyrics_size == 0) {
 			memset(eartist, 0, sizeof(eartist));
@@ -1243,6 +1267,21 @@ retrieve_track_lyrics(void) {
 				lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
 						eartist, etitle, cache_file, "//pre[@class=\"lyric\"]", HTML);
 				if(lyrics) {
+					lyrics_size = strlen(lyrics);
+				}
+			}
+		}
+		
+		trace("infobar: trying to remove new line symbols\n");
+		if(lyrics && lyrics_size > 0) {
+			int nlnum = 0;
+			
+			nlnum = get_new_lines_count(lyrics);
+			if(nlnum > 0) {
+				char *tmp = cleanup_new_lines(lyrics, lyrics_size, nlnum);
+				if(tmp) {
+					free(lyrics);
+					lyrics = tmp;
 					lyrics_size = strlen(lyrics);
 				}
 			}
