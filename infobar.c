@@ -188,7 +188,7 @@ update_lyrics_view(gpointer data) {
     	gtk_text_buffer_insert(buffer, &begin, title, -1);
     	gtk_text_buffer_insert(buffer, &begin, "\n", -1);
     	gtk_text_buffer_insert(buffer, &begin, artist, -1);
-    	gtk_text_buffer_insert(buffer, &begin, "\n", -1);
+    	gtk_text_buffer_insert(buffer, &begin, "\n\n", -1);
 
     	if(lyr_data->txt && lyr_data->size > 0) {
     		gtk_text_buffer_insert(buffer, &begin, 
@@ -665,7 +665,7 @@ static void
 parser_errors_handler(void *ctx, const char *msg, ...) {}
 
 static char*
-parse_content(const char *cnt, int size, const char *pattern, ContentType type) {
+parse_content(const char *cnt, int size, const char *pattern, ContentType type, int node_num) {
 	xmlDocPtr doc = NULL;
 	xmlXPathContextPtr ctx = NULL;
 	xmlXPathObjectPtr obj = NULL;
@@ -699,7 +699,7 @@ parse_content(const char *cnt, int size, const char *pattern, ContentType type) 
 	if(!obj || !obj->nodesetval->nodeMax)
 		goto cleanup;
 
-	node = obj->nodesetval->nodeTab[0];
+	node = obj->nodesetval->nodeTab[node_num];
 	if(!node)
 		goto cleanup;
 
@@ -881,13 +881,13 @@ retrieve_artist_bio(void) {
 		}
 
 		cnt_size = strlen(cnt);
-		bio = parse_content(cnt, cnt_size, "/lfm/artist/bio/content", XML);
+		bio = parse_content(cnt, cnt_size, "/lfm/artist/bio/content", XML, 0);
 		if(bio) {
 			bio_size = strlen(bio);
 			
 			char *tmp = NULL;
 
-			tmp = parse_content(bio, bio_size, "/html/body", HTML);
+			tmp = parse_content(bio, bio_size, "/html/body", HTML, 0);
 			if(tmp) {
 				free(bio);
 				bio = tmp;
@@ -934,7 +934,7 @@ retrieve_artist_bio(void) {
 		}
 
 		cnt_size = strlen(cnt);
-		img_url = parse_content(cnt, cnt_size, "//image[@size=\"extralarge\"]", XML);
+		img_url = parse_content(cnt, cnt_size, "//image[@size=\"extralarge\"]", XML, 0);
 		if(img_url) {
 			img_size = strlen(img_url);
 		}	
@@ -973,6 +973,9 @@ cleanup:
 
 static gboolean
 is_redirect(const char* lyrics) {
+	if(!lyrics) {
+		return FALSE;
+	}
 	char tmp[9] = {0};
 	
 	for(int i = 0; i < sizeof(tmp); ++i) {
@@ -1048,11 +1051,12 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 	}
 
 	cnt_size = strlen(cnt);
-	lyrics = parse_content(cnt, cnt_size, pattern, type);
+	
+	trace("infobar: parsing retrieved lyrics\n");
+	lyrics = parse_content(cnt, cnt_size, pattern, type, 0);
 	if(lyrics) {
+		lyrics_size = strlen(lyrics);
 		if(deadbeef->junk_detect_charset(lyrics)) {
-			lyrics_size = strlen(lyrics);
-				
 			trace("infobar: converting lyrics to the utf-8\n");
 			char *tmp = convert_to_utf8(lyrics, lyrics_size);
 			if(tmp) {
@@ -1122,7 +1126,8 @@ retrieve_track_lyrics(void) {
 	
 	if(!is_exists(cache_file) ||
 		is_old_cache(cache_file)) {
-		trace("infobar: trying to fetch lyrics ftom lyricswikia\n");
+			
+		trace("infobar: trying to fetch lyrics from lyricswikia\n");
 		wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
 		if(wikia && !lyrics && lyrics_size == 0) {
 			memset(eartist, 0, sizeof(eartist));
@@ -1135,40 +1140,58 @@ retrieve_track_lyrics(void) {
 						eartist, etitle, cache_file, "//rev", XML);
 				if(lyrics) {
 					lyrics_size = strlen(lyrics);
+				}
 				
-					if(is_redirect(lyrics)) {
-						trace("infobar: lyricswikia gave a redirect\n");
+				if(is_redirect(lyrics) && lyrics && lyrics_size > 0) {
+					trace("infobar: lyricswikia gave a redirect\n");
 						
-						char tmp_artist[100] = {0};
-						char tmp_title[100] = {0};
+					char tmp_artist[100] = {0};
+					char tmp_title[100] = {0};
 						
-						res = get_redirect_info(lyrics, lyrics_size, tmp_artist, sizeof(tmp_artist), tmp_title, sizeof(tmp_title));
-						if(res == 0) {		
+					res = get_redirect_info(lyrics, lyrics_size, tmp_artist, 
+							sizeof(tmp_artist), tmp_title, sizeof(tmp_title));
+					if(res == 0) {						
+						memset(eartist, 0, sizeof(eartist));
+						memset(etitle, 0, sizeof(etitle));
 										
-							memset(eartist, 0, sizeof(eartist));
-							memset(etitle, 0, sizeof(etitle));
-										
-							if(uri_encode(eartist, sizeof(eartist), tmp_artist, LYRICSWIKIA) != -1 &&
-							   uri_encode(etitle, sizeof(etitle), tmp_title, LYRICSWIKIA) != -1) {
-								free(lyrics);		
+						if(uri_encode(eartist, sizeof(eartist), tmp_artist, LYRICSWIKIA) != -1 &&
+						   uri_encode(etitle, sizeof(etitle), tmp_title, LYRICSWIKIA) != -1) {
+							free(lyrics);			
 								
-								trace("infobar: trying to fetch lyrics with new eartist and etitile\n");
-								lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
-										eartist, etitle, cache_file, "//rev", XML);
-								if(lyrics) {
-									lyrics_size = strlen(lyrics);
-								}
+							trace("infobar: trying to fetch lyrics with new eartist and etitile\n");
+							lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
+									eartist, etitle, cache_file, "//rev", XML);
+							if(lyrics) {
+								lyrics_size = strlen(lyrics);
 							}
 						}
 					}
 				}
 				
 				if(lyrics && lyrics_size > 0) {
-					char *tmp = parse_content(lyrics, lyrics_size, "//lyrics", HTML);
-					if(tmp) {
-						free(lyrics);
-						lyrics = tmp;
-						lyrics_size = strlen(lyrics);
+					trace("infobar: parsing content, retrieved from lyricswikia\n");
+					char *tmp1 = parse_content(lyrics, lyrics_size, "//lyrics", HTML, 0);
+					if(tmp1) {
+						trace("infobar: checking if one more lyrics is available\n");
+						char *tmp2 = parse_content(lyrics, lyrics_size, "//lyrics", HTML, 1);
+						if(tmp2) {
+							int tmp1_size = strlen(tmp1);
+							int tmp2_size = strlen(tmp2);
+							
+							free(lyrics);
+							lyrics = calloc(tmp1_size + tmp2_size + 1, sizeof(char));
+							if(lyrics) {
+								strncpy(lyrics, tmp1, tmp1_size);
+								strncat(lyrics, tmp2, tmp2_size);
+								lyrics_size = tmp1_size + tmp2_size;
+							}
+							free(tmp1);
+							free(tmp2);
+						} else {
+							free(lyrics);
+							lyrics = tmp1;
+							lyrics_size = strlen(lyrics);
+						}
 					}
 				}
 			}
