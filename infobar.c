@@ -45,6 +45,14 @@ typedef enum {
 	BIO = 2,
 } CacheType;
 
+typedef enum {
+	LYRICSWIKIA = 1,
+	LYRICSMANIA = 2,
+	LYRICSTIME = 3,
+	MEGALYRICS = 4,
+	LASTFM = 5,
+} SourceType;
+
 typedef struct {
 	char *txt;
 	int size;
@@ -82,11 +90,6 @@ static char title[100];
 
 static char old_artist[100];
 static char old_title[100];
-
-static char eartist[300];
-static char etitle[300];
-
-static char eartist_lfm[300];
 
 gboolean artist_changed = TRUE;
 
@@ -219,7 +222,7 @@ delete_cache_clicked(void) {
 		res = get_cache_path(lyrics_path, sizeof(lyrics_path), LYRICS);
 		if(res > 0) {
 			char lyrics_file[512] = {0};
-			res = snprintf(lyrics_file, sizeof(lyrics_file), "%s/%s-%s", lyrics_path, eartist, etitle);
+			res = snprintf(lyrics_file, sizeof(lyrics_file), "%s/%s-%s", lyrics_path, artist, title);
 			if(res > 0) {
 				res = remove(lyrics_file);
 				if(res != 0) {
@@ -232,7 +235,7 @@ delete_cache_clicked(void) {
 		res = get_cache_path(bio_path, sizeof(bio_path), BIO);
 		if(res > 0) {
 			char bio_file[512] = {0};
-			res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, eartist_lfm);
+			res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, artist);
 			if(res > 0) {
 				res = remove(bio_file);
 				if(res != 0) {
@@ -241,7 +244,7 @@ delete_cache_clicked(void) {
 			}
 			
 			char bio_img[512] = {0};
-			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, eartist_lfm);
+			res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, artist);
 			if(res > 0) {
 				res = remove(bio_img);
 				if(res != 0) {
@@ -457,7 +460,7 @@ create_infobar_menu_entry(void) {
 }
 
 static int
-uri_encode(char *out, int outl, const char *str, char space) {
+uri_encode(char *out, int outl, const char *str, SourceType type) {
 	int l = outl;
 
     while (*str) {
@@ -468,7 +471,8 @@ uri_encode(char *out, int outl, const char *str, char space) {
             (*str >= '0' && *str <= '9') ||
             (*str >= 'a' && *str <= 'z') ||
             (*str >= 'A' && *str <= 'Z') ||
-            (*str == ' ')
+            (*str == ' ') ||
+            (*str == '\'')
         ))
         {
             if (outl <= 3)
@@ -479,7 +483,33 @@ uri_encode(char *out, int outl, const char *str, char space) {
         }
         else {
         	if(*str == ' ') {
-        		*out = space;
+        		switch(type) {
+				case LYRICSWIKIA:
+				case LYRICSMANIA:
+					*out = '_';
+					break;
+				case LYRICSTIME:
+				case MEGALYRICS:
+					*out = '-';
+					break;
+				case LASTFM:
+					*out = '+';
+					break;
+				}
+        	} else if(*str == '\'') {
+				switch(type) {
+				case LYRICSMANIA:
+					str++;
+					*out = *str;
+					break;
+				case LYRICSTIME:
+				case MEGALYRICS:
+					*out = '-';
+					break;
+				case LYRICSWIKIA:
+				case LASTFM:
+					break;
+				}	
         	} else {
         		*out = *str;
         	}
@@ -765,6 +795,8 @@ retrieve_artist_bio(void) {
 	int img_size = 0;
 	int cnt_size = 0;
 	
+	char eartist[300] = {0};
+	
 	BioViewData *data = malloc(sizeof(BioViewData));
 	if(!data)
 		goto cleanup;
@@ -796,7 +828,7 @@ retrieve_artist_bio(void) {
 
 	trace("infobar: forming a path to the bio cache file\n");
 	char cache_file[512] = {0};
-	res = snprintf(cache_file, sizeof(cache_file), "%s/%s", cache_path, eartist_lfm);
+	res = snprintf(cache_file, sizeof(cache_file), "%s/%s", cache_path, artist);
 	if(res == 0) {
 		trace("infobar: failed to form a path to the bio cache file\n");
 		ret_value = -1;
@@ -804,9 +836,17 @@ retrieve_artist_bio(void) {
 	}
 
 	trace("infobar: forming a path to the bio image file\n");
-	res = asprintf(&img_file, "%s/%s_img", cache_path, eartist_lfm);
+	res = asprintf(&img_file, "%s/%s_img", cache_path, artist);
 	if(res == -1) {
 		trace("infobar: failed to form a path to the bio image file\n");
+		ret_value = -1;
+		goto cleanup;
+	}
+
+	trace("infobar: encoding artist's name\n");
+	res = uri_encode(eartist, sizeof(eartist), artist, LASTFM);
+	if(res == -1) {
+		trace("infobar: failed to encode artist's name\n");
 		ret_value = -1;
 		goto cleanup;
 	}
@@ -816,11 +856,12 @@ retrieve_artist_bio(void) {
 	
 	deadbeef->conf_get_str(CONF_BIO_LOCALE, "en", cur_locale, sizeof(cur_locale));
 	deadbeef->conf_get_str(CONF_BIO_LOCALE_OLD, "en", old_locale, sizeof(old_locale));
+	
 
 	trace("infobar: forming bio download url\n");
 	char track_url[512] = {0};
 	res = snprintf(track_url, sizeof(track_url), "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026",
-			eartist_lfm, cur_locale);
+			eartist, cur_locale);
 	if(res == 0) {
 		trace("infobar: failed to form bio download url\n");
 		ret_value = -1;
@@ -1042,6 +1083,9 @@ retrieve_track_lyrics(void) {
 	gboolean mania = FALSE;
 	gboolean mega = FALSE;
 	
+	char eartist[300] = {0};
+	char etitle[300] = {0};
+		
 	LyricsViewData *data = malloc(sizeof(LyricsViewData));
 	if(!data)
 		goto cleanup;
@@ -1069,7 +1113,7 @@ retrieve_track_lyrics(void) {
 
 	trace("infobar: forming a path to the lyrics cache file\n")
 	char cache_file[512] = {0};
-	res = snprintf(cache_file, sizeof(cache_file), "%s/%s-%s", cache_path, eartist, etitle);
+	res = snprintf(cache_file, sizeof(cache_file), "%s/%s-%s", cache_path, artist, title);
 	if(res == 0) {
 		trace("infobar: failed to form a path to the lyrics cache file\n");
 		ret_value = -1;
@@ -1081,30 +1125,39 @@ retrieve_track_lyrics(void) {
 		trace("infobar: trying to fetch lyrics ftom lyricswikia\n");
 		wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
 		if(wikia && !lyrics && lyrics_size == 0) {
-			lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
-					eartist, etitle, cache_file, "//rev", XML);
-			if(lyrics) {
-				lyrics_size = strlen(lyrics);
+			memset(eartist, 0, sizeof(eartist));
+			memset(etitle, 0, sizeof(etitle));
+			
+			if(uri_encode(eartist, sizeof(eartist), artist, LYRICSWIKIA) != -1 &&
+			   uri_encode(etitle, sizeof(etitle), title, LYRICSWIKIA) != -1) {
+			
+				lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
+						eartist, etitle, cache_file, "//rev", XML);
+				if(lyrics) {
+					lyrics_size = strlen(lyrics);
 				
-				if(is_redirect(lyrics)) {
-					trace("infobar: lyrics was redirected\n");
-					char new_artist[100] = {0};
-					char new_title[100] = {0};
-					
-					res = get_redirect_info(lyrics, lyrics_size, new_artist, sizeof(new_artist), new_title, sizeof(new_title));
-					if(res == 0) {					
-						char new_eartist[300] = {0};
-						char new_etitle[300] = {0};
+					if(is_redirect(lyrics)) {
+						trace("infobar: lyricswikia gave a redirect\n");
 						
-						if(uri_encode(new_eartist, sizeof(new_eartist), new_artist, '_') != -1 &&
-						   uri_encode(new_etitle, sizeof(new_etitle), new_title, '_') != -1) {
-							free(lyrics);		
+						char tmp_artist[100] = {0};
+						char tmp_title[100] = {0};
+						
+						res = get_redirect_info(lyrics, lyrics_size, tmp_artist, sizeof(tmp_artist), tmp_title, sizeof(tmp_title));
+						if(res == 0) {		
+										
+							memset(eartist, 0, sizeof(eartist));
+							memset(etitle, 0, sizeof(etitle));
+										
+							if(uri_encode(eartist, sizeof(eartist), tmp_artist, LYRICSWIKIA) != -1 &&
+							   uri_encode(etitle, sizeof(etitle), tmp_title, LYRICSWIKIA) != -1) {
+								free(lyrics);		
 								
-							trace("infobar: trying to fetch lyrics with new eartist and etitile\n");
-							lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
-									new_eartist, new_etitle, cache_file, "//rev", XML);
-							if(lyrics) {
-								lyrics_size = strlen(lyrics);
+								trace("infobar: trying to fetch lyrics with new eartist and etitile\n");
+								lyrics = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
+										eartist, etitle, cache_file, "//rev", XML);
+								if(lyrics) {
+									lyrics_size = strlen(lyrics);
+								}
 							}
 						}
 					}
@@ -1124,30 +1177,51 @@ retrieve_track_lyrics(void) {
 		trace("infobar: trying to fetch lyrics from the lyricsmania\n");
 		mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
 		if(mania && !lyrics && lyrics_size == 0) {
-			lyrics = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
-					etitle, eartist, cache_file, "//*[@id=\"songlyrics_h\"]", HTML);
-			if(lyrics) {
-				lyrics_size = strlen(lyrics);
+			memset(eartist, 0, sizeof(eartist));
+			memset(etitle, 0, sizeof(etitle));
+			
+			if(uri_encode(eartist, sizeof(eartist), artist, LYRICSMANIA) != -1 &&
+			   uri_encode(etitle, sizeof(etitle), title, LYRICSMANIA) != -1) {
+				
+				lyrics = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
+						etitle, eartist, cache_file, "//*[@id=\"songlyrics_h\"]", HTML);
+				if(lyrics) {
+					lyrics_size = strlen(lyrics);
+				}
 			}
 		}
 	
 		trace("infobar: trying to fetch lyrics from the lyricstime\n");
 		time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
 		if(time && !lyrics && lyrics_size == 0) {
-			lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
-					eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]", HTML);
-			if(lyrics) {
-				lyrics_size = strlen(lyrics);
+			memset(eartist, 0, sizeof(eartist));
+			memset(etitle, 0, sizeof(etitle));
+			
+			if(uri_encode(eartist, sizeof(eartist), artist, LYRICSTIME) != -1 &&
+			   uri_encode(etitle, sizeof(etitle), title, LYRICSTIME) != -1) {
+				   
+				lyrics = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
+						eartist, etitle, cache_file, "//*[@id=\"songlyrics\"]", HTML);
+				if(lyrics) {
+					lyrics_size = strlen(lyrics);
+				}
 			}
 		}
 	
 		trace("infobar: trying to fetch lyrics from the megalyrics\n");
 		mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
 		if(mega && !lyrics && lyrics_size == 0) {
-			lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
-					eartist, etitle, cache_file, "//pre[@class=\"lyric\"]", HTML);
-			if(lyrics) {
-				lyrics_size = strlen(lyrics);
+			memset(eartist, 0, sizeof(eartist));
+			memset(etitle, 0, sizeof(etitle));
+			
+			if(uri_encode(eartist, sizeof(eartist), artist, MEGALYRICS) != -1 &&
+			   uri_encode(etitle, sizeof(etitle), title, MEGALYRICS) != -1) {
+				   
+				lyrics = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
+						eartist, etitle, cache_file, "//pre[@class=\"lyric\"]", HTML);
+				if(lyrics) {
+					lyrics_size = strlen(lyrics);
+				}
 			}
 		}
 	
@@ -1268,32 +1342,6 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	
 	memset(old_title, 0, sizeof(old_title));
 	strncpy(old_title, title, sizeof(old_title));
-
-	memset(eartist, 0, sizeof(eartist));
-    res = uri_encode(eartist, sizeof(eartist), artist, '_');
-    if(res == -1) {
-		trace("infobar: failed to encode artist's name\n");
-    	deadbeef->mutex_unlock(infobar_mutex);
-    	return;
-    }
-
-	memset(etitle, 0, sizeof(etitle));
-	res = uri_encode(etitle, sizeof (etitle), title, '_');
-	if(res == -1) {
-		trace("infobar: failed to encode song's title\n")
-		deadbeef->mutex_unlock(infobar_mutex);
-		return;
-	}
-
-	memset(eartist_lfm, 0, sizeof(eartist_lfm));
-	res = uri_encode(eartist_lfm, sizeof(eartist_lfm), artist, '+');
-	if(res == - 1) {
-		trace("failed to encode artist's name for last.fm\n");
-		deadbeef->mutex_unlock(infobar_mutex);
-		return;
-	}
-	
-	trace("infobar: encoded artist: %s, title: %s\n", eartist, etitle);
 	
 	deadbeef->mutex_unlock(infobar_mutex);
 	deadbeef->cond_signal(infobar_cond);
