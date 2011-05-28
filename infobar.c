@@ -480,10 +480,11 @@ uri_encode(char *out, int outl, const char *str, SourceType type) {
             (*str == '\'')
         ))
         {
+		reg_encode:
             if (outl <= 3)
                 return -1;
 
-            snprintf (out, outl, "%%%02x", (uint8_t)*str);
+            snprintf(out, outl, "%%%02x", (uint8_t)*str);
             outl -= 3; ++str; out += 3;
         }
         else {
@@ -513,6 +514,7 @@ uri_encode(char *out, int outl, const char *str, SourceType type) {
 					break;
 				case LYRICSWIKIA:
 				case LASTFM:
+					goto reg_encode;
 					break;
 				}	
         	} else {
@@ -1200,15 +1202,18 @@ retrieve_track_lyrics(void) {
 						trace("infobar: checking if one more lyrics is available\n");
 						char *tmp2 = parse_content(lyrics, lyrics_size, "//lyrics", HTML, 1);
 						if(tmp2) {
+							char sep[] = "\n\n***************\n\n";
+							int sep_size = strlen(sep);
 							int tmp1_size = strlen(tmp1);
 							int tmp2_size = strlen(tmp2);
 							
 							free(lyrics);
-							lyrics = calloc(tmp1_size + tmp2_size + 1, sizeof(char));
+							lyrics = calloc(tmp1_size + sep_size + tmp2_size + 1, sizeof(char));
 							if(lyrics) {
 								strncpy(lyrics, tmp1, tmp1_size);
+								strncat(lyrics, sep, sep_size);
 								strncat(lyrics, tmp2, tmp2_size);
-								lyrics_size = tmp1_size + tmp2_size;
+								lyrics_size = tmp1_size + sep_size + tmp2_size ;
 							}
 							free(tmp1);
 							free(tmp2);
