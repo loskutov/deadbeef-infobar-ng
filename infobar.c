@@ -1577,7 +1577,7 @@ static const char settings_dlg[] =
 	"property \"Biography locale\" entry infobar.bio.locale \"en\";"
 	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 2;"
 	"property \"Lyrics cache update period (hr)\" entry infobar.lyrics.cache.period 0;"
-	"property \"Biography cache update period (hr)\" entry infobar.cache.period 24;"
+	"property \"Biography cache update period (hr)\" entry infobar.bio.cache.period 24;"
 	"property \"Default sidebar width (px)\" entry infobar.width 250;"
 ;
 
