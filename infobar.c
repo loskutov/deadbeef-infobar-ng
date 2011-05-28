@@ -79,9 +79,9 @@ static ddb_gtkui_t *gtkui_plugin;
 #define CONF_LYRICS_ALIGNMENT "infobar.lyrics.alignment"
 #define CONF_BIO_ENABLED "infobar.bio.enabled"
 #define CONF_BIO_LOCALE "infobar.bio.locale"
-#define CONF_BIO_LOCALE_OLD "infobar.bio.oldlocale"
 #define CONF_INFOBAR_WIDTH "infobar.width"
-#define CONF_UPDATE_PERIOD "infobar.cache.period"
+#define CONF_LYRICS_UPDATE_PERIOD "infobar.lyrics.cache.period"
+#define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
 
 DB_FILE *infobar_cnt;
@@ -363,9 +363,11 @@ create_infobar(void) {
 	bio_image = gtk_image_new();
 	
 	GtkWidget *dlt_btn = gtk_button_new();
+	gtk_widget_set_tooltip_text(dlt_btn, "Remove current cache files.");
+	g_signal_connect(dlt_btn, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
+	
 	GtkWidget *dlt_img = gtk_image_new_from_stock(GTK_STOCK_REFRESH, GTK_ICON_SIZE_SMALL_TOOLBAR); 
 	gtk_button_set_image(GTK_BUTTON(dlt_btn), dlt_img);
-	g_signal_connect(dlt_btn, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
 
 	gtk_container_add(GTK_CONTAINER(lyrics_tab), lyrics_view);
 	gtk_container_add(GTK_CONTAINER(bio_scroll), bio_view);
@@ -565,7 +567,7 @@ is_exists(const char *obj) {
 }
 
 static gboolean
-is_old_cache(const char *cache_file) {
+is_old_cache(const char *cache_file, CacheType type) {
 	int res = -1;
 	int upd_period = 0;
 	time_t tm = time(NULL);
@@ -573,7 +575,17 @@ is_old_cache(const char *cache_file) {
 	struct stat st;
 	res = stat(cache_file, &st);
 	if(res == 0) {
-		upd_period = deadbeef->conf_get_int(CONF_UPDATE_PERIOD, 24);
+		switch(type) {
+		case LYRICS:
+			upd_period = deadbeef->conf_get_int(CONF_LYRICS_UPDATE_PERIOD, 0);
+			break;
+		case BIO:
+			upd_period = deadbeef->conf_get_int(CONF_BIO_UPDATE_PERIOD, 24);
+			break;
+		}
+		if(upd_period == 0) {
+			return FALSE;
+		}
 		if(upd_period > 0 && tm - st.st_mtime > upd_period * 60 * 60) {
 			return TRUE;
 		} else {
@@ -855,10 +867,7 @@ retrieve_artist_bio(void) {
 	}
 
 	char cur_locale[5] = {0};
-	char old_locale[5] = {0};
-	
 	deadbeef->conf_get_str(CONF_BIO_LOCALE, "en", cur_locale, sizeof(cur_locale));
-	deadbeef->conf_get_str(CONF_BIO_LOCALE_OLD, "en", old_locale, sizeof(old_locale));
 	
 	trace("infobar: forming bio download url\n");
 	char track_url[512] = {0};
@@ -871,8 +880,7 @@ retrieve_artist_bio(void) {
 	}
 
 	if(!is_exists(cache_file) ||
-		is_old_cache(cache_file) ||
-		strcmp(old_locale, cur_locale) != 0) {
+		is_old_cache(cache_file, BIO)) {
 		trace("infobar: trying to download artist's bio\n");
 		cnt = retrieve_txt_content(track_url, TXT_MAX);
 		if(!cnt) {
@@ -921,10 +929,8 @@ retrieve_artist_bio(void) {
 		}
 	}
 
-	deadbeef->conf_set_str(CONF_BIO_LOCALE_OLD, cur_locale);
-
 	if(!is_exists(img_file) || 
-		is_old_cache(img_file)) {
+		is_old_cache(img_file, BIO)) {
 		if(!cnt) {
 			cnt = retrieve_txt_content(track_url, TXT_MAX);
 			if(!cnt) {
@@ -1069,7 +1075,7 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 
 	cnt = retrieve_txt_content(track_url, TXT_MAX);
 	if(!cnt) {
-		trace("infobar: failed to download a track's lyrics\n");
+		trace("infobar: failed to download track's lyrics\n");
 		return NULL;
 	}
 
@@ -1144,7 +1150,7 @@ retrieve_track_lyrics(void) {
 	}
 	
 	if(!is_exists(cache_file) ||
-		is_old_cache(cache_file)) {
+		is_old_cache(cache_file, LYRICS)) {
 			
 		trace("infobar: trying to fetch lyrics from lyricswikia\n");
 		wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
@@ -1287,6 +1293,7 @@ retrieve_track_lyrics(void) {
 			res = save_content(cache_file, lyrics, lyrics_size);
 			if(res < 0) {
 				trace("infobar: failed to save retrieved track's lyrics\n");
+				ret_value = -1;
 				goto cleanup;
 			}
 		}
@@ -1569,7 +1576,8 @@ static const char settings_dlg[] =
 	"property \"Enable biography\" checkbox infobar.bio.enabled 1;"
 	"property \"Biography locale\" entry infobar.bio.locale \"en\";"
 	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 2;"
-	"property \"Cache update period (hr)\" entry infobar.cache.period 24;"
+	"property \"Lyrics cache update period (hr)\" entry infobar.lyrics.cache.period 0;"
+	"property \"Biography cache update period (hr)\" entry infobar.cache.period 24;"
 	"property \"Default sidebar width (px)\" entry infobar.width 250;"
 ;
 
@@ -1583,7 +1591,8 @@ static DB_misc_t plugin = {
     .plugin.descr = "Fetches and shows song's lyrics and artist's biography.\n\n"
     				"To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
     				"See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"
-    				"Lyrics alignment types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)",
+    				"Lyrics alignment types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)\n\n"
+    				"You can set cache update period to 0 if you don't want to update the cache at all.",
     .plugin.copyright =
         "Copyright (C) 2011 Dmitriy Simbiriatin <slpiv@mail.ru>\n"
         "\n"
