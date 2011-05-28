@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -104,9 +105,10 @@ static GtkWidget *lyrics_toggle;
 static GtkWidget *bio_toggle;
 static GtkWidget *lyrics_tab;
 static GtkWidget *bio_tab;
-static GtkWidget *lyrics_view;
-static GtkWidget *bio_view;
 static GtkWidget *bio_image;
+
+GtkTextBuffer *lyrics_buffer;
+GtkTextBuffer *bio_buffer;
 
 static int
 get_cache_path(char *cache_path, int size, ContentType type) {
@@ -132,28 +134,24 @@ update_bio_view(gpointer data) {
 	trace("infobar: update bio view started\n");
 	
     GtkTextIter begin, end;
-	GtkTextBuffer *buffer = NULL;
-	
 	BioViewData *bio_data = (BioViewData*) data;
 	
 	gdk_threads_enter();
-	
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
 
     if(bio_image && bio_data->img)
     	gtk_image_set_from_file(GTK_IMAGE(bio_image), bio_data->img);
 
-    if(buffer) {
+    if(bio_buffer) {
 		trace("infobar: inserting bio data to the buffer\n");
-    	gtk_text_buffer_get_iter_at_line (buffer, &begin, 0);
-    	gtk_text_buffer_get_end_iter (buffer, &end);
-    	gtk_text_buffer_delete (buffer, &begin, &end);
+    	gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
+    	gtk_text_buffer_get_end_iter (bio_buffer, &end);
+    	gtk_text_buffer_delete (bio_buffer, &begin, &end);
 
     	if(bio_data->txt && bio_data->size > 0) {
-    		gtk_text_buffer_insert(buffer, &begin, 
+    		gtk_text_buffer_insert(bio_buffer, &begin, 
 				bio_data->txt, bio_data->size);
     	} else {
-    		gtk_text_buffer_insert(buffer, &begin,
+    		gtk_text_buffer_insert(bio_buffer, &begin,
 				"Biography not found.", -1);
     	}
     }
@@ -171,30 +169,28 @@ update_lyrics_view(gpointer data) {
 	trace("infobar: update lyrics view started\n");
 	
     GtkTextIter begin, end;
-    GtkTextBuffer *buffer = NULL;
-	
 	LyricsViewData *lyr_data = (LyricsViewData*) data;
 	
 	gdk_threads_enter();
-	
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
 
-    if(buffer) {
+    if(lyrics_buffer) {
 		trace("infobar: inserting lyrics data to the buffer\n");
-    	gtk_text_buffer_get_iter_at_line (buffer, &begin, 0);
-    	gtk_text_buffer_get_end_iter (buffer, &end);
-    	gtk_text_buffer_delete (buffer, &begin, &end);
-
-    	gtk_text_buffer_insert(buffer, &begin, title, -1);
-    	gtk_text_buffer_insert(buffer, &begin, "\n", -1);
-    	gtk_text_buffer_insert(buffer, &begin, artist, -1);
-    	gtk_text_buffer_insert(buffer, &begin, "\n\n", -1);
+    	gtk_text_buffer_get_iter_at_line (lyrics_buffer, &begin, 0);
+    	gtk_text_buffer_get_end_iter (lyrics_buffer, &end);
+    	gtk_text_buffer_delete (lyrics_buffer, &begin, &end);
+		
+		gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyrics_buffer), 
+				&begin, title, -1, "bold", "large", NULL);
+    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n", -1);
+    	gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyrics_buffer),
+				&begin, artist, -1, "italic", NULL);
+    	gtk_text_buffer_insert(lyrics_buffer, &begin, "\n\n", -1);
 
     	if(lyr_data->txt && lyr_data->size > 0) {
-    		gtk_text_buffer_insert(buffer, &begin, 
+    		gtk_text_buffer_insert(lyrics_buffer, &begin, 
 				lyr_data->txt, lyr_data->size);
     	} else {
-    		gtk_text_buffer_insert(buffer, &begin, 
+    		gtk_text_buffer_insert(lyrics_buffer, &begin, 
 				"Lyrics not found.", -1);
     	}
     }
@@ -333,7 +329,7 @@ create_infobar(void) {
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bio_scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
-	lyrics_view = gtk_text_view_new();
+	GtkWidget *lyrics_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(lyrics_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyrics_view), GTK_WRAP_WORD);
 	
@@ -352,9 +348,16 @@ create_infobar(void) {
 	}
 	gtk_text_view_set_justification(GTK_TEXT_VIEW(lyrics_view), just_type);
 
-	bio_view = gtk_text_view_new();
+	GtkWidget *bio_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(bio_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(bio_view), GTK_WRAP_WORD);
+	
+	lyrics_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyrics_view));
+	gtk_text_buffer_create_tag(GTK_TEXT_BUFFER(lyrics_buffer), "bold", "weight", PANGO_WEIGHT_BOLD, NULL);
+	gtk_text_buffer_create_tag(GTK_TEXT_BUFFER(lyrics_buffer), "large", "scale", PANGO_SCALE_LARGE, NULL);
+	gtk_text_buffer_create_tag(GTK_TEXT_BUFFER(lyrics_buffer), "italic", "style", PANGO_STYLE_ITALIC, NULL);
+	
+	bio_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
 
 	bio_tab = gtk_vpaned_new();
 	bio_image = gtk_image_new();
@@ -479,7 +482,7 @@ uri_encode(char *out, int outl, const char *str, SourceType type) {
                 return -1;
 
             snprintf (out, outl, "%%%02x", (uint8_t)*str);
-            outl -= 3; str++; out += 3;
+            outl -= 3; ++str; out += 3;
         }
         else {
         	if(*str == ' ') {
@@ -499,7 +502,7 @@ uri_encode(char *out, int outl, const char *str, SourceType type) {
         	} else if(*str == '\'') {
 				switch(type) {
 				case LYRICSMANIA:
-					str++;
+					++str;
 					*out = *str;
 					break;
 				case LYRICSTIME:
@@ -513,7 +516,7 @@ uri_encode(char *out, int outl, const char *str, SourceType type) {
         	} else {
         		*out = *str;
         	}
-            out++; str++; outl--;
+            ++out; ++str; --outl;
         }
     }
     *out = 0;
@@ -857,7 +860,6 @@ retrieve_artist_bio(void) {
 	deadbeef->conf_get_str(CONF_BIO_LOCALE, "en", cur_locale, sizeof(cur_locale));
 	deadbeef->conf_get_str(CONF_BIO_LOCALE_OLD, "en", old_locale, sizeof(old_locale));
 	
-
 	trace("infobar: forming bio download url\n");
 	char track_url[512] = {0};
 	res = snprintf(track_url, sizeof(track_url), "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026",
@@ -868,7 +870,6 @@ retrieve_artist_bio(void) {
 		goto cleanup;
 	}
 
-	
 	if(!is_exists(cache_file) ||
 		is_old_cache(cache_file) ||
 		strcmp(old_locale, cur_locale) != 0) {
@@ -977,68 +978,61 @@ is_redirect(const char* lyrics) {
 		return FALSE;
 	}
 	char tmp[9] = {0};
+	memcpy(tmp, lyrics, sizeof(tmp));
 	
-	strncpy(tmp, lyrics, sizeof(tmp));
-	tmp[9] = '\0';
+	for(int i = 0; i < sizeof(tmp); ++i) {
+		tmp[i] = tolower(tmp[i]);
+	}
 		
-	if(strcasecmp(tmp, "#REDIRECT") == 0) {
+	if(memcmp(tmp, "#redirect", sizeof(tmp)) == 0) {
 		return TRUE;
 	}
 	return FALSE;
 }
 		
 static int 
-get_redirect_info(const char *lyrics, int size, char *new_artist, int asize, char *new_title, int tsize) {
+get_redirect_info(const char *buf, int size, char *new_artist, int asize, char *new_title, int tsize) {
 	int begin = 0, mid = 0, end = 0;
 	
 	for(int i = 0; i < size; ++i) {
-		if(lyrics[i] == '[' &&
-		   lyrics[++i] == '[')
+		if(buf[i] == '[' &&
+		   buf[++i] == '[')
 		{
 			begin = i + 1;
 		}
-		if(lyrics[i] == ':') {
+		if(buf[i] == ':') {
 			mid = i;
 		}
-		if(lyrics[i] == ']') {
+		if(buf[i] == ']') {
 			end = i - 1;
 		}
 	}
-	int red_asize = 0, red_tsize = 0;
+	int red_asize = mid - begin;
+	int red_tsize = end - mid;
 	
-	red_asize = mid - begin;
-	red_tsize = end - mid;
-	
-	if(asize < red_asize || tsize < red_tsize) {
+	if(asize < red_asize || 
+	   tsize < red_tsize) 
+	{
 		return -1;
 	}
-	int i = 0, j = 0;
-	
-	for(i = begin; i < mid; ++i) {
-		new_artist[j++] = lyrics[i];
-	}	
-	
-	j = 0;	
-	for(i = mid + 1; i < end; ++i) {
-		new_title[j++] = lyrics[i];
-	}
+	memcpy(new_artist, buf + begin, red_asize);
+	memcpy(new_title, buf + mid + 1, red_tsize - 1);
 	return 0;
 }
 
 static int
-get_new_lines_count(const char *buf) {
+get_new_lines_count(const char *buf, int size) {
 	int nlnum = 0;
 	
-	while(*buf) {
-		if(*buf == '\n' ||
-		  (*buf == '\r' &&
-		   *(buf + 1) == '\n')) 
+	for(int i = 0; i < size; ++i) {
+		if(buf[i] == '\n' ||
+		  (buf[i] == '\r' &&
+		   buf[i + 1] == '\n')) 
 		{
 			++nlnum;
 		} else { 
 			break;
 		}
-		++buf;
 	}
 	return nlnum;
 }
@@ -1046,6 +1040,7 @@ get_new_lines_count(const char *buf) {
 static char*
 cleanup_new_lines(const char *buf, int size, int nlnum) {
 	char *cld_buf = NULL;
+	
 	cld_buf = calloc(size + 1, sizeof(char));
 	if(!cld_buf) {
 		return NULL;
@@ -1166,7 +1161,7 @@ retrieve_track_lyrics(void) {
 					lyrics_size = strlen(lyrics);
 				}
 				
-				if(is_redirect(lyrics) && lyrics && lyrics_size > 0) {
+				if(is_redirect(lyrics) && lyrics_size > 0) {
 					trace("infobar: lyricswikia gave a redirect\n");
 						
 					char tmp_artist[100] = {0};
@@ -1276,7 +1271,7 @@ retrieve_track_lyrics(void) {
 		if(lyrics && lyrics_size > 0) {
 			int nlnum = 0;
 			
-			nlnum = get_new_lines_count(lyrics);
+			nlnum = get_new_lines_count(lyrics, lyrics_size);
 			if(nlnum > 0) {
 				char *tmp = cleanup_new_lines(lyrics, lyrics_size, nlnum);
 				if(tmp) {
