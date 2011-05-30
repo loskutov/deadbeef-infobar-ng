@@ -127,7 +127,7 @@ update_bio_view(gpointer data) {
 	
 	gdk_threads_enter();
 
-    if(bio_image && bio_data->img) {
+    if(bio_image) {
     	gtk_image_set_from_file(GTK_IMAGE(bio_image), bio_data->img);
 	}
 
@@ -280,7 +280,6 @@ infobar_config_changed(void) {
 	}
 		
 	gdk_threads_leave();
-	
 	return FALSE;
 }
 
@@ -327,6 +326,8 @@ create_infobar(void) {
 	GtkWidget *lyr_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(lyr_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyr_view), GTK_WRAP_WORD);
+	gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(lyr_view), FALSE);
+	gtk_widget_set_can_focus(lyr_view, FALSE);
 	
 	int just_type = 0;
 	int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 2);
@@ -346,6 +347,8 @@ create_infobar(void) {
 	GtkWidget *bio_view = gtk_text_view_new();
 	gtk_text_view_set_editable(GTK_TEXT_VIEW(bio_view), FALSE);
 	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(bio_view), GTK_WRAP_WORD);
+	gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(bio_view), FALSE);
+	gtk_widget_set_can_focus(bio_view, FALSE);
 	
 	lyr_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyr_view));
 	gtk_text_buffer_create_tag(GTK_TEXT_BUFFER(lyr_buffer), "bold", "weight", PANGO_WEIGHT_BOLD, NULL);
