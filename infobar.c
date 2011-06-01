@@ -1510,7 +1510,7 @@ static const char settings_dlg[] =
 	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 1;"
 	"property \"Lyrics cache update period (hr)\" entry infobar.lyrics.cache.period 0;"
 	"property \"Biography cache update period (hr)\" entry infobar.bio.cache.period 24;"
-	"property \"Default image height (px)\" entry infobar.bio.image.height 250;"
+	"property \"Default image height (px)\" entry infobar.bio.image.height 200;"
 	"property \"Default sidebar width (px)\" entry infobar.width 250;"
 ;
 
