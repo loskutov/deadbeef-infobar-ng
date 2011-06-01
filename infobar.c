@@ -70,6 +70,7 @@ static ddb_gtkui_t *gtkui_plugin;
 #define CONF_LYRICS_ALIGNMENT "infobar.lyrics.alignment"
 #define CONF_BIO_ENABLED "infobar.bio.enabled"
 #define CONF_BIO_LOCALE "infobar.bio.locale"
+#define CONF_BIO_IMAGE_HEIGHT "infobar.bio.image.height"
 #define CONF_INFOBAR_WIDTH "infobar.width"
 #define CONF_LYRICS_UPDATE_PERIOD "infobar.lyrics.cache.period"
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
@@ -97,6 +98,7 @@ static GtkWidget *bio_toggle;
 static GtkWidget *lyr_tab;
 static GtkWidget *bio_tab;
 static GtkWidget *bio_image;
+static GdkPixbuf *bio_pixbuf;
 
 GtkTextBuffer *lyr_buffer;
 GtkTextBuffer *bio_buffer;
@@ -128,7 +130,12 @@ update_bio_view(gpointer data) {
 	gdk_threads_enter();
 
     if(bio_image) {
-    	gtk_image_set_from_file(GTK_IMAGE(bio_image), bio_data->img);
+		if(bio_pixbuf) {
+			g_object_unref(bio_pixbuf);
+			bio_pixbuf = NULL;
+		}
+    	bio_pixbuf = gdk_pixbuf_new_from_file(bio_data->img, NULL);
+		gtk_widget_queue_draw(bio_image);
 	}
 
     if(bio_buffer) {
@@ -298,6 +305,55 @@ infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
 	return FALSE;
 }
 
+static gboolean
+bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
+	if(bio_pixbuf) {
+		float ww = gdk_pixbuf_get_width(bio_pixbuf);
+		float wh = gdk_pixbuf_get_height(bio_pixbuf);
+	
+		float aw = image->allocation.width;
+		float ah = image->allocation.height;
+	
+		if(aw < 10) aw = 10;
+		if(ah < 10) ah = 10;
+		
+		float w = 0, h = 0;
+		float ratio = wh / ww;
+	
+		if(ww > wh) {
+			w = ww > aw ? aw : ww;
+			h = w * ratio;
+		} else {
+			h = wh > ah ? ah : wh;
+			w = h / ratio;
+		}
+
+		if(w > aw) {
+			w = aw;
+			h = w * ratio;
+		}
+		if(h > ah) {
+			h = ah;
+			w = h / ratio;
+		}
+		
+		int pos_x = (aw - w) / 2;
+		int pos_y = (ah - h) / 2;	
+		
+		GdkPixbuf *sld = gdk_pixbuf_scale_simple(bio_pixbuf, w, h, GDK_INTERP_BILINEAR);
+		if(sld) {
+			cairo_t *cr = gdk_cairo_create(image->window);
+			if(cr) {				
+				gdk_cairo_set_source_pixbuf(cr, sld, pos_x, pos_y);
+				cairo_paint(cr);
+				cairo_destroy(cr);
+			}
+			g_object_unref(sld);
+		}
+	}
+	return FALSE;
+}
+
 static void
 create_infobar(void) {
 	trace("infobar: creating infobar\n");
@@ -330,7 +386,7 @@ create_infobar(void) {
 	gtk_widget_set_can_focus(lyr_view, FALSE);
 	
 	int just_type = 0;
-	int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 2);
+	int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 1);
 	
 	switch(align) {
 	case 1: just_type = GTK_JUSTIFY_LEFT; 
@@ -356,9 +412,14 @@ create_infobar(void) {
 	gtk_text_buffer_create_tag(GTK_TEXT_BUFFER(lyr_buffer), "italic", "style", PANGO_STYLE_ITALIC, NULL);
 	
 	bio_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
-
 	bio_tab = gtk_vpaned_new();
-	bio_image = gtk_image_new();
+	
+	GtkWidget *img_frame = gtk_frame_new(NULL);
+	gtk_frame_set_shadow_type(GTK_FRAME(img_frame), GTK_SHADOW_IN);
+	
+	bio_image = gtk_drawing_area_new();
+	gtk_widget_set_app_paintable(bio_image, TRUE);
+	g_signal_connect(bio_image, "expose-event", G_CALLBACK(bio_image_expose), NULL);
 	
 	GtkWidget *dlt_btn = gtk_button_new();
 	gtk_widget_set_tooltip_text(dlt_btn, "Remove current cache files");
@@ -369,8 +430,9 @@ create_infobar(void) {
 
 	gtk_container_add(GTK_CONTAINER(lyr_tab), lyr_view);
 	gtk_container_add(GTK_CONTAINER(bio_scroll), bio_view);
+	gtk_container_add(GTK_CONTAINER(img_frame), bio_image);
 
-	gtk_paned_pack1(GTK_PANED(bio_tab), bio_image, FALSE, TRUE);
+	gtk_paned_pack1(GTK_PANED(bio_tab), img_frame, FALSE, TRUE);
 	gtk_paned_pack2(GTK_PANED(bio_tab), bio_scroll, TRUE, TRUE);
 
 	gtk_box_pack_start(GTK_BOX(infobar_toggles), lyr_toggle, FALSE, FALSE, 1);
@@ -385,9 +447,12 @@ create_infobar(void) {
 
 	gtk_box_pack_start(GTK_BOX(infobar), infobar_toggles, FALSE, TRUE, 1);
 	gtk_box_pack_start(GTK_BOX(infobar), infobar_tabs, TRUE, TRUE, 1);
-
-	int width = deadbeef->conf_get_int(CONF_INFOBAR_WIDTH, 250);
-	gtk_widget_set_size_request(infobar, width, -1);
+	
+	gint handle_width;
+	gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
+	
+	int height = deadbeef->conf_get_int(CONF_BIO_IMAGE_HEIGHT, 200);
+	gtk_widget_set_size_request(img_frame, -1, height + handle_width);
 
 	gtk_widget_show_all(infobar);
 }
@@ -426,6 +491,12 @@ create_infobar_interface(void) {
 	gtk_container_add(GTK_CONTAINER(ddb_main), ddb_main_new);
 
 	gtk_box_reorder_child(GTK_BOX(ddb_main), ddb_main_new, 2);
+	
+	gint handle_width;
+	gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
+	
+	int width = deadbeef->conf_get_int(CONF_INFOBAR_WIDTH, 250);
+	gtk_widget_set_size_request(infobar, width + handle_width, -1);
 	
 	gtk_widget_show(ddb_main_new);
 	gtk_widget_show(playlist_box);
@@ -1263,11 +1334,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	}
 	
 	res = strcmp(old_artist, artist);
-	if(res == 0) {
-		artist_changed = FALSE;
-	} else {
-		artist_changed = TRUE;
-	}
+	artist_changed = res == 0 ? FALSE : TRUE;
 	
 	memset(old_artist, 0, sizeof(old_artist));
 	strncpy(old_artist, artist, sizeof(old_artist));
@@ -1403,6 +1470,11 @@ infobar_stop(void) {
 
 	infobar_stopped = TRUE;
 
+	if(bio_pixbuf) {
+		g_object_unref(bio_pixbuf);
+		bio_pixbuf = NULL;
+	}
+
 	if(infobar_cnt) {
 		deadbeef->fabort(infobar_cnt);
 		infobar_cnt = NULL;
@@ -1435,9 +1507,10 @@ static const char settings_dlg[] =
 	"property \"Fetch from Megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
 	"property \"Enable biography\" checkbox infobar.bio.enabled 1;"
 	"property \"Biography locale\" entry infobar.bio.locale \"en\";"
-	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 2;"
+	"property \"Lyrics alignment type\" entry infobar.lyrics.alignment 1;"
 	"property \"Lyrics cache update period (hr)\" entry infobar.lyrics.cache.period 0;"
 	"property \"Biography cache update period (hr)\" entry infobar.bio.cache.period 24;"
+	"property \"Default image height (px)\" entry infobar.bio.image.height 250;"
 	"property \"Default sidebar width (px)\" entry infobar.width 250;"
 ;
 
