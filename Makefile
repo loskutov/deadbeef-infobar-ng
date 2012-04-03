@@ -10,7 +10,7 @@ CC?=gcc
 CFLAGS+=-Wall -fPIC -std=c99 -D_GNU_SOURCE $(GTK_CFLAGS) $(LIBXML2_CFLAGS)
 LDFLAGS+=-shared $(GTK_LIBS) $(LIBXML2_LIBS)
 
-SOURCES=infobar.c support.c
+SOURCES=infobar.c infobar_ui.c support.c utils.c
 
 OBJECTS=$(SOURCES:.c=.o)
 
