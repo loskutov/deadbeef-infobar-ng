@@ -366,26 +366,6 @@ cleanup:
 		g_idle_add((GSourceFunc)update_bio_view, data);
 	}
 }
-		
-static int 
-get_redirect_info(const char *buf, char *artist, int alen, char *title, int tlen) {
-	char *bp = strrchr(buf, '[');
-	char *mp = strchr(buf, ':');
-	char *ep = strchr(buf, ']');
-	
-	int bi = bp - buf + 1;
-	int mi = mp - buf + 1;
-	int ei = ep - buf + 1;
-	
-	if((mi - bi) > alen ||
-	   (ei - mi) > tlen)
-	{
-		return -1;
-	}
-	memcpy(artist, buf + bi, (mi - bi) - 1);
-	memcpy(title, buf + mi, (ei - mi) - 1);
-	return 0;
-}
 
 static int
 get_new_lines_count(const char *buf) {
@@ -523,10 +503,10 @@ retrieve_track_lyrics(void) {
 				len = strlen(lyr);
 			}
 			if(is_redirect(lyr) && len > 0) {		
-				char rartist[100] = {0};
-				char rtitle[100] = {0};
+				char *rartist = NULL;
+				char *rtitle = NULL;
 				
-				res = get_redirect_info(lyr, rartist, sizeof(rartist), rtitle, sizeof(rtitle));
+				res = get_redirect_info(lyr, &rartist, &rtitle);
 				if(res == 0) {						
 					free(lyr);			
 					lyr = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
@@ -535,6 +515,8 @@ retrieve_track_lyrics(void) {
 						len = strlen(lyr);
 					}	
 				}
+                free(rartist);
+                free(rtitle);
 			}
 			
 			if(lyr && len > 0) {

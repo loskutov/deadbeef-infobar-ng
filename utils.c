@@ -151,6 +151,32 @@ int convert_to_utf8(const char *str, char **str_utf8) {
     return 0;
 }
 
+int get_redirect_info(const char *str, char **artist, char **title) {
+    
+    char *bp = strchr(str, '[');
+    char *mp = strchr(str, ':');
+    char *ep = strchr(str, ']');
+    
+    int bi = bp - str + 1;
+    int mi = mp - str + 1;
+    int ei = ep - str + 1;
+    
+    *artist = calloc((mi - bi) + 1, sizeof(char));
+    if (!*artist)
+        return -1;
+        
+    *title = calloc((ei - mi) + 1, sizeof(char));
+    if (!*title) {
+        free(*artist);
+        return -1;
+    }
+        
+    memcpy(artist, str + bi, (mi - bi) - 1);
+    memcpy(title, str + mi, (ei - mi) - 1);
+    
+    return 0;
+}
+
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     
     float w = 0, h = 0;

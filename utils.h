@@ -36,6 +36,8 @@ int create_dir(const char *dir, mode_t mode);
 
 int convert_to_utf8(const char *str, char **str_utf8);
 
+int get_redirect_info(const char *str, char **artist, char **title);
+
 int get_cache_path(char *cache_path, int len, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);

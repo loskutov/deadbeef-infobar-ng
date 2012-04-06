@@ -449,6 +449,7 @@ gboolean update_bio_view(gpointer data) {
         /* Previous image has to be disposed (if exists). */
         free_bio_pixbuf();
         
+        // TODO: Add check if the image file is exists.
         bio_pixbuf = gdk_pixbuf_new_from_file(bio_data->img, NULL);
         gtk_widget_queue_draw(bio_image);
     }
