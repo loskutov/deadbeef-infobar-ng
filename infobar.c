@@ -35,38 +35,6 @@ static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
 static int
-uri_encode(char *out, int outl, const char *str, char space) {
-    int l = outl;
-
-    while (*str) {
-        if (outl <= 1)
-            return -1;
-
-        if (!(
-            (*str >= '0' && *str <= '9') ||
-            (*str >= 'a' && *str <= 'z') ||
-            (*str >= 'A' && *str <= 'Z') ||
-            (*str == ' ') ||
-            (*str == '\'') ||
-            (*str == '/')
-        ))
-        {
-            if (outl <= 3)
-                return -1;
-
-            snprintf (out, outl, "%%%02x", (uint8_t)*str);
-            outl -= 3; str++; out += 3;
-        }
-        else {
-			*out = *str == ' ' ? space : *str;
-            out++; str++; outl--;
-        }
-    }
-    *out = 0;
-    return l - outl;
-}
-
-static int
 is_dir(const char *dir, mode_t mode)
 {
 	int res = -1;

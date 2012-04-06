@@ -38,6 +38,38 @@ int get_cache_path(char *cache_path, int len, ContentType type) {
     return res;
 }
 
+int uri_encode(char *out, int outl, const char *str, char space) {
+    
+    int l = outl;
+
+    while (*str) {
+        if (outl <= 1)
+            return -1;
+
+        if (!(
+            (*str >= '0' && *str <= '9') ||
+            (*str >= 'a' && *str <= 'z') ||
+            (*str >= 'A' && *str <= 'Z') ||
+            (*str == ' ') ||
+            (*str == '\'') ||
+            (*str == '/')
+        ))
+        {
+            if (outl <= 3)
+                return -1;
+
+            snprintf (out, outl, "%%%02x", (uint8_t)*str);
+            outl -= 3; str++; out += 3;
+        }
+        else {
+            *out = *str == ' ' ? space : *str;
+            out++; str++; outl--;
+        }
+    }
+    *out = 0;
+    return l - outl;
+}
+
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     
     float w = 0, h = 0;

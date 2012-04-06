@@ -28,6 +28,8 @@
 
 int get_cache_path(char *cache_path, int len, ContentType type);
 
+int uri_encode(char *out, int outl, const char *str, char space);
+
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res);
 
 #endif
