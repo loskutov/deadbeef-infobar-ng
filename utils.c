@@ -44,6 +44,30 @@ int get_cache_path(char *cache_path, int len, ContentType type) {
     return res;
 }
 
+gboolean is_old_cache(const char *cache_file, CacheType type) {
+    
+    int uperiod = 0;
+    time_t tm = time(NULL);
+
+    struct stat st;
+    if (stat(cache_file, &st) == 0) {
+        
+        switch (type) {
+        case LYRICS:
+            uperiod = deadbeef->conf_get_int(CONF_LYRICS_UPDATE_PERIOD, 0);
+            break;
+        case BIO:
+            uperiod = deadbeef->conf_get_int(CONF_BIO_UPDATE_PERIOD, 24);
+            break;
+        }
+        if (uperiod == 0) 
+            return FALSE;
+        
+        return (uperiod > 0 && tm - st.st_mtime > uperiod * 60 * 60);
+    }
+    return TRUE;
+}
+
 int create_dir(const char *dir, mode_t mode) {
     
     struct stat st;
@@ -53,7 +77,7 @@ int create_dir(const char *dir, mode_t mode) {
     
     do {
         slash = strstr(slash + 1, "/");
-        if(slash) *slash = 0;
+        if (slash) *slash = 0;
             
         if (stat(tmp, &st) == -1 ) {
             if (mkdir(tmp, mode) != 0) {
@@ -61,7 +85,7 @@ int create_dir(const char *dir, mode_t mode) {
                 return -1;
             }
         }
-        if(slash) *slash = '/';
+        if (slash) *slash = '/';
         
     } while(slash);
 

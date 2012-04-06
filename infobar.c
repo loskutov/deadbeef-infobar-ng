@@ -34,37 +34,6 @@ static uintptr_t infobar_cond;
 static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
-static gboolean
-is_old_cache(const char *cache_file, CacheType type) {
-	int res = -1;
-	int uperiod = 0;
-	time_t tm = time(NULL);
-
-	struct stat st;
-	res = stat(cache_file, &st);
-	if(res == 0) {
-		switch(type) {
-		case LYRICS:
-			uperiod = deadbeef->conf_get_int(CONF_LYRICS_UPDATE_PERIOD, 0);
-			break;
-		case BIO:
-			uperiod = deadbeef->conf_get_int(CONF_BIO_UPDATE_PERIOD, 24);
-			break;
-		}
-		
-		if(uperiod == 0) {
-			return FALSE;
-		}
-		
-		if(uperiod > 0 && tm - st.st_mtime > uperiod * 60 * 60) {
-			return TRUE;
-		} else {
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
 static char*
 convert_to_utf8(const char *buf, int len) {
 	int res = -1;
