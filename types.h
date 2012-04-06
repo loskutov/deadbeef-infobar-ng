@@ -17,17 +17,12 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef UTILS_HEADER
-#define UTILS_HEADER
+#ifndef TYPES_HEADER
+#define TYPES_HEADER
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "infobar.h"
-#include "types.h"
-
-int get_cache_path(char *cache_path, int len, ContentType type);
-
-void find_new_resolution(float ww, float wh, float aw, float ah, Res *res);
+typedef struct {
+    float width;
+    float height;
+} Res;
 
 #endif

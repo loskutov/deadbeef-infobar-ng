@@ -63,44 +63,31 @@ infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
 static gboolean
 bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
     
-    if(bio_pixbuf) {
+    if (bio_pixbuf) {
         
         float ww = gdk_pixbuf_get_width(bio_pixbuf);
         float wh = gdk_pixbuf_get_height(bio_pixbuf);
     
         float aw = image->allocation.width;
         float ah = image->allocation.height;
+        
+        /* This is a workaround which prevents application
+         * hanging when we make infobar width == 0 */
+        if (aw < 10) aw = 10;
+        if (ah < 10) ah = 10;
     
-        if(aw < 10) aw = 10;
-        if(ah < 10) ah = 10;
+        Res new_res = {0};
+        find_new_resolution(ww, wh, aw, ah, &new_res);
         
-        float w = 0, h = 0;
-        float ratio = wh / ww;
-    
-        if(ww > wh) {
-            w = ww > aw ? aw : ww;
-            h = w * ratio;
-        } else {
-            h = wh > ah ? ah : wh;
-            w = h / ratio;
-        }
-
-        if(w > aw) {
-            w = aw;
-            h = w * ratio;
-        }
-        if(h > ah) {
-            h = ah;
-            w = h / ratio;
-        }
+        int pos_x = (aw - new_res.width) / 2;
+        int pos_y = (ah - new_res.height) / 2;
         
-        int pos_x = (aw - w) / 2;
-        int pos_y = (ah - h) / 2;
-        
-        GdkPixbuf *sld = gdk_pixbuf_scale_simple(bio_pixbuf, w, h, GDK_INTERP_BILINEAR);
-        if(sld) {
+        GdkPixbuf *sld = gdk_pixbuf_scale_simple(bio_pixbuf, new_res.width,
+                new_res.height, GDK_INTERP_BILINEAR);
+                
+        if (sld) {
             cairo_t *cr = gdk_cairo_create(image->window);
-            if(cr) {
+            if (cr) {
                 gdk_cairo_set_source_pixbuf(cr, sld, pos_x, pos_y);
                 cairo_paint(cr);
                 cairo_destroy(cr);
@@ -120,7 +107,7 @@ delete_cache_clicked(void) {
     GtkWidget *main_wnd = gtkui_plugin->get_mainwin();
     GtkWidget *dlt_dlg = gtk_message_dialog_new(GTK_WINDOW(main_wnd), 
             GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, 
-            "Cache files for the current track wiil be removed. Continue?");
+            "Cache files for the current track will be removed. Continue?");
     
     gint choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
     switch(choise) {
@@ -191,7 +178,7 @@ get_align_type(void) {
     int type = 0;
     int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 1);
     
-    switch(align) {
+    switch (align) {
     case 1: type = GTK_JUSTIFY_LEFT; 
         break;
     case 2: type = GTK_JUSTIFY_CENTER; 
@@ -415,7 +402,7 @@ gboolean update_lyrics_view(gpointer data) {
     
     LyricsViewData *lyr_data = (LyricsViewData*) data;
 
-    if(lyr_buffer) {
+    if (lyr_buffer) {
         
         GtkTextIter begin, end;
         
@@ -435,7 +422,7 @@ gboolean update_lyrics_view(gpointer data) {
                 
         gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
 
-        if(lyr_data->txt && lyr_data->len > 0) {
+        if (lyr_data->txt && lyr_data->len > 0) {
             
             gtk_text_buffer_insert(lyr_buffer, &begin, 
                 lyr_data->txt, lyr_data->len);
@@ -445,8 +432,8 @@ gboolean update_lyrics_view(gpointer data) {
                 "Lyrics not found.", -1);
         }
     }
-    if(lyr_data->txt) free(lyr_data->txt);
-    if(lyr_data) free(lyr_data);
+    if (lyr_data->txt) free(lyr_data->txt);
+    if (lyr_data) free(lyr_data);
     
     return FALSE;
 }
@@ -457,7 +444,7 @@ gboolean update_bio_view(gpointer data) {
     BioViewData *bio_data = (BioViewData*) data;
 
     /* Drawing artist's image. */
-    if(bio_image) {
+    if (bio_image) {
         
         /* Previous image has to be disposed (if exists). */
         free_bio_pixbuf();
@@ -467,7 +454,7 @@ gboolean update_bio_view(gpointer data) {
     }
 
     /* Updating biography text. */
-    if(bio_buffer) {
+    if (bio_buffer) {
         
         GtkTextIter begin, end;
         
@@ -485,9 +472,9 @@ gboolean update_bio_view(gpointer data) {
                 "Biography not found.", -1);
         }
     }
-    if(bio_data->txt) free(bio_data->txt);
-    if(bio_data->img) free(bio_data->img);
-    if(bio_data) free(bio_data);
+    if (bio_data->txt) free(bio_data->txt);
+    if (bio_data->img) free(bio_data->img);
+    if (bio_data) free(bio_data);
         
     return FALSE;
 }
@@ -501,13 +488,13 @@ gboolean infobar_config_changed(void) {
     
     /* Showing/hiding "Lyrics" tab. */
     state = deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1);
-    if(lyr_toggle && lyr_tab) {
+    if (lyr_toggle && lyr_tab) {
         set_tab_visible(lyr_toggle, lyr_tab, state);
     }
     
     /* Showing/hiding "Biography" tab. */
     state = deadbeef->conf_get_int(CONF_BIO_ENABLED, 1);
-    if(bio_toggle && bio_tab) {
+    if (bio_toggle && bio_tab) {
         set_tab_visible(bio_toggle, bio_tab, state);
     }
     return FALSE;

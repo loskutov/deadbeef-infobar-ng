@@ -37,3 +37,29 @@ int get_cache_path(char *cache_path, int len, ContentType type) {
     }
     return res;
 }
+
+void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
+    
+    float w = 0, h = 0;
+    float ratio = wh / ww;
+    
+    if (ww > wh) {
+        w = ww > aw ? aw : ww;
+        h = w * ratio;
+    } else {
+        h = wh > ah ? ah : wh;
+        w = h / ratio;
+    }
+
+    if (w > aw) {
+        w = aw;
+        h = w * ratio;
+    }
+    if (h > ah) {
+        h = ah;
+        w = h / ratio;
+    }
+    
+    res->width = w;
+    res->height = h;
+}
