@@ -35,30 +35,6 @@ static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
 static char*
-convert_to_utf8(const char *buf, int len) {
-	int res = -1;
-
-	const char *buf_cs = deadbeef->junk_detect_charset(buf);
-	if(!buf_cs) {
-		trace("infobar: failed to get cur encoding\n");
-		return NULL;
-	}
-	
-	char *buf_cnv = calloc(len * 4, sizeof(char));
-	if(!buf_cnv) {
-		return NULL;
-	}
-	
-	res = deadbeef->junk_iconv(buf, len, buf_cnv, len * 4, buf_cs, "utf-8");
-	if(res < 0) {
-		trace("infobar: failed to convert to utf-8\n");
-		free(buf_cnv);
-		return NULL;
-	}
-	return buf_cnv;
-}
-
-static char*
 load_content(const char *cache_file) {
 	int res = -1;
 
@@ -317,8 +293,7 @@ retrieve_artist_bio(void) {
 			}
 			
 			if(deadbeef->junk_detect_charset(bio)) {
-				tmp = convert_to_utf8(bio, bio_len);
-				if(tmp) {
+				if (convert_to_utf8(bio, &tmp) == 0) {
 					free(bio);
 					bio = tmp;
 					bio_len = strlen(bio);
@@ -501,8 +476,8 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		if(deadbeef->junk_detect_charset(lyr)) {
 			len = strlen(lyr);
 			
-			char *tmp = convert_to_utf8(lyr, len);
-			if(tmp) {
+			char *tmp = NULL;
+            if (convert_to_utf8(lyr, &tmp) == 0) {
 				free(lyr);
 				lyr = tmp;
 			}

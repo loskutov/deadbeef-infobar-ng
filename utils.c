@@ -124,6 +124,25 @@ int uri_encode(char *out, int outl, const char *str, char space) {
     return l - outl;
 }
 
+int convert_to_utf8(const char *str, char **str_utf8) {
+    
+    int len = strlen(str);
+
+    const char *str_cs = deadbeef->junk_detect_charset(str);
+    if (!str_cs) 
+        return -1;
+    
+    *str_utf8 = calloc(len * 4, sizeof(char));
+    if (!*str_utf8) 
+        return -1;
+    
+    if (deadbeef->junk_iconv(str, len, *str_utf8, len * 4, str_cs, "utf-8") < 0) {
+        free(*str_utf8);
+        return -1;
+    }
+    return 0;
+}
+
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     
     float w = 0, h = 0;
