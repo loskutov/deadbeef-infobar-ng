@@ -26,6 +26,8 @@
 #include "infobar.h"
 #include "types.h"
 
+gboolean is_exists(const char *obj);
+
 int get_cache_path(char *cache_path, int len, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);

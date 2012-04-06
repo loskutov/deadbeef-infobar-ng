@@ -67,16 +67,6 @@ is_dir(const char *dir, mode_t mode)
 }
 
 static gboolean
-is_exists(const char *obj) {
-	struct stat st;
-	
-	if(stat(obj, &st) != 0) {
-		return FALSE;
-	}
-	return TRUE;
-}
-
-static gboolean
 is_old_cache(const char *cache_file, CacheType type) {
 	int res = -1;
 	int uperiod = 0;

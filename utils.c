@@ -19,6 +19,12 @@
 
 #include "utils.h"
 
+gboolean is_exists(const char *obj) {
+    
+    struct stat st = {0};
+    return stat(obj, &st) == 0;
+}
+
 int get_cache_path(char *cache_path, int len, ContentType type) {
     
     int res = -1;
