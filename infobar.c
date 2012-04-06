@@ -366,20 +366,6 @@ cleanup:
 		g_idle_add((GSourceFunc)update_bio_view, data);
 	}
 }
-
-static gboolean
-is_redirect(const char *buf) {
-	if(!buf) {
-		return FALSE;
-	}
-	
-	if(strstr(buf, "#REDIRECT") ||
-	   strstr(buf, "#redirect")) 
-	{
-		return TRUE;
-	}
-	return FALSE;
-}
 		
 static int 
 get_redirect_info(const char *buf, char *artist, int alen, char *title, int tlen) {

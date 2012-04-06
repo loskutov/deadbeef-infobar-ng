@@ -28,6 +28,8 @@
 
 gboolean is_exists(const char *obj);
 
+gboolean is_redirect(const char *str);
+
 gboolean is_old_cache(const char *cache_file, CacheType type);
 
 int create_dir(const char *dir, mode_t mode);

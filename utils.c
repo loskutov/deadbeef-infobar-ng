@@ -19,6 +19,14 @@
 
 #include "utils.h"
 
+gboolean is_redirect(const char *str) {
+    
+    if (!str) return FALSE;
+        
+    return strstr(str, "#REDIRECT") || 
+           strstr(str, "#redirect");
+}
+
 gboolean is_exists(const char *obj) {
     
     struct stat st = {0};
