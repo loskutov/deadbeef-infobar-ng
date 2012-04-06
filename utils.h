@@ -28,6 +28,8 @@
 
 gboolean is_exists(const char *obj);
 
+int create_dir(const char *dir, mode_t mode);
+
 int get_cache_path(char *cache_path, int len, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);

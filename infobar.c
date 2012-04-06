@@ -34,38 +34,6 @@ static uintptr_t infobar_cond;
 static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
-static int
-is_dir(const char *dir, mode_t mode)
-{
-	int res = -1;
-	struct stat st;
-    
-    char *tmp = strdup(dir);
-    char *slash = tmp;
-    
-    do {
-        slash = strstr(slash + 1, "/");
-        if(slash) {
-			*slash = 0;
-        }
-        res = stat(tmp, &st);
-        if(res == -1) {
-            res = mkdir(tmp, mode);
-            if(res != 0) {
-                trace("infobar: failed to create %s\n", tmp);
-                free(tmp);
-                return -1;
-            }
-        }
-        if(slash) {
-			*slash = '/';
-		}
-    } while(slash);
-
-    free(tmp);
-    return 0;
-}
-
 static gboolean
 is_old_cache(const char *cache_file, CacheType type) {
 	int res = -1;
@@ -325,7 +293,7 @@ retrieve_artist_bio(void) {
 	}
 
 	if(!is_exists(cache_path)) {
-		res = is_dir(cache_path, 0755);
+		res = create_dir(cache_path, 0755);
 		if(res < 0) {
 			trace("infobar: failed to create %s\n", cache_path);
 			goto cleanup;
@@ -599,7 +567,7 @@ retrieve_track_lyrics(void) {
 	}
 
 	if(!is_exists(cache_path)) {
-		res = is_dir(cache_path, 0755);
+		res = create_dir(cache_path, 0755);
 		if(res < 0) {
 			trace("infobar: failed to create %s\n", cache_path);
 			goto cleanup;
