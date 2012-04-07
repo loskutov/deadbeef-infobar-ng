@@ -38,6 +38,8 @@ int create_dir(const char *dir, mode_t mode);
 
 int retrieve_txt_content(const char *url, char **content);
 
+int retrieve_img_content(const char *url, const char *img);
+
 int load_txt_file(const char *file, char **content);
 
 int save_txt_file(const char *file, const char *content);

@@ -54,6 +54,33 @@ int retrieve_txt_content(const char *url, char **content) {
     return 0;
 }
 
+int retrieve_img_content(const char *url, const char *img) {
+    
+    DB_FILE *stream = deadbeef->fopen(url);
+    if (!stream)
+        return -1;
+
+    FILE *out_file = fopen(img, "wb+");
+    if (!out_file) {
+        deadbeef->fclose(stream);
+        return -1;
+    }
+
+    int len = 0;
+    char temp[4096] = {0};
+
+    while ((len = deadbeef->fread(temp, 1, sizeof(temp), stream)) > 0) {
+        if (fwrite(temp, 1, len, out_file) != len) {
+            deadbeef->fclose(stream);
+            fclose(out_file);
+            return -1;
+        }
+    }
+    deadbeef->fclose(stream);
+    fclose(out_file);
+    return 0;
+}
+
 int load_txt_file(const char *file, char **content) {
     
     FILE *in_file = fopen(file, "r");

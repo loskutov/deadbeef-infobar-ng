@@ -88,46 +88,6 @@ cleanup:
 	return pcnt;
 }
 
-static int
-retrieve_img_content(const char *url, const char *img) {
-	infobar_cnt = deadbeef->fopen(url);
-	if(!infobar_cnt) {
-		trace("infobar: failed to open %s\n", url);
-		return -1;
-	}
-
-	FILE *out_file = fopen(img, "wb+");
-	if(!out_file) {
-		trace("infobar: failed to open %s", img);
-		if(infobar_cnt) {
-			deadbeef->fclose(infobar_cnt);
-			infobar_cnt = NULL;
-		}
-		return -1;
-	}
-
-	int len = 0;
-	int err = 0;
-	char tmp[4096] = {0};
-
-	if(infobar_cnt) {
-		while((len = deadbeef->fread(tmp, 1, sizeof(tmp), infobar_cnt)) > 0) {
-			if(fwrite(tmp, 1, len, out_file) != len) {
-				trace ("infobar: failed to write to %s\n", img);
-				err = 1;
-				break;
-			}
-		}
-	}
-	fclose(out_file);
-	
-	if(infobar_cnt) {
-		deadbeef->fclose(infobar_cnt);
-		infobar_cnt = NULL;
-	}
-	return err ? -1 : 0;
-}
-
 static void
 retrieve_artist_bio(void) {
 	trace("infobar: retrieve artist bio started\n");
