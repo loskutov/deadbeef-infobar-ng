@@ -34,26 +34,6 @@ static uintptr_t infobar_cond;
 static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
-static int
-save_content(const char *cache_file, const char *buf, int size) {
-	int res = -1;
-
-	FILE *out_file = fopen(cache_file, "w+");
-	if(!out_file) {
-		trace("infobar: failed to open %s\n", cache_file);
-		return -1;
-	}
-
-	res = fwrite(buf, 1, size, out_file);
-	if(res <= 0) {
-		trace("infobar: failed to write to %s\n", cache_file);
-		fclose(out_file);
-		return -1;
-	}
-	fclose(out_file);
-	return 0;
-}
-
 static void
 parser_errors_handler(void *ctx, const char *msg, ...) {}
 
@@ -268,14 +248,14 @@ retrieve_artist_bio(void) {
 				}
 			}
 	
-			res = save_content(cache_file, bio, bio_len);
+			res = save_txt_file(cache_file, bio);
 			if(res < 0) {
 				trace("infobar: failed to save %s\n", cache_file);
 				goto cleanup;
 			}
 		}
 	} else {
-		if (load_content(cache_file, &bio) == 0) {
+		if (load_txt_file(cache_file, &bio) == 0) {
 			bio_len = strlen(bio);
 		}
 	}
@@ -546,14 +526,14 @@ retrieve_track_lyrics(void) {
 		}
 	
 		if(lyr && len > 0) {
-			res = save_content(cache_file, lyr, len);
+			res = save_txt_file(cache_file, lyr);
 			if(res < 0) {
 				trace("infobar: failed to save %s\n", cache_file);
 				goto cleanup;
 			}
 		}
 	} else {
-		if (load_content(cache_file, &lyr) == 0) {
+		if (load_txt_file(cache_file, &lyr) == 0) {
 			len = strlen(lyr);
 		}
 	}

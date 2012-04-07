@@ -33,10 +33,10 @@ gboolean is_exists(const char *obj) {
     return stat(obj, &st) == 0;
 }
 
-int load_content(const char *file, char **content) {
+int load_txt_file(const char *file, char **content) {
     
     FILE *in_file = fopen(file, "r");
-    if(!in_file) 
+    if (!in_file) 
         return -1;
 
     if (fseek(in_file, 0, SEEK_END) != 0) {
@@ -59,6 +59,22 @@ int load_content(const char *file, char **content) {
         return -1;
     }
     fclose(in_file);
+    return 0;
+}
+
+int save_txt_file(const char *file, const char *content) {
+    
+    FILE *out_file = fopen(file, "w+");
+    if (!out_file)
+        return -1;
+        
+    int size = strlen(content);
+    
+    if (fwrite(content, 1, size, out_file) <= 0) {
+        fclose(out_file);
+        return -1;
+    }
+    fclose(out_file);
     return 0;
 }
 
