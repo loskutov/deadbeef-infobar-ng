@@ -88,30 +88,6 @@ cleanup:
 	return pcnt;
 }
 
-static char*
-retrieve_txt_content(const char *url, int size) {
-	int res = -1;
-
-    infobar_cnt = deadbeef->fopen(url);
-    if(!infobar_cnt) {
-    	trace("infobar: failed to open %s\n", url);
-    	return NULL;
-    }
-
-    char *txt = calloc(size + 1, sizeof(char));
-    if(txt && infobar_cnt) {
-		res = deadbeef->fread(txt, 1, size, infobar_cnt);
-		if(res <= 0) {
-			trace("infobar: failed to retrieve a content from %s\n", url);
-		}
-	}
-	if(infobar_cnt) {
-		deadbeef->fclose(infobar_cnt);
-		infobar_cnt = NULL;
-	}
-    return txt;
-}
-
 static int
 retrieve_img_content(const char *url, const char *img) {
 	infobar_cnt = deadbeef->fopen(url);
@@ -221,8 +197,7 @@ retrieve_artist_bio(void) {
 	if(!is_exists(cache_file) ||
 		is_old_cache(cache_file, BIO)) {
 
-		cnt = retrieve_txt_content(track_url, TXT_MAX);
-		if(!cnt) {
+		if (retrieve_txt_content(track_url, &cnt) != 0) {
 			trace("infobar: failed to download %s\n", track_url);
 			goto cleanup;
 		}
@@ -269,8 +244,7 @@ retrieve_artist_bio(void) {
 	if(!is_exists(img) || 
 		is_old_cache(img, BIO)) {
 		if(!cnt) {
-			cnt = retrieve_txt_content(track_url, TXT_MAX);
-			if(!cnt) {
+			if (retrieve_txt_content(track_url, &cnt) != 0) {
 				trace("infobar: failed to download %s\n", track_url);
 				goto cleanup;
 			}
@@ -377,8 +351,8 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		return NULL;
 	}
 
-	char *cnt = retrieve_txt_content(track_url, TXT_MAX);
-	if(!cnt) {
+	char *cnt = NULL;
+    if (retrieve_txt_content(track_url, &cnt) != 0) {
 		trace("infobar: failed to download %s\n", track_url);
 		return NULL;
 	}

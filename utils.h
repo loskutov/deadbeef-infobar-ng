@@ -26,6 +26,8 @@
 #include "infobar.h"
 #include "types.h"
 
+#define MAX_TXT_SIZE 100000
+
 gboolean is_exists(const char *obj);
 
 gboolean is_redirect(const char *str);
@@ -33,6 +35,8 @@ gboolean is_redirect(const char *str);
 gboolean is_old_cache(const char *cache_file, CacheType type);
 
 int create_dir(const char *dir, mode_t mode);
+
+int retrieve_txt_content(const char *url, char **content);
 
 int load_txt_file(const char *file, char **content);
 

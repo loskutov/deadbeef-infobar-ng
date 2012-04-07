@@ -33,6 +33,27 @@ gboolean is_exists(const char *obj) {
     return stat(obj, &st) == 0;
 }
 
+int retrieve_txt_content(const char *url, char **content) {
+    
+    DB_FILE *stream = deadbeef->fopen(url);
+    if (!stream)
+        return -1;
+
+    *content = calloc(MAX_TXT_SIZE + 1, sizeof(char));
+    if (!*content) {
+        deadbeef->fclose(stream);
+        return -1;
+    }
+    
+    if (deadbeef->fread(*content, 1, MAX_TXT_SIZE, stream) <= 0) {
+        deadbeef->fclose(stream);
+        free(*content);
+        return -1;
+    }
+    deadbeef->fclose(stream);
+    return 0;
+}
+
 int load_txt_file(const char *file, char **content) {
     
     FILE *in_file = fopen(file, "r");
