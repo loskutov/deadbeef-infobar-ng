@@ -25,8 +25,6 @@ static DB_misc_t plugin;
 
 #define TXT_MAX 100000
 
-DB_FILE *infobar_cnt;
-
 gboolean artist_changed = TRUE;
 
 static uintptr_t infobar_mutex;
@@ -489,13 +487,6 @@ infobar_songstarted(ddb_event_track_t *ev) {
 
 static void
 infobar_songchanged(void) {
-    if(infobar_cnt) {
-        if(infobar_mutex) {
-            deadbeef->mutex_unlock(infobar_mutex);
-        }
-        deadbeef->fabort(infobar_cnt);
-        infobar_cnt = NULL;
-    }
 }
 
 static void
@@ -520,14 +511,6 @@ infobar_thread(void *ctx) {
             retrieve_artist_bio();
         }
     }
-}
-
-static gboolean 
-is_stream(DB_playItem_t *track) {
-    if(deadbeef->pl_get_item_duration(track) <= 0.000000) {
-        return TRUE;
-    }
-    return FALSE;
 }
 
 static int
@@ -614,11 +597,6 @@ infobar_stop(void) {
     infobar_stopped = TRUE;
 
     free_bio_pixbuf();
-
-    if(infobar_cnt) {
-        deadbeef->fabort(infobar_cnt);
-        infobar_cnt = NULL;
-    }
 
     if(infobar_tid) {
         deadbeef->cond_signal(infobar_cond);

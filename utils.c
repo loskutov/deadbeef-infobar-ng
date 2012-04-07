@@ -33,6 +33,10 @@ gboolean is_exists(const char *obj) {
     return stat(obj, &st) == 0;
 }
 
+gboolean is_stream(DB_playItem_t *track) {
+    return deadbeef->pl_get_item_duration(track) <= 0.000000;
+}
+
 static void
 parser_errors_handler(void *ctx, const char *msg, ...) {}
 
