@@ -264,8 +264,8 @@ int get_redirect_info(const char *str, char **artist, char **title) {
         return -1;
     }
         
-    memcpy(artist, str + bi, (mi - bi) - 1);
-    memcpy(title, str + mi, (ei - mi) - 1);
+    memcpy(*artist, str + bi, (mi - bi) - 1);
+    memcpy(*title, str + mi, (ei - mi) - 1);
     
     return 0;
 }
