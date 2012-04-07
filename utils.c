@@ -323,6 +323,41 @@ int get_redirect_info(const char *str, char **artist, char **title) {
     return 0;
 }
 
+int get_track_info(DB_playItem_t *track, char **artist, char **title) {
+    
+    deadbeef->pl_lock();
+
+    const char *cur_artist = deadbeef->pl_find_meta(track, "artist");
+    const char *cur_title =  deadbeef->pl_find_meta(track, "title");
+
+    if (!cur_artist || !cur_title) {
+        deadbeef->pl_unlock();
+        return -1;
+    }
+    
+    int alen = strlen(cur_artist);
+    
+    *artist = calloc(alen + 1, sizeof(char));
+    if (!*artist) {
+        deadbeef->pl_unlock();
+        return -1;
+    } 
+    
+    int tlen = strlen(cur_title);
+    
+    *title = calloc(tlen + 1, sizeof(char));
+    if (!*title) {
+        deadbeef->pl_unlock();
+        free(*artist);
+        return -1;
+    }
+    memcpy(*artist, cur_artist, alen + 1);
+    memcpy(*title, cur_title, tlen + 1);
+
+    deadbeef->pl_unlock();
+    return 0;
+}
+
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     
     float w = 0, h = 0;

@@ -28,6 +28,8 @@
 #include <deadbeef/deadbeef.h>
 
 #include "infobar_ui.h"
+#include "utils.h"
+#include "types.h"
 
 #define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
 #define CONF_LYRICSWIKIA_ENABLED "infobar.lyrics.lyricswikia"
@@ -45,36 +47,12 @@
 
 #define trace(...) { fprintf(stderr, __VA_ARGS__); }
 
-
-typedef enum {
-    HTML = 1,
-    XML = 2,
-} ContentType;
-
-typedef enum {
-    LYRICS = 1,
-    BIO = 2,
-} CacheType;
-
-typedef struct {
-    char *txt;
-    int len;
-} LyricsViewData;
-
-typedef struct {
-    char *txt;
-    char *img;
-    int len;
-} BioViewData;
-
-char artist[100];
-char title[100];
+char *artist;
+char *title;
 
 char old_artist[100];
 char old_title[100];
 
 DB_functions_t *deadbeef;
-
-#include "utils.h"
 
 #endif

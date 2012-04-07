@@ -421,25 +421,6 @@ cleanup:
 	g_idle_add((GSourceFunc)update_lyrics_view, data);
 }
 
-static int 
-get_track_info(DB_playItem_t *track, char *artist, int alen, char *title, int tlen) {
-	deadbeef->pl_lock();
-
-	const char *cur_artist = deadbeef->pl_find_meta(track, "artist");
-	const char *cur_title =  deadbeef->pl_find_meta(track, "title");
-	
-	if(!cur_artist || !cur_title) {
-		deadbeef->pl_unlock();
-		return -1;
-	}
-	
-	strncpy(artist, cur_artist, alen);
-	strncpy(title, cur_title, tlen);
-
-	deadbeef->pl_unlock();
-	return 0;
-}
-
 static void
 infobar_songstarted(ddb_event_track_t *ev) {
 	trace("infobar: infobar song started\n");
@@ -468,18 +449,17 @@ infobar_songstarted(ddb_event_track_t *ev) {
 	}
 		
 	if(!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
-			!deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
+       !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
 		trace("infobar: lyrics and bio are disabled\n");		
 		return;
 	}
 
 	deadbeef->mutex_lock(infobar_mutex);
 		
-	memset(artist, 0, sizeof(artist));
-	memset(title, 0, sizeof(title));
+	if (artist) free(artist);
+    if (title) free(title);
 	
-	res = get_track_info(ev->track, artist, sizeof(artist), title, sizeof(title));
-	if(res == -1) {
+	if (get_track_info(ev->track, &artist, &title) == -1) {
 		trace("infobar: failed to get track info\n");
 	    deadbeef->mutex_unlock(infobar_mutex);
     	return;

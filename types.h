@@ -20,9 +20,30 @@
 #ifndef TYPES_HEADER
 #define TYPES_HEADER
 
+typedef enum {
+    HTML = 1,
+    XML = 2,
+} ContentType;
+
+typedef enum {
+    LYRICS = 1,
+    BIO = 2,
+} CacheType;
+
 typedef struct {
     float width;
     float height;
 } Res;
+
+typedef struct {
+    char *txt;
+    int len;
+} LyricsViewData;
+
+typedef struct {
+    char *txt;
+    char *img;
+    int len;
+} BioViewData;
 
 #endif
