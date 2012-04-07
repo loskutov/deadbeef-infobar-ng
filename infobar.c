@@ -34,37 +34,6 @@ static uintptr_t infobar_cond;
 static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
-static char*
-load_content(const char *cache_file) {
-	int res = -1;
-
-	FILE *in_file = fopen(cache_file, "r");
-	if(!in_file) {
-		trace("infobar: failed to open %s\n", cache_file);
-		return NULL;
-	}
-
-	res = fseek(in_file, 0, SEEK_END);
-	if(res != 0) {
-		trace("infobar: failed to seek %s\n", cache_file);
-		fclose(in_file);
-		return NULL;
-	}
-	
-	int size = ftell(in_file);
-	rewind(in_file);
-
-	char *cnt = calloc(size + 1, sizeof(char));
-	if(cnt) {
-		res = fread(cnt, 1, size, in_file);
-		if(res != size) {
-			trace("infobar: failed to read %s\n", cache_file);
-		}
-	}
-	fclose(in_file);
-	return cnt;
-}
-
 static int
 save_content(const char *cache_file, const char *buf, int size) {
 	int res = -1;
@@ -307,8 +276,7 @@ retrieve_artist_bio(void) {
 			}
 		}
 	} else {
-		bio = load_content(cache_file);
-		if(bio) {
+		if (load_content(cache_file, &bio) == 0) {
 			bio_len = strlen(bio);
 		}
 	}
@@ -587,8 +555,7 @@ retrieve_track_lyrics(void) {
 			}
 		}
 	} else {
-		lyr = load_content(cache_file);
-		if(lyr) {
+		if (load_content(cache_file, &lyr) == 0) {
 			len = strlen(lyr);
 		}
 	}

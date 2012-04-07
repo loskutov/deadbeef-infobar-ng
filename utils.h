@@ -34,6 +34,8 @@ gboolean is_old_cache(const char *cache_file, CacheType type);
 
 int create_dir(const char *dir, mode_t mode);
 
+int load_content(const char *file, char **content);
+
 int convert_to_utf8(const char *str, char **str_utf8);
 
 int get_redirect_info(const char *str, char **artist, char **title);

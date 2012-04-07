@@ -33,6 +33,35 @@ gboolean is_exists(const char *obj) {
     return stat(obj, &st) == 0;
 }
 
+int load_content(const char *file, char **content) {
+    
+    FILE *in_file = fopen(file, "r");
+    if(!in_file) 
+        return -1;
+
+    if (fseek(in_file, 0, SEEK_END) != 0) {
+        fclose(in_file);
+        return -1;
+    }
+    
+    int size = ftell(in_file);
+    rewind(in_file);
+
+    *content = calloc(size + 1, sizeof(char));
+    if (!*content) {
+        fclose(in_file);
+        return -1;
+    }
+    
+    if (fread(*content, 1, size, in_file) != size) {
+        fclose(in_file);
+        free(*content);
+        return -1;
+    }
+    fclose(in_file);
+    return 0;
+}
+
 int get_cache_path(char *cache_path, int len, ContentType type) {
     
     int res = -1;
