@@ -35,66 +35,11 @@ static intptr_t infobar_tid;
 static gboolean infobar_stopped;
 
 static void
-parser_errors_handler(void *ctx, const char *msg, ...) {}
-
-static char*
-parse_content(const char *cnt, int size, const char *pattern, ContentType type, int nnum) {
-	char *pcnt = NULL;
-	xmlDocPtr doc = NULL;
-
-	xmlSetGenericErrorFunc(NULL, parser_errors_handler);
-	
-	switch(type) {
-	case HTML:
-		doc = htmlReadMemory(cnt, size, NULL, "utf-8", (HTML_PARSE_RECOVER | HTML_PARSE_NONET));
-		break;
-	case XML:
-		doc = xmlReadMemory(cnt, size, NULL, "utf-8", (XML_PARSE_RECOVER | XML_PARSE_NONET));
-		break;
-	}
-	xmlSetGenericErrorFunc(NULL, NULL);
-
-	xmlNodePtr node = NULL;
-	xmlXPathObjectPtr obj = NULL;
-	xmlXPathContextPtr ctx = NULL;
-
-	if(doc) {
-		ctx = xmlXPathNewContext(doc);
-		if(!ctx) {
-			goto cleanup;
-		}
-		
-		obj = xmlXPathEvalExpression((xmlChar*)pattern, ctx);
-		if(!obj || !obj->nodesetval->nodeMax) {
-			goto cleanup;
-		}
-		
-		node = obj->nodesetval->nodeTab[nnum];
-		if(node) {
-			pcnt = (char*)xmlNodeGetContent(node);
-		}
-	}
-	
-cleanup:
-	if(obj) {
-		xmlXPathFreeObject(obj);
-	}
-	if(ctx) {
-		xmlXPathFreeContext(ctx);
-	}
-	if(doc) {
-		xmlFreeDoc(doc);
-	}
-	return pcnt;
-}
-
-static void
 retrieve_artist_bio(void) {
 	trace("infobar: retrieve artist bio started\n");
 
 	int res = -1;
 	
-	int cnt_len = 0;
 	int bio_len = 0;
 	int img_len = 0;
 
@@ -162,14 +107,11 @@ retrieve_artist_bio(void) {
 			goto cleanup;
 		}
 
-		cnt_len = strlen(cnt);
-		bio = parse_content(cnt, cnt_len, "/lfm/artist/bio/content", XML, 0);
-		if(bio) {
+		if (parse_content(cnt, "/lfm/artist/bio/content", &bio, XML, 0) == 0) {
 			bio_len = strlen(bio);
 			
 			char *tmp = NULL;
-			tmp = parse_content(bio, bio_len, "/html/body", HTML, 0);
-			if(tmp) {
+			if (parse_content(bio, "/html/body", &tmp, HTML, 0) == 0) {
 				free(bio);
 				bio = tmp;
 				bio_len = strlen(bio);
@@ -210,9 +152,7 @@ retrieve_artist_bio(void) {
 			}
 		}
 
-		cnt_len = strlen(cnt);
-		img_url = parse_content(cnt, cnt_len, "//image[@size=\"extralarge\"]", XML, 0);
-		if(img_url) {
+		if (parse_content(cnt, "//image[@size=\"extralarge\"]", &img_url, XML, 0) == 0) {
 			img_len = strlen(img_url);
 		}	
 
@@ -292,7 +232,6 @@ lyrics_concat(const char *buf1, const char *buf2, const char *sep) {
 static char*
 fetch_lyrics_from(const char *url, const char *artist, const char *title, const char *pattern, ContentType type, char space) {
 	int res = -1;
-	int len = 0;
 	
 	char eartist[300] = {0};
 	char etitle[300] = {0};
@@ -316,12 +255,10 @@ fetch_lyrics_from(const char *url, const char *artist, const char *title, const 
 		trace("infobar: failed to download %s\n", track_url);
 		return NULL;
 	}
-	len = strlen(cnt);
-	
-	char *lyr = parse_content(cnt, len, pattern, type, 0);
-	if(lyr) {
+    
+	char *lyr = NULL;
+    if (parse_content(cnt, pattern, &lyr, type, 0) == 0) {
 		if(deadbeef->junk_detect_charset(lyr)) {
-			len = strlen(lyr);
 			
 			char *tmp = NULL;
             if (convert_to_utf8(lyr, &tmp) == 0) {
@@ -400,10 +337,10 @@ retrieve_track_lyrics(void) {
 			}
 			
 			if(lyr && len > 0) {
-				char *tmp1 = parse_content(lyr, len, "//lyrics", HTML, 0);
-				if(tmp1) {
-					char *tmp2 = parse_content(lyr, len, "//lyrics", HTML, 1);
-					if(tmp2) {
+				char *tmp1 = NULL;
+                if (parse_content(lyr, "//lyrics", &tmp1, HTML, 0) == 0) {
+					char *tmp2 = NULL;
+                    if (parse_content(lyr, "//lyrics", &tmp2, HTML, 1) == 0) {
 						free(lyr);
 						lyr = lyrics_concat(tmp1, tmp2, "\n\n***************\n\n");
 						if(lyr) {

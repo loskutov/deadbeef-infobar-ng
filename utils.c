@@ -33,6 +33,59 @@ gboolean is_exists(const char *obj) {
     return stat(obj, &st) == 0;
 }
 
+static void
+parser_errors_handler(void *ctx, const char *msg, ...) {}
+
+int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num) {
+    
+    xmlDocPtr doc = NULL;
+    xmlSetGenericErrorFunc(NULL, parser_errors_handler);
+
+    int size = strlen(content);
+
+    switch (type) {
+    case HTML:
+        doc = htmlReadMemory(content, size, NULL, "utf-8", 
+            (HTML_PARSE_RECOVER | HTML_PARSE_NONET));
+        break;
+    case XML:
+        doc = xmlReadMemory(content, size, NULL, "utf-8", 
+            (XML_PARSE_RECOVER | XML_PARSE_NONET));
+        break;
+    }
+    xmlSetGenericErrorFunc(NULL, NULL);
+        
+    if (!doc) 
+        return -1;
+        
+    int res = 0;
+    
+    xmlXPathContextPtr ctx = xmlXPathNewContext(doc);
+    if (!ctx) {
+        res = -1;
+        goto cleanup;
+    }
+        
+    xmlXPathObjectPtr obj = xmlXPathEvalExpression((xmlChar*) pattern, ctx);
+    if (!obj || !obj->nodesetval->nodeMax) {
+        res = -1;
+        goto cleanup;
+    }
+    
+    xmlNodePtr node = obj->nodesetval->nodeTab[num];
+    if (!node) {
+        res = -1;
+        goto cleanup;
+    }
+    *parsed = (char*) xmlNodeGetContent(node);
+
+cleanup:
+    if (obj) xmlXPathFreeObject(obj);
+    if (ctx) xmlXPathFreeContext(ctx);
+    if (doc) xmlFreeDoc(doc);
+    return res;
+}
+
 int retrieve_txt_content(const char *url, char **content) {
     
     DB_FILE *stream = deadbeef->fopen(url);

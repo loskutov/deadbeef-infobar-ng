@@ -25,10 +25,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <gtk/gtk.h>
-#include <libxml/tree.h>
-#include <libxml/xpath.h>
-#include <libxml/parser.h>
-#include <libxml/HTMLparser.h>
 #include <deadbeef/deadbeef.h>
 
 #include "infobar_ui.h"

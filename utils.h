@@ -22,6 +22,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
+#include <libxml/parser.h>
+#include <libxml/HTMLparser.h>
 
 #include "infobar.h"
 #include "types.h"
@@ -51,6 +55,8 @@ int get_redirect_info(const char *str, char **artist, char **title);
 int get_cache_path(char **path, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);
+
+int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num);
 
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res);
 
