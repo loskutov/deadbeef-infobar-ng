@@ -199,9 +199,8 @@ retrieve_artist_bio(void) {
 		goto cleanup;
 	}
 
-	char cache_path[512] = {0};
-	res = get_cache_path(cache_path, sizeof(cache_path), BIO);
-	if(res == 0) {
+	char *cache_path = NULL;
+	if (get_cache_path(&cache_path, BIO) == -1) {
 		trace("infobar: failed to get bio cache dir\n");
 		goto cleanup;
 	}
@@ -437,9 +436,8 @@ retrieve_track_lyrics(void) {
 	
 	deadbeef->mutex_lock(infobar_mutex);
 
-	char cache_path[512] = {0};
-	res = get_cache_path(cache_path, sizeof(cache_path), LYRICS);
-	if(res == 0) {
+	char *cache_path = NULL;
+	if (get_cache_path(&cache_path, LYRICS) == -1) {
 		trace("infobar: failed to get lyrics cache path\n");
 		goto cleanup;
 	}

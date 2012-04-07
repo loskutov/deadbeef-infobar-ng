@@ -62,19 +62,19 @@ int load_content(const char *file, char **content) {
     return 0;
 }
 
-int get_cache_path(char *cache_path, int len, ContentType type) {
+int get_cache_path(char **path, ContentType type) {
     
     int res = -1;
-
+    
     const char *home_cache = getenv("XDG_CACHE_HOME");
 
     switch(type) {
     case LYRICS:
-        res = snprintf(cache_path, len, home_cache ? "%s/deadbeef/lyrics" : "%s/.cache/deadbeef/lyrics",
+        res = asprintf(path, home_cache ? "%s/deadbeef/lyrics" : "%s/.cache/deadbeef/lyrics",
                 home_cache ? home_cache : getenv("HOME"));
         break;
     case BIO:
-        res = snprintf(cache_path, len, home_cache ? "%s/deadbeef/bio" : "%s/.cache/deadbeef/bio",
+        res = asprintf(path, home_cache ? "%s/deadbeef/bio" : "%s/.cache/deadbeef/bio",
                 home_cache ? home_cache : getenv("HOME"));
         break;
     }
