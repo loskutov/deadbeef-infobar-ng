@@ -113,9 +113,8 @@ delete_cache_clicked(void) {
     switch(choise) {
     case GTK_RESPONSE_YES:
     {
-        char lyr_path[512] = {0};
-        res = get_cache_path(lyr_path, sizeof(lyr_path), LYRICS);
-        if(res > 0) {
+        char *lyr_path = NULL;
+        if (get_cache_path(&lyr_path, LYRICS) > 0) {
             char lyr_file[512] = {0};
             res = snprintf(lyr_file, sizeof(lyr_file), "%s/%s-%s", lyr_path, artist, title);
             if(res > 0) {
@@ -123,12 +122,12 @@ delete_cache_clicked(void) {
                 if(res != 0) {
                     trace("infobar: failed to remove lyrics cache file\n");
                 }
-            } 
+            }
+            free(lyr_path);
         }
         
-        char bio_path[512] = {0};
-        res = get_cache_path(bio_path, sizeof(bio_path), BIO);
-        if(res > 0) {
+        char *bio_path = NULL;
+        if (get_cache_path(&bio_path, BIO) > 0) {
             char bio_file[512] = {0};
             res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, artist);
             if(res > 0) {
