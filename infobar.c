@@ -230,11 +230,8 @@ infobar_songstarted(ddb_event_track_t *ev) {
 }
 
 static void
-infobar_songchanged(void) {
-}
-
-static void
 infobar_thread(void *ctx) {
+    
     for(;;) {
         trace("infobar: infobar thread started\n");
 
@@ -274,13 +271,16 @@ infobar_thread(void *ctx) {
 
 static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
+    
     switch(id) {
     case DB_EV_SONGSTARTED:
     {
         trace("infobar: recieved songstarted message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
+        
         if(!event->track) 
             return 0;
+            
         if(!is_stream(event->track))
             infobar_songstarted(event);
     }
@@ -289,17 +289,16 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
     {
         trace("infobar: recieved trackinfochanged message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
+        
         if(!event->track) 
             return 0;
+            
         if(is_stream(event->track))
             infobar_songstarted(event);
     }
         break;
-    case DB_EV_SONGCHANGED:
-        infobar_songchanged();
-        break;
     case DB_EV_CONFIGCHANGED:
-        g_idle_add((GSourceFunc)infobar_config_changed, NULL);
+        g_idle_add((GSourceFunc) infobar_config_changed, NULL);
         break;
     }
     return 0;
@@ -307,72 +306,72 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
 
 static gboolean
 infobar_init(void) {
-    trace("infobar: starting up infobar plugin\n");
+    
+    trace("infobar: initializing plug-in's ui\n");
 
     create_infobar_interface();
     attach_infobar_menu_entry();
-
     infobar_config_changed();
+    
     return FALSE;
 }
 
 static int
 infobar_connect(void) {
-    trace("infobar: connecting infobar plugin\n");
+    
+    trace("infobar: connecting the plug-in\n");
 
     ddb_gtkui_t* gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
-    if(!gtkui_plugin) {
+    if (!gtkui_plugin) {
         return -1;
     }    
     init_ui_plugin(gtkui_plugin);
-    
     g_idle_add((GSourceFunc)infobar_init, NULL);
+    
     return 0;
 }
 
 static int
 infobar_disconnect(void) {
-    trace("infobar: disconnecting infobar plugin\n");
+    
+    trace("infobar: disconnecting the plug-in\n");
     free_ui_plugin();
     return 0;
 }
 
 static int
 infobar_start(void) {
-    trace("infobar: starting infobar plugin\n");
-
+    
+    trace("infobar: starting the plug-in\n");
     infobar_stopped = FALSE;
-
+    
     infobar_cond = deadbeef->cond_create();
     infobar_mutex = deadbeef->mutex_create_nonrecursive();
-    infobar_tid = deadbeef->thread_start_low_priority(infobar_thread, NULL);
+    infobar_tid = deadbeef->thread_start(infobar_thread, NULL);
     return 0;
 }
 
 static int
 infobar_stop(void) {
-    trace("infobar: stopping infobar plugin\n");
+    
+    trace("infobar: stopping the plug-in\n");
 
     infobar_stopped = TRUE;
-
     free_bio_pixbuf();
 
-    if(infobar_tid) {
+    if (infobar_tid) {
         deadbeef->cond_signal(infobar_cond);
         deadbeef->thread_join(infobar_tid);
-        infobar_tid = 0;
     }
 
-    if(infobar_mutex) {
+    if (infobar_mutex) {
         deadbeef->mutex_unlock(infobar_mutex);
         deadbeef->mutex_free(infobar_mutex);
-        infobar_mutex = 0;
     }
 
-    if(infobar_cond) {
+    if (infobar_cond)
         deadbeef->cond_free(infobar_cond);
-        infobar_cond = 0;
-    }
+        
     return 0;
 }
 
@@ -392,6 +391,7 @@ static const char settings_dlg[] =
 ;
 
 static DB_misc_t plugin = {
+    
     .plugin.api_vmajor = 1,
     .plugin.api_vminor = 0,
     .plugin.version_major = 1,
@@ -404,7 +404,7 @@ static DB_misc_t plugin = {
                     "Lyrics alignment types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)\n\n"
                     "You can set cache update period to 0 if you don't want to update the cache at all.",
     .plugin.copyright =
-        "Copyright (C) 2011 Dmitriy Simbiriatin <slpiv@mail.ru>\n"
+        "Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>\n"
         "\n"
         "This program is free software; you can redistribute it and/or\n"
         "modify it under the terms of the GNU General Public License\n"
@@ -420,7 +420,7 @@ static DB_misc_t plugin = {
         "along with this program; if not, write to the Free Software\n"
         "Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.\n"
     ,
-    .plugin.website = "https://bitbucket.org/Not_eXist/deadbeef-infobar",
+    .plugin.website = "https://bitbucket.org/dsimbiriatin/deadbeef-infobar",
     .plugin.start = infobar_start,
     .plugin.stop = infobar_stop,
     .plugin.connect    = infobar_connect,
@@ -430,6 +430,7 @@ static DB_misc_t plugin = {
 };
 
 DB_plugin_t *ddb_infobar_load (DB_functions_t *ddb) {
+    
     deadbeef = ddb;
     return DB_PLUGIN(&plugin);
 }
