@@ -41,6 +41,8 @@ retrieve_artist_bio(void) {
     char *cnt = NULL;
     char *bio = NULL;
     char *img = NULL;
+    
+    char *track_url = NULL;
  
     BioViewData *data = malloc(sizeof(BioViewData));
     if(!data) {
@@ -75,21 +77,7 @@ retrieve_artist_bio(void) {
         goto cleanup;
     }
     
-    char eartist[300] = {0};
-    res = uri_encode(eartist, sizeof(eartist), artist, '+');
-    if(res == -1) {
-        trace("infobar: failed to encode %s\n", artist);
-        goto cleanup;
-    }
-
-    char locale[5] = {0};
-    deadbeef->conf_get_str(CONF_BIO_LOCALE, "en", locale, sizeof(locale));
-    
-    char track_url[512] = {0};
-    res = snprintf(track_url, sizeof(track_url), "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026",
-            eartist, locale);
-    if(res == 0) {
-        trace("infobar: failed to form a bio download url\n");
+    if (form_bio_url(artist, &track_url) == -1) {
         goto cleanup;
     }
 
@@ -161,6 +149,10 @@ cleanup:
         data->txt = bio;
         data->img = img;
         data->len = bio ? strlen(bio) : 0;
+    }
+    
+    if (track_url) {
+        free(track_url);
     }
     
     if(cnt) {
