@@ -37,14 +37,11 @@ retrieve_artist_bio(void) {
     trace("infobar: retrieve artist bio started\n");
 
     int res = -1;
-    
-    int img_len = 0;
 
     char *cnt = NULL;
     char *bio = NULL;
     char *img = NULL;
-    char *img_url = NULL;
-    
+ 
     BioViewData *data = malloc(sizeof(BioViewData));
     if(!data) {
         goto cleanup;
@@ -136,26 +133,23 @@ retrieve_artist_bio(void) {
         goto cleanup;
     }
 
-    if(!is_exists(img) || 
-        is_old_cache(img, BIO)) {
-        if(!cnt) {
+    if (!is_exists(img) || is_old_cache(img, BIO)) {
+        
+        if (!cnt) {
             if (retrieve_txt_content(track_url, &cnt) != 0) {
                 trace("infobar: failed to download %s\n", track_url);
                 goto cleanup;
             }
         }
-
+    
+        char *img_url = NULL;
         if (parse_content(cnt, "//image[@size=\"extralarge\"]", &img_url, XML, 0) == 0) {
-            img_len = strlen(img_url);
-        }    
-
-        if(img_url && img_len > 0) {
-            res = retrieve_img_content(img_url, img);
-            if(res < 0) {
-                trace("infobar: failed to download %s\n", img_url);
+            if (retrieve_img_content(img_url, img) < 0) {
+                free(img_url);
                 goto cleanup;
             }
         }
+        free(img_url);
     }
 
 cleanup:
@@ -171,9 +165,6 @@ cleanup:
     
     if(cnt) {
         free(cnt);
-    }
-    if(img_url) {
-        free(img_url);
     }
     
     if(artist_changed) {
