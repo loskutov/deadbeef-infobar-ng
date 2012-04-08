@@ -474,8 +474,7 @@ gboolean update_bio_view(gpointer data) {
     }
     if (bio_data->txt) free(bio_data->txt);
     if (bio_data->img) free(bio_data->img);
-    if (bio_data) free(bio_data);
-        
+    
     return FALSE;
 }
 

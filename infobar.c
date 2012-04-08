@@ -19,117 +19,74 @@
 
 #include "infobar.h"
 
-//#define trace(fmt,...)
-
 static DB_misc_t plugin;
-
-#define TXT_MAX 100000
-
-gboolean artist_changed = TRUE;
 
 static uintptr_t infobar_mutex;
 static uintptr_t infobar_cond;
 static intptr_t infobar_tid;
-static gboolean infobar_stopped;
+
+static gboolean artist_changed = TRUE;
+static gboolean infobar_stopped = TRUE;
 
 static void
-retrieve_artist_bio(void) {
-    trace("infobar: retrieve artist bio started\n");
-
-    int res = -1;
-
-    char *cnt = NULL;
-    char *bio = NULL;
-    char *img = NULL;
+retrieve_artist_bio(BioViewData *view) {
     
-    char *track_url = NULL;
- 
-    BioViewData *data = malloc(sizeof(BioViewData));
-    if(!data) {
-        goto cleanup;
-    }
-    
-    deadbeef->mutex_lock(infobar_mutex);
-    
-    if(!artist_changed) {
-        trace("infobar: artist hasn't changed\n");
-        goto cleanup;
-    }
+    trace("infobar: started retrieving of artist's biography\n");
 
     char *cache_path = NULL;
-    if (get_cache_path(&cache_path, BIO) == -1) {
-        trace("infobar: failed to get bio cache dir\n");
-        goto cleanup;
-    }
-
-    if(!is_exists(cache_path)) {
-        res = create_dir(cache_path, 0755);
-        if(res < 0) {
-            trace("infobar: failed to create %s\n", cache_path);
-            goto cleanup;
+    if (get_cache_path(&cache_path, BIO) == -1)
+        return;
+        
+    if (!is_exists(cache_path)) {
+        if (create_dir(cache_path, 0755) == -1) {
+            free(cache_path);
+            return;
         }
     }
-
-    char cache_file[512] = {0};
-    res = snprintf(cache_file, sizeof(cache_file), "%s/%s", cache_path, artist);
-    if(res == 0) {
-        trace("infobar: failed to form a path to the bio cache file\n");
-        goto cleanup;
+    
+    char *txt_cache = NULL;
+    if (asprintf(&txt_cache, "%s/%s", cache_path, artist) == -1) {
+        free(cache_path);
+        return;
     }
     
-    if (form_bio_url(artist, &track_url) == -1) {
-        goto cleanup;
+    char *url = NULL;
+    if (form_bio_url(artist, &url) == -1) {
+        free(cache_path);
+        free(txt_cache);
+        return;
     }
-
-    if(!is_exists(cache_file) || is_old_cache(cache_file, BIO)) {
+    
+    char *bio_txt = NULL;
+    
+    if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
         
-        if (fetch_bio_txt(track_url, &bio) == -1)
-            goto cleanup;
-    
-        if (save_txt_file(cache_file, bio) < 0) {
-            trace("infobar: failed to save %s\n", cache_file);
-            goto cleanup;
+        if (fetch_bio_txt(url, &bio_txt) == 0) {
+            view->txt = bio_txt;
+            view->len = strlen(bio_txt);
+            save_txt_file(txt_cache, bio_txt);
         }
     } else {
-        if (load_txt_file(cache_file, &bio) == 0) {
+        if (load_txt_file(txt_cache, &bio_txt) == 0) {
+            view->txt = bio_txt;
+            view->len = strlen(bio_txt);
         }
     }
+    free(txt_cache);
     
-    res = asprintf(&img, "%s/%s_img", cache_path, artist);
-    if(res == -1) {
-        trace("infobar: failed to form a path to the bio image file\n");
-        goto cleanup;
+    char *img_cache = NULL;
+    if (asprintf(&img_cache, "%s/%s_img", cache_path, artist) == -1) {
+        free(cache_path);
+        free(url);
+        return;
     }
-
-    if (!is_exists(img) || is_old_cache(img, BIO)) {
+    free(cache_path);
+    
+    if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
+        fetch_bio_image(url, img_cache);
         
-        if (fetch_bio_image(track_url, img) == -1) {
-            goto cleanup;
-        }
-    }
-
-cleanup:
-    if(infobar_mutex) {
-        deadbeef->mutex_unlock(infobar_mutex);
-    }
-    
-    if(data) {
-        data->txt = bio;
-        data->img = img;
-        data->len = bio ? strlen(bio) : 0;
-    }
-    
-    if (track_url) {
-        free(track_url);
-    }
-    
-    if(cnt) {
-        free(cnt);
-    }
-    
-    if(artist_changed) {
-        g_idle_add((GSourceFunc)update_bio_view, data);
-    }
+    view->img = img_cache;
+    free(url);
 }
 
 static int
@@ -454,7 +411,15 @@ infobar_thread(void *ctx) {
 
         if(deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
             trace("infobar: retrieving artist's bio...\n");
-            retrieve_artist_bio();
+            
+            deadbeef->mutex_lock(infobar_mutex);
+            
+            if (artist_changed) {
+                BioViewData view = {0};
+                retrieve_artist_bio(&view);
+                g_idle_add((GSourceFunc) update_bio_view, &view);
+            }
+            deadbeef->mutex_unlock(infobar_mutex);
         }
     }
 }
