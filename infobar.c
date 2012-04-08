@@ -98,32 +98,6 @@ retrieve_artist_bio(BioViewData **view) {
     free(url);
 }
 
-static int
-get_new_lines_count(const char *buf) {
-    int nlnum = 0;
-    
-    while(*buf) {
-        if(*buf == '\n' ||
-           *buf == '\r') 
-        {
-            ++nlnum;
-        } else {
-            break;
-        }
-        ++buf;
-    }
-    return nlnum;
-}
-
-static char*
-cleanup_new_lines(const char *buf, int len, int nlnum) {
-    char *cld_buf = calloc(len + 1, sizeof(char));
-    if(cld_buf) {
-        memcpy(cld_buf, buf + nlnum, len - nlnum + 1);
-    }
-    return cld_buf;
-}
-
 static void
 retrieve_track_lyrics(LyricsViewData **view) {
     
@@ -168,18 +142,6 @@ retrieve_track_lyrics(LyricsViewData **view) {
     
         if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
             fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
-        
-        /*if(lyr && len > 0) {
-            int nlnum = get_new_lines_count(lyr);
-            if(nlnum > 0) {
-                char *tmp = cleanup_new_lines(lyr, len, nlnum);
-                if(tmp) {
-                    free(lyr);
-                    lyr = tmp;
-                    len = strlen(lyr);
-                }
-            }
-        }*/
     
         if (lyr_txt) {
             (*view)->txt = lyr_txt;
