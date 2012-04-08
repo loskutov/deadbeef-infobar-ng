@@ -22,8 +22,8 @@
 static int
 form_lyr_url(const char *artist, const char* title, const char* template, char **url) {
     
-    int alen = strlen(artist) * 3;
-    int tlen = strlen(title) * 3;
+    int alen = strlen(artist) * 4;
+    int tlen = strlen(title) * 4;
     
     char *eartist = calloc(alen + 1, sizeof(char));
     if (!eartist)
@@ -123,5 +123,66 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
     }
     free(url);
     *txt = lyr_txt;
+    return 0;
+}
+
+int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt) {
+    
+    char *url = NULL;
+    if (form_lyr_url(artist, title, LYRICSWIKIA_URL_TEMPLATE, &url) == -1)
+        return -1;
+
+    char *raw_page = NULL;
+    if (fetch_lyrics(url, LYRICSWIKIA_XML_PATTERN, XML, &raw_page) == -1) {
+        free(url);
+        return -1;
+    }
+    free(url);
+
+    if (is_redirect(raw_page)) {
+        
+        char *rartist = NULL;
+        char *rtitle = NULL;
+        
+        if (get_redirect_info(raw_page, &rartist, &rtitle) == 0) {
+            
+            free(raw_page);
+            
+            url = NULL;
+            if (form_lyr_url(rartist, rtitle, LYRICSWIKIA_URL_TEMPLATE, &url) == -1) {
+                free(rartist);
+                free(rtitle);
+                return -1;
+            }
+            free(rartist);
+            free(rtitle);
+            
+            raw_page = NULL;
+            if (fetch_lyrics(url, LYRICSWIKIA_XML_PATTERN, XML, &raw_page) == -1) {
+                free(url);
+                return -1;
+            }
+            free(url);
+        }
+    }
+    char *fst_lyr_txt = NULL;
+    char *snd_lyr_txt = NULL;
+
+    if (parse_content(raw_page, LYRICSWIKIA_HTML_PATTERN, &fst_lyr_txt, HTML, 0) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    *txt = fst_lyr_txt;
+
+    char *multi_lyr = NULL;
+    if (parse_content(raw_page, LYRICSWIKIA_HTML_PATTERN, &snd_lyr_txt, HTML, 1) == 0) {
+        
+        if (concat_lyrics(fst_lyr_txt, snd_lyr_txt, &multi_lyr) == 0) {
+            free(fst_lyr_txt);
+            *txt = multi_lyr;
+        }
+        free(snd_lyr_txt);
+    }
+    free(raw_page);
     return 0;
 }

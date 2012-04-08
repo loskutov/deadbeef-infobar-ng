@@ -257,7 +257,8 @@ int uri_encode(char *out, int outl, const char *str, char space) {
 
     while (*str) {
         
-        if (outl <= 1) return -1;
+        if (outl <= 1) 
+            return -1;
 
         if (!(
             (*str >= '0' && *str <= '9') ||
@@ -268,7 +269,8 @@ int uri_encode(char *out, int outl, const char *str, char space) {
             (*str == '/')
         ))
         {
-            if (outl <= 3) return -1;
+            if (outl <= 3) 
+                return -1;
 
             snprintf (out, outl, "%%%02x", (uint8_t)*str);
             outl -= 3; str++; out += 3;
@@ -298,6 +300,25 @@ int convert_to_utf8(const char *str, char **str_utf8) {
         free(*str_utf8);
         return -1;
     }
+    return 0;
+}
+
+int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
+    
+    const char *sep = "\n**************\n";
+    
+    int fst_len = strlen(fst_lyr);
+    int snd_len = strlen(snd_lyr);
+    int sep_len = strlen(sep);
+    
+    *lyr = calloc(fst_len + snd_len + sep_len + 1, sizeof(char));
+    if (!*lyr) 
+        return -1;
+    
+    memcpy(*lyr, fst_lyr, fst_len + 1);
+    memcpy(*lyr + fst_len, sep, sep_len + 1);
+    memcpy(*lyr + fst_len + sep_len, snd_lyr, snd_len + 1);
+
     return 0;
 }
 

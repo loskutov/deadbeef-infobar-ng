@@ -115,63 +115,6 @@ cleanup_new_lines(const char *buf, int len, int nlnum) {
     return cld_buf;
 }
 
-static char*
-lyrics_concat(const char *buf1, const char *buf2, const char *sep) {    
-    int len1 = strlen(buf1);
-    int len2 = strlen(buf2);
-    int slen = strlen(sep);
-    
-    char *new_buf = calloc(len1 + len2 + slen + 1, sizeof(char));
-    if(new_buf) {
-        strncpy(new_buf, buf1, len1);
-        strncat(new_buf, sep, slen);
-        strncat(new_buf, buf2, len2);
-    }
-    return new_buf;
-}
-
-static char*
-fetch_lyrics_from(const char *url, const char *artist, const char *title, const char *pattern, ContentType type, char space) {
-    int res = -1;
-    
-    char eartist[300] = {0};
-    char etitle[300] = {0};
-    
-    if(uri_encode(eartist, sizeof(eartist), artist, space) == -1 ||
-       uri_encode(etitle, sizeof(etitle), title, space) == -1)
-    {
-        trace("infobar: failed to encode %s or %s", artist, title);
-        return NULL;
-    }
-
-    char track_url[512] = {0};
-    res = snprintf(track_url, sizeof(track_url), url, eartist, etitle);
-    if(res == 0) {
-        trace("infobar: failed to form lyrics download url\n");
-        return NULL;
-    }
-
-    char *cnt = NULL;
-    if (retrieve_txt_content(track_url, &cnt) != 0) {
-        trace("infobar: failed to download %s\n", track_url);
-        return NULL;
-    }
-    
-    char *lyr = NULL;
-    if (parse_content(cnt, pattern, &lyr, type, 0) == 0) {
-        if(deadbeef->junk_detect_charset(lyr)) {
-            
-            char *tmp = NULL;
-            if (convert_to_utf8(lyr, &tmp) == 0) {
-                free(lyr);
-                lyr = tmp;
-            }
-        }
-    }
-    free(cnt);
-    return lyr;
-}
-
 static void
 retrieve_track_lyrics(void) {
     trace("infobar: retrieve track lyrics started\n");
@@ -213,49 +156,9 @@ retrieve_track_lyrics(void) {
         is_old_cache(cache_file, LYRICS)) {
             
         gboolean wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
-        if(wikia && !lyr && len == 0) {
-            
-            lyr = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
-                    artist, title, "//rev", XML, '_');
-            if(lyr) {
+        if(wikia && !lyr) {
+            if (fetch_lyrics_from_lyricswikia(artist, title, &lyr) == 0)
                 len = strlen(lyr);
-            }
-            if(is_redirect(lyr) && len > 0) {        
-                char *rartist = NULL;
-                char *rtitle = NULL;
-                
-                res = get_redirect_info(lyr, &rartist, &rtitle);
-                if(res == 0) {                        
-                    free(lyr);            
-                    lyr = fetch_lyrics_from("http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s",
-                            rartist, rtitle, "//rev", XML, '_');
-                    if(lyr) {
-                        len = strlen(lyr);
-                    }    
-                }
-                free(rartist);
-                free(rtitle);
-            }
-            
-            if(lyr && len > 0) {
-                char *tmp1 = NULL;
-                if (parse_content(lyr, "//lyrics", &tmp1, HTML, 0) == 0) {
-                    char *tmp2 = NULL;
-                    if (parse_content(lyr, "//lyrics", &tmp2, HTML, 1) == 0) {
-                        free(lyr);
-                        lyr = lyrics_concat(tmp1, tmp2, "\n\n***************\n\n");
-                        if(lyr) {
-                            len = strlen(lyr);
-                        }
-                        free(tmp1);
-                        free(tmp2);
-                    } else {
-                        free(lyr);
-                        lyr = tmp1;
-                        len = strlen(lyr);
-                    }
-                }
-            }
         }
 
         gboolean mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
