@@ -29,7 +29,7 @@ static gboolean artist_changed = TRUE;
 static gboolean infobar_stopped = TRUE;
 
 static void
-retrieve_artist_bio(BioViewData *view) {
+retrieve_artist_bio(BioViewData **view) {
     
     trace("infobar: started retrieving of artist's biography\n");
 
@@ -57,19 +57,28 @@ retrieve_artist_bio(BioViewData *view) {
         return;
     }
     
+    *view = calloc(1, sizeof(BioViewData));
+    if (!*view) {
+        free(cache_path);
+        free(txt_cache);
+        free(url);
+        return;
+    }
+    
     char *bio_txt = NULL;
     
     if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
         
         if (fetch_bio_txt(url, &bio_txt) == 0) {
-            view->txt = bio_txt;
-            view->len = strlen(bio_txt);
+            (*view)->txt = bio_txt;
+            (*view)->len = strlen(bio_txt);
             save_txt_file(txt_cache, bio_txt);
         }
     } else {
+        
         if (load_txt_file(txt_cache, &bio_txt) == 0) {
-            view->txt = bio_txt;
-            view->len = strlen(bio_txt);
+            (*view)->txt = bio_txt;
+            (*view)->len = strlen(bio_txt);
         }
     }
     free(txt_cache);
@@ -85,7 +94,7 @@ retrieve_artist_bio(BioViewData *view) {
     if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
         fetch_bio_image(url, img_cache);
         
-    view->img = img_cache;
+    (*view)->img = img_cache;
     free(url);
 }
 
@@ -116,70 +125,51 @@ cleanup_new_lines(const char *buf, int len, int nlnum) {
 }
 
 static void
-retrieve_track_lyrics(void) {
+retrieve_track_lyrics(LyricsViewData **view) {
+    
     trace("infobar: retrieve track lyrics started\n");
 
-    int res = -1;
-    int len = 0;
-    
-    char *lyr = NULL;
-        
-    LyricsViewData *data = malloc(sizeof(LyricsViewData));
-    if(!data) {
-        goto cleanup;
-    }
-    
-    deadbeef->mutex_lock(infobar_mutex);
-
     char *cache_path = NULL;
-    if (get_cache_path(&cache_path, LYRICS) == -1) {
-        trace("infobar: failed to get lyrics cache path\n");
-        goto cleanup;
-    }
+    if (get_cache_path(&cache_path, LYRICS) == -1)
+        return;
 
-    if(!is_exists(cache_path)) {
-        res = create_dir(cache_path, 0755);
-        if(res < 0) {
-            trace("infobar: failed to create %s\n", cache_path);
-            goto cleanup;
+    if (!is_exists(cache_path)) {
+        if (create_dir(cache_path, 0755) == -1) {
+            free(cache_path);
+            return;
         }
     }
 
-    char cache_file[512] = {0};
-    res = snprintf(cache_file, sizeof(cache_file), "%s/%s-%s", cache_path, artist, title);
-    if(res == 0) {
-        trace("infobar: failed to form a path to the lyrics cache file\n");
-        goto cleanup;
+    char *txt_cache = NULL;
+    if (asprintf(&txt_cache, "%s/%s-%s", cache_path, artist, title) == -1) {
+        free(cache_path);
+        return;
+    }
+    free(cache_path);
+    
+    *view = calloc(1, sizeof(LyricsViewData));
+    if (!*view) {
+        free(txt_cache);
+        return;
     }
     
-    if(!is_exists(cache_file) ||
-        is_old_cache(cache_file, LYRICS)) {
+    char *lyr_txt = NULL;
+    
+    if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
             
-        gboolean wikia = deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1);
-        if(wikia && !lyr) {
-            if (fetch_lyrics_from_lyricswikia(artist, title, &lyr) == 0)
-                len = strlen(lyr);
-        }
+        if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
+            fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
 
-        gboolean mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
-        if (mania && !lyr) {
-            if (fetch_lyrics_from_lyricsmania(artist, title, &lyr) == 0)
-                len = strlen(lyr);
-        }
+        if (deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1) && !lyr_txt)
+            fetch_lyrics_from_lyricsmania(artist, title, &lyr_txt);
     
-        gboolean time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
-        if(time && !lyr) {
-            if (fetch_lyrics_from_lyricstime(artist, title, &lyr) == 0)
-                len = strlen(lyr);
-        }
+        if (deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1) && !lyr_txt)
+            fetch_lyrics_from_lyricstime(artist, title, &lyr_txt);
     
-        gboolean mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
-        if(mega && !lyr) {
-            if (fetch_lyrics_from_megalyrics(artist, title, &lyr) == 0)
-                len = strlen(lyr);
-        }
+        if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
+            fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
         
-        if(lyr && len > 0) {
+        /*if(lyr && len > 0) {
             int nlnum = get_new_lines_count(lyr);
             if(nlnum > 0) {
                 char *tmp = cleanup_new_lines(lyr, len, nlnum);
@@ -189,31 +179,20 @@ retrieve_track_lyrics(void) {
                     len = strlen(lyr);
                 }
             }
-        }
+        }*/
     
-        if(lyr && len > 0) {
-            res = save_txt_file(cache_file, lyr);
-            if(res < 0) {
-                trace("infobar: failed to save %s\n", cache_file);
-                goto cleanup;
-            }
+        if (lyr_txt) {
+            (*view)->txt = lyr_txt;
+            (*view)->len = strlen(lyr_txt);
+            save_txt_file(txt_cache, lyr_txt);
         }
     } else {
-        if (load_txt_file(cache_file, &lyr) == 0) {
-            len = strlen(lyr);
+        if (load_txt_file(txt_cache, &lyr_txt) == 0) {
+            (*view)->txt = lyr_txt;
+            (*view)->len = strlen(lyr_txt);
         }
     }
-    
-cleanup:
-    if(infobar_mutex) {
-        deadbeef->mutex_unlock(infobar_mutex);
-    }
-    
-    if(data) {
-        data->txt = lyr;
-        data->len = len;
-    }
-    g_idle_add((GSourceFunc)update_lyrics_view, data);
+    free(txt_cache);
 }
 
 static void
@@ -306,7 +285,14 @@ infobar_thread(void *ctx) {
 
         if(deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
             trace("infobar: retrieving song's lyrics...\n");
-            retrieve_track_lyrics();
+            
+            deadbeef->mutex_lock(infobar_mutex);
+            
+            LyricsViewData *view = NULL;
+            retrieve_track_lyrics(&view);
+            g_idle_add((GSourceFunc) update_lyrics_view, view);
+
+            deadbeef->mutex_unlock(infobar_mutex);
         }
 
         if(deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
@@ -315,9 +301,9 @@ infobar_thread(void *ctx) {
             deadbeef->mutex_lock(infobar_mutex);
             
             if (artist_changed) {
-                BioViewData view = {0};
+                BioViewData *view = NULL;
                 retrieve_artist_bio(&view);
-                g_idle_add((GSourceFunc) update_bio_view, &view);
+                g_idle_add((GSourceFunc) update_bio_view, view);
             }
             deadbeef->mutex_unlock(infobar_mutex);
         }
