@@ -27,6 +27,7 @@
 #include <gtk/gtk.h>
 #include <deadbeef/deadbeef.h>
 
+#include "infobar_lyr.h"
 #include "infobar_bio.h"
 #include "infobar_ui.h"
 #include "utils.h"

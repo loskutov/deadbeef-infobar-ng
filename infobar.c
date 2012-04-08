@@ -259,30 +259,21 @@ retrieve_track_lyrics(void) {
         }
 
         gboolean mania = deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1);
-        if(mania && !lyr && len == 0) {
-            lyr = fetch_lyrics_from("http://www.lyricsmania.com/%s_lyrics_%s.html",
-                    title, artist, "//*[@id=\"songlyrics_h\"]", HTML, '_');
-            if(lyr) {
+        if (mania && !lyr) {
+            if (fetch_lyrics_from_lyricsmania(artist, title, &lyr) == 0)
                 len = strlen(lyr);
-            }
         }
     
         gboolean time = deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1);
-        if(time && !lyr && len == 0) {
-            lyr = fetch_lyrics_from("http://www.lyricstime.com/%s-%s-lyrics.html",
-                    artist, title, "//*[@id=\"songlyrics\"]", HTML, '-');
-            if(lyr) {
+        if(time && !lyr) {
+            if (fetch_lyrics_from_lyricstime(artist, title, &lyr) == 0)
                 len = strlen(lyr);
-            }
         }
     
         gboolean mega = deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1);
-        if(mega && !lyr && len == 0) {
-            lyr = fetch_lyrics_from("http://megalyrics.ru/lyric/%s/%s.htm",
-                    artist, title, "//pre[@class=\"lyric\"]", HTML, '_');
-            if(lyr) {
+        if(mega && !lyr) {
+            if (fetch_lyrics_from_megalyrics(artist, title, &lyr) == 0)
                 len = strlen(lyr);
-            }
         }
         
         if(lyr && len > 0) {
@@ -357,8 +348,14 @@ infobar_songstarted(ddb_event_track_t *ev) {
 
     deadbeef->mutex_lock(infobar_mutex);
         
-    if (artist) free(artist);
-    if (title) free(title);
+    if (artist) {
+        free(artist);
+        artist = NULL;
+    }
+    if (title) {
+        free(title);
+        title = NULL;
+    }
     
     if (get_track_info(ev->track, &artist, &title) == -1) {
         trace("infobar: failed to get track info\n");

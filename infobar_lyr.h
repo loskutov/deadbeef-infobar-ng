@@ -22,7 +22,20 @@
 
 #include <stdio.h>
 #include "utils.h"
+#include "types.h"
 
-int form_lyr_url(const char *artist, const char* title, const char* template, char **url);
+#define LYRICSMANIA_URL_TEMPLATE "http://www.lyricsmania.com/%s_lyrics_%s.html"
+#define LYRICSTIME_URL_TEMPLATE "http://www.lyricstime.com/%s-%s-lyrics.html"
+#define MEGALYRICS_URL_TEMPLATE "http://megalyrics.ru/lyric/%s/%s.htm"
+
+#define LYRICSMANIA_PATTERN "//*[@id=\"songlyrics_h\"]"
+#define LYRICSTIME_PATTERN "//*[@id=\"songlyrics\"]"
+#define MEGALYRICS_PATTERN "//pre[@class=\"lyric\"]"
+
+int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt);
+
+int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt);
+
+int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt);
 
 #endif
