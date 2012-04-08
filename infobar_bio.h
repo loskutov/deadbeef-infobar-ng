@@ -29,4 +29,6 @@ int fetch_bio_txt(const char *url, char **txt);
 
 int form_bio_url(const char *artist, char **url);
 
+int fetch_bio_image(const char *url, const char *path);
+
 #endif

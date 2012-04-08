@@ -75,3 +75,24 @@ int fetch_bio_txt(const char *url, char **txt) {
     }
     return 0;
 }
+
+int fetch_bio_image(const char *url, const char *path) {
+
+    char *raw_page = NULL;
+    if (retrieve_txt_content(url, &raw_page) == -1)
+        return -1;
+    
+    char *img_url = NULL;
+    if (parse_content(raw_page, "//image[@size=\"extralarge\"]", &img_url, XML, 0) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    
+    if (retrieve_img_content(img_url, path) == -1) {
+        free(img_url);
+        return -1;
+    }
+    free(img_url);
+    return 0;
+}

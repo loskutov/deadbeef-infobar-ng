@@ -103,21 +103,9 @@ retrieve_artist_bio(void) {
 
     if (!is_exists(img) || is_old_cache(img, BIO)) {
         
-        if (!cnt) {
-            if (retrieve_txt_content(track_url, &cnt) != 0) {
-                trace("infobar: failed to download %s\n", track_url);
-                goto cleanup;
-            }
+        if (fetch_bio_image(track_url, img) == -1) {
+            goto cleanup;
         }
-    
-        char *img_url = NULL;
-        if (parse_content(cnt, "//image[@size=\"extralarge\"]", &img_url, XML, 0) == 0) {
-            if (retrieve_img_content(img_url, img) < 0) {
-                free(img_url);
-                goto cleanup;
-            }
-        }
-        free(img_url);
     }
 
 cleanup:
