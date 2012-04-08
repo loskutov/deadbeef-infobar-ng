@@ -81,34 +81,14 @@ retrieve_artist_bio(void) {
         goto cleanup;
     }
 
-    if(!is_exists(cache_file) ||
-        is_old_cache(cache_file, BIO)) {
-
-        if (retrieve_txt_content(track_url, &cnt) != 0) {
-            trace("infobar: failed to download %s\n", track_url);
+    if(!is_exists(cache_file) || is_old_cache(cache_file, BIO)) {
+        
+        if (fetch_bio_txt(track_url, &bio) == -1)
             goto cleanup;
-        }
-
-        if (parse_content(cnt, "/lfm/artist/bio/content", &bio, XML, 0) == 0) {
-            
-            char *tmp = NULL;
-            if (parse_content(bio, "/html/body", &tmp, HTML, 0) == 0) {
-                free(bio);
-                bio = tmp;
-            }
-            
-            if(deadbeef->junk_detect_charset(bio)) {
-                if (convert_to_utf8(bio, &tmp) == 0) {
-                    free(bio);
-                    bio = tmp;
-                }
-            }
     
-            res = save_txt_file(cache_file, bio);
-            if(res < 0) {
-                trace("infobar: failed to save %s\n", cache_file);
-                goto cleanup;
-            }
+        if (save_txt_file(cache_file, bio) < 0) {
+            trace("infobar: failed to save %s\n", cache_file);
+            goto cleanup;
         }
     } else {
         if (load_txt_file(cache_file, &bio) == 0) {

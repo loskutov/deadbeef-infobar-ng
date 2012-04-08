@@ -25,6 +25,8 @@
 
 #define BIO_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026"
 
+int fetch_bio_txt(const char *url, char **txt);
+
 int form_bio_url(const char *artist, char **url);
 
 #endif

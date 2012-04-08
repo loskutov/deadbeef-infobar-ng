@@ -31,7 +31,6 @@ int form_bio_url(const char *artist, char **url) {
         free(eartist);
         return -1;
     }
-    
     deadbeef->conf_lock();
     
     const char *locale = deadbeef->conf_get_str_fast(CONF_BIO_LOCALE, "en");
@@ -44,5 +43,35 @@ int form_bio_url(const char *artist, char **url) {
     deadbeef->conf_unlock();
     free(eartist);
     
+    return 0;
+}
+
+int fetch_bio_txt(const char *url, char **txt) {
+    
+    char *raw_page = NULL;
+    if (retrieve_txt_content(url, &raw_page) == -1)
+        return -1;
+
+    char *html_txt = NULL;
+    if (parse_content(raw_page, "/lfm/artist/bio/content", &html_txt, XML, 0) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    
+    char *bio_txt = NULL;
+    if (parse_content(html_txt, "/html/body", &bio_txt, HTML, 0) == -1) {
+        free(html_txt);
+        return -1;
+    }
+    *txt = bio_txt;
+    
+    char *bio_utf8 = NULL;
+    if(deadbeef->junk_detect_charset(bio_txt)) {
+        if (convert_to_utf8(bio_txt, &bio_utf8) == 0) {
+            free(bio_txt);
+            *txt = bio_utf8;
+        }
+    }
     return 0;
 }
