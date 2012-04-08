@@ -23,7 +23,7 @@
 #include "utils.h"
 #include "infobar.h"
 
-#define BIO_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=b25b959554ed76058ac220b7b2e0a026"
+#define BIO_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
 
 int fetch_bio_txt(const char *url, char **txt);
 
