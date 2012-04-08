@@ -38,7 +38,6 @@ retrieve_artist_bio(void) {
 
     int res = -1;
     
-    int bio_len = 0;
     int img_len = 0;
 
     char *cnt = NULL;
@@ -106,20 +105,17 @@ retrieve_artist_bio(void) {
         }
 
         if (parse_content(cnt, "/lfm/artist/bio/content", &bio, XML, 0) == 0) {
-            bio_len = strlen(bio);
             
             char *tmp = NULL;
             if (parse_content(bio, "/html/body", &tmp, HTML, 0) == 0) {
                 free(bio);
                 bio = tmp;
-                bio_len = strlen(bio);
             }
             
             if(deadbeef->junk_detect_charset(bio)) {
                 if (convert_to_utf8(bio, &tmp) == 0) {
                     free(bio);
                     bio = tmp;
-                    bio_len = strlen(bio);
                 }
             }
     
@@ -131,7 +127,6 @@ retrieve_artist_bio(void) {
         }
     } else {
         if (load_txt_file(cache_file, &bio) == 0) {
-            bio_len = strlen(bio);
         }
     }
     
@@ -171,7 +166,7 @@ cleanup:
     if(data) {
         data->txt = bio;
         data->img = img;
-        data->len = bio_len;
+        data->len = bio ? strlen(bio) : 0;
     }
     
     if(cnt) {
