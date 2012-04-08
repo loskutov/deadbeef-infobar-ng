@@ -58,6 +58,8 @@ int get_redirect_info(const char *str, char **artist, char **title);
 
 int get_track_info(DB_playItem_t *track, char **artist, char **title);
 
+int update_track_info(const char *artist, const char * title, char **old_artist, char **old_title);
+
 int get_cache_path(char **path, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);

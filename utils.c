@@ -383,6 +383,27 @@ int get_track_info(DB_playItem_t *track, char **artist, char **title) {
     return 0;
 }
 
+int update_track_info(const char *artist, const char * title, char **old_artist, char **old_title) {
+    
+    int alen = strlen(artist);
+    int tlen = strlen(title);
+    
+    *old_artist = calloc(alen + 1, sizeof(char));
+    if (!*old_artist) 
+        return -1;
+        
+    *old_title = calloc(tlen + 1, sizeof(char));
+    if (!*old_title) {
+        free(*old_artist);
+        return -1;
+    }
+    
+    memcpy(*old_artist, artist, alen + 1);
+    memcpy(*old_title, title, tlen + 1);
+    
+    return 0;
+}
+
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     
     float w = 0, h = 0;

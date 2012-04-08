@@ -52,8 +52,8 @@
 char *artist;
 char *title;
 
-char old_artist[100];
-char old_title[100];
+char *old_artist;
+char *old_title;
 
 DB_functions_t *deadbeef;
 

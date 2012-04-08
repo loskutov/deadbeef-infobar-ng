@@ -162,36 +162,29 @@ update:
 
 static void
 infobar_songstarted(ddb_event_track_t *ev) {
+    
     trace("infobar: infobar song started\n");
-
-    int res = -1;
     
     DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
-    if(!pl_track) {
-        trace("infobar: playing track is null\n");
+    if (!pl_track)
         return;
-    }    
         
-    if(ev->track != pl_track) {
-        trace("infobar: event track is not the same as the current playing track\n");
+    if (ev->track != pl_track) {
         deadbeef->pl_item_unref(pl_track);
         return;
     } 
     deadbeef->pl_item_unref(pl_track);
         
-    if(!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0)) {
-        trace("infobar: infobar is set to non visible\n");
+    if (!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
         return;
-    }
         
-    if(!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
-       !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
-        trace("infobar: lyrics and bio are disabled\n");        
+    if (!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
+        !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
         return;
     }
-
+    
     deadbeef->mutex_lock(ifb_mutex);
-        
+    
     if (artist) {
         free(artist);
         artist = NULL;
@@ -200,30 +193,35 @@ infobar_songstarted(ddb_event_track_t *ev) {
         free(title);
         title = NULL;
     }
-    
     if (get_track_info(ev->track, &artist, &title) == -1) {
-        trace("infobar: failed to get track info\n");
         deadbeef->mutex_unlock(ifb_mutex);
         return;
     }
     
-    trace("infobar: current playing artist: %s, title, %s\n", artist, title);
+    if (old_artist && old_title) {
+        
+        int acmp = strcmp(old_artist, artist);
+        int tcmp = strcmp(old_title, title);
     
-    if(strcmp(old_artist, artist) == 0 && 
-            strcmp(old_title, title) == 0) {
-        trace("infobar: same artist and title\n");
+        if (acmp == 0 && tcmp == 0) {
+            deadbeef->mutex_unlock(ifb_mutex);
+            return;
+        } 
+        artist_changed = acmp != 0;
+    }
+    
+    if (old_artist) {
+        free(old_artist);
+        old_artist = NULL;
+    }
+    if (old_title) {
+        free(old_title);
+        old_title = NULL;
+    }
+    if (update_track_info(artist, title, &old_artist, &old_title) == -1){
         deadbeef->mutex_unlock(ifb_mutex);
         return;
     }
-    
-    res = strcmp(old_artist, artist);
-    artist_changed = res == 0 ? FALSE : TRUE;
-    
-    memset(old_artist, 0, sizeof(old_artist));
-    strncpy(old_artist, artist, sizeof(old_artist));
-    
-    memset(old_title, 0, sizeof(old_title));
-    strncpy(old_title, title, sizeof(old_title));
     
     deadbeef->mutex_unlock(ifb_mutex);
     deadbeef->cond_signal(ifb_cond);
@@ -232,7 +230,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
 static void
 infobar_thread(void *ctx) {
     
-    for(;;) {
+    for (;;) {
         
         trace("infobar: infobar thread started\n");
     
@@ -248,12 +246,12 @@ infobar_thread(void *ctx) {
         }
         deadbeef->mutex_unlock(ifb_mutex);
         
-        if(deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
+        if (deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
             trace("infobar: retrieving song's lyrics...\n");
             retrieve_track_lyrics();
         }
 
-        if(deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
+        if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
             trace("infobar: retrieving artist's bio...\n");
             if (artist_changed)
                 retrieve_artist_bio();
@@ -264,16 +262,16 @@ infobar_thread(void *ctx) {
 static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
     
-    switch(id) {
+    switch (id) {
     case DB_EV_SONGSTARTED:
     {
         trace("infobar: recieved songstarted message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
         
-        if(!event->track) 
+        if (!event->track) 
             return 0;
             
-        if(!is_stream(event->track))
+        if (!is_stream(event->track))
             infobar_songstarted(event);
     }
         break;
@@ -282,10 +280,10 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
         trace("infobar: recieved trackinfochanged message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
         
-        if(!event->track) 
+        if (!event->track) 
             return 0;
             
-        if(is_stream(event->track))
+        if (is_stream(event->track))
             infobar_songstarted(event);
     }
         break;
@@ -422,7 +420,7 @@ static DB_misc_t plugin = {
     .plugin.message = infobar_message,
 };
 
-DB_plugin_t *ddb_infobar_load (DB_functions_t *ddb) {
+DB_plugin_t *ddb_infobar_load(DB_functions_t *ddb) {
     
     deadbeef = ddb;
     return DB_PLUGIN(&plugin);
