@@ -1,6 +1,6 @@
 /*
     Infobar plugin for DeaDBeeF music player
-    Copyright (C) 2011 Dmitriy Simbiriatin <slpiv@mail.ru>
+    Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ static gboolean infobar_stopped = TRUE;
 static void
 retrieve_artist_bio() {
     
-    trace("infobar: started retrieving of artist's biography\n");
+    trace("infobar: retrieving artist's biography\n");
 
     BioViewData *view = calloc(1, sizeof(BioViewData));
     if (!view)
@@ -64,7 +64,8 @@ retrieve_artist_bio() {
     char *bio_txt = NULL;
     
     if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
-        
+        /* There is no cache for artist's biography or it's too old,
+         * retrieving new one. */
         if (fetch_bio_txt(url, &bio_txt) == 0) {
             view->txt = bio_txt;
             view->len = strlen(bio_txt);
@@ -72,7 +73,7 @@ retrieve_artist_bio() {
         }
         
     } else {
-        
+        /* We got a cached biography, just loading it. */
         if (load_txt_file(txt_cache, &bio_txt) == 0) {
             view->txt = bio_txt;
             view->len = strlen(bio_txt);
@@ -88,6 +89,7 @@ retrieve_artist_bio() {
     }
     free(cache_path);
     
+    /* Retrieving artist's image if we don't a cached one. */
     if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
         fetch_bio_image(url, img_cache);
         
@@ -101,7 +103,7 @@ update:
 static void
 retrieve_track_lyrics(void) {
     
-    trace("infobar: retrieve track lyrics started\n");
+    trace("infobar: retrieving track lyrics\n");
 
     LyricsViewData *view = calloc(1, sizeof(LyricsViewData));
     if (!view)
@@ -128,7 +130,8 @@ retrieve_track_lyrics(void) {
     char *lyr_txt = NULL;
     
     if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
-            
+        /* There is no cache for the current track or the previous cache 
+         * is too old, so start retrieving new one. */
         if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
             fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
 
@@ -144,19 +147,20 @@ retrieve_track_lyrics(void) {
         if (lyr_txt) {
             
             char *lyr_wo_nl = NULL;
-        
+            /* Some lyrics contains new line characters at the beginning of the 
+             * file, so we gonna strip them. */
             if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
                 free(lyr_txt);
                 lyr_txt = lyr_wo_nl;
             }
             view->txt = lyr_txt;
             view->len = strlen(lyr_txt);
-            
+            /* Saving lyrics to reuse it later.*/
             save_txt_file(txt_cache, lyr_txt);
         }
         
     } else {
-        
+        /* We got a cache for the current track, so just load it. */
         if (load_txt_file(txt_cache, &lyr_txt) == 0) {
             view->txt = lyr_txt;
             view->len = strlen(lyr_txt);
@@ -183,9 +187,11 @@ infobar_songstarted(ddb_event_track_t *ev) {
     } 
     deadbeef->pl_item_unref(pl_track);
         
+    /* Don't retrieve anything as infobar is not visible. */
     if (!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
         return;
         
+    /* Don't retrieve anything as lyrics and biography tabs are invisible. */
     if (!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
         !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
         return;
@@ -210,7 +216,8 @@ infobar_songstarted(ddb_event_track_t *ev) {
         
         int acmp = strcmp(old_artist, artist);
         int tcmp = strcmp(old_title, title);
-    
+        
+        /* Same artist and title as before. */
         if (acmp == 0 && tcmp == 0) {
             deadbeef->mutex_unlock(ifb_mutex);
             return;
@@ -260,7 +267,9 @@ infobar_thread(void *ctx) {
         }
 
         if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
-            trace("infobar: retrieving artist's bio...\n");
+            trace("infobar: retrieving artist's biography...\n");
+            /* Don't retrieve biography again, if we still playing 
+             * the same artist.*/
             if (artist_changed)
                 retrieve_artist_bio();
         }

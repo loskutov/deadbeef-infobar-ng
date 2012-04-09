@@ -1,6 +1,6 @@
 /*
     Infobar plugin for DeaDBeeF music player
-    Copyright (C) 2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>
+    Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -16,6 +16,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
+
 #ifndef INFOBAR_HEADER
 #define INFOBAR_HEADER
 
@@ -35,6 +36,7 @@
 //#define trace(...) { fprintf(stderr, __VA_ARGS__); }
 #define trace(fmt, ...)
 
+/* Predefined names of infobar properties. */
 #define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
 #define CONF_LYRICSWIKIA_ENABLED "infobar.lyrics.lyricswikia"
 #define CONF_LYRICSMANIA_ENABLED "infobar.lyrics.lyricsmania"
@@ -49,9 +51,11 @@
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
 
+/* Current playing track info. */
 char *artist;
 char *title;
 
+/* Previously playing track info. */
 char *old_artist;
 char *old_title;
 
