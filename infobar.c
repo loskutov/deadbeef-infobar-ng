@@ -142,8 +142,16 @@ retrieve_track_lyrics(void) {
             fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
     
         if (lyr_txt) {
+            
+            char *lyr_wo_nl = NULL;
+        
+            if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
+                free(lyr_txt);
+                lyr_txt = lyr_wo_nl;
+            }
             view->txt = lyr_txt;
             view->len = strlen(lyr_txt);
+            
             save_txt_file(txt_cache, lyr_txt);
         }
         
@@ -155,7 +163,7 @@ retrieve_track_lyrics(void) {
         }
     }
     free(txt_cache);
-
+    
 update:
     g_idle_add((GSourceFunc) update_lyrics_view, view);
 }

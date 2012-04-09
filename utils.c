@@ -303,6 +303,26 @@ int convert_to_utf8(const char *str, char **str_utf8) {
     return 0;
 }
 
+int del_nl(const char *txt, char **txt_wo_nl) {
+    
+    int num = 0;
+    int len = strlen(txt);
+    
+    for (int i = 0; i < len; ++i) {
+        if (txt[i] == '\n')
+            ++num;
+        else
+            break;
+    }
+    
+    *txt_wo_nl = calloc(len - num + 1, sizeof(char));
+    if (!*txt_wo_nl)
+        return -1;
+    
+    memcpy(*txt_wo_nl, txt + num, len - num + 1);
+    return 0;
+}
+
 int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
     
     const char *sep = "\n**************\n";

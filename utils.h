@@ -52,6 +52,8 @@ int save_txt_file(const char *file, const char *content);
 
 int convert_to_utf8(const char *str, char **str_utf8);
 
+int del_nl(const char *txt, char **txt_wo_nl);
+
 int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr);
 
 int get_redirect_info(const char *str, char **artist, char **title);
