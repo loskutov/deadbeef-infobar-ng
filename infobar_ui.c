@@ -58,6 +58,36 @@ infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
     return FALSE;
 }
 
+/* Utility method which is used to get pointer to widget using its name. */
+static GtkWidget*
+lookup_widget(GtkWidget *widget, const gchar *widget_name) {
+    
+    GtkWidget *parent = NULL;
+    GtkWidget *found_widget = NULL;
+
+    for (;;) {
+        
+        if (GTK_IS_MENU(widget)) {
+            parent = gtk_menu_get_attach_widget(GTK_MENU (widget));
+        } else {
+            parent = widget->parent;
+        }
+        if (!parent)
+            parent = (GtkWidget*) g_object_get_data(G_OBJECT (widget), "GladeParentKey");
+            
+        if (parent == NULL)
+            break;
+            
+        widget = parent;
+    }
+    found_widget = (GtkWidget*) g_object_get_data(G_OBJECT (widget), widget_name);
+    
+    if (!found_widget)
+        g_warning ("Widget not found: %s", widget_name);
+        
+    return found_widget;
+}
+
 /* Called when user resizes artist's image on "Biography" tab to redraw
  * the image with the new size. */
 static gboolean
