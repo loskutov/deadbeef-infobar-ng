@@ -69,6 +69,7 @@ retrieve_artist_bio() {
         if (fetch_bio_txt(url, &bio_txt) == 0) {
             view->txt = bio_txt;
             view->len = strlen(bio_txt);
+            /* Saving biography to reuse it later. */
             save_txt_file(txt_cache, bio_txt);
         }
         
@@ -89,7 +90,7 @@ retrieve_artist_bio() {
     }
     free(cache_path);
     
-    /* Retrieving artist's image if we don't a cached one. */
+    /* Retrieving artist's image if we don't have a cached one. */
     if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
         fetch_bio_image(url, img_cache);
         
@@ -366,6 +367,18 @@ infobar_stop(void) {
 
     infobar_stopped = TRUE;
     free_bio_pixbuf();
+    
+    if (artist) 
+        free(artist);
+    
+    if (title) 
+        free(title);
+        
+    if (old_artist) 
+        free(old_artist);
+    
+    if (old_title) 
+        free(old_title);
 
     if (ifb_tid) {
         deadbeef->cond_signal(ifb_cond);
