@@ -132,8 +132,6 @@ bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
 static void
 delete_cache_clicked(void) {
     
-    int res = -1;
-    
     GtkWidget *main_wnd = gtkui_plugin->get_mainwin();
     GtkWidget *dlt_dlg = gtk_message_dialog_new(GTK_WINDOW(main_wnd), 
             GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, 
@@ -143,41 +141,17 @@ delete_cache_clicked(void) {
     switch(choise) {
     case GTK_RESPONSE_YES:
     {
-        char *lyr_path = NULL;
-        if (get_cache_path(&lyr_path, LYRICS) > 0) {
-            char lyr_file[512] = {0};
-            res = snprintf(lyr_file, sizeof(lyr_file), "%s/%s-%s", lyr_path, artist, title);
-            if(res > 0) {
-                res = remove(lyr_file);
-                if(res != 0) {
-                    //trace("infobar: failed to remove lyrics cache file\n");
-                }
-            }
-            free(lyr_path);
-        }
+        del_lyr_cache(artist, title);
+        del_bio_cache(artist);
         
-        char *bio_path = NULL;
-        if (get_cache_path(&bio_path, BIO) > 0) {
-            char bio_file[512] = {0};
-            res = snprintf(bio_file, sizeof(bio_file), "%s/%s", bio_path, artist);
-            if(res > 0) {
-                res = remove(bio_file);
-                if(res != 0) {
-                    //trace("infobar: failed to remove bio cache file\n");
-                }
-            }
-            
-            char bio_img[512] = {0};
-            res = snprintf(bio_img, sizeof(bio_img), "%s/%s_img", bio_path, artist);
-            if(res > 0) {
-                res = remove(bio_img);
-                if(res != 0) {
-                    //trace("infobar: failed to remove bio image file\n");
-                }
-            }
+        if (old_artist) {
+            free(old_artist);
+            old_artist = NULL;
         }
-        memset(old_artist, 0, sizeof(old_artist));
-        memset(old_title, 0, sizeof(old_title));
+        if (old_title) {
+            free(old_title);
+            old_title = NULL;
+        }
     }
         break;
     case GTK_RESPONSE_NO:

@@ -183,6 +183,62 @@ int save_txt_file(const char *file, const char *content) {
     return 0;
 }
 
+int del_lyr_cache(const char *artist, const char *title) {
+    
+    char *cache_path = NULL;
+    if (get_cache_path(&cache_path, LYRICS) == -1)
+        return -1;
+    
+    char *txt_cache = NULL;
+    if (asprintf(&txt_cache, "%s/%s-%s", cache_path, artist, title) == -1) {
+        free(cache_path);
+        return -1;
+    }
+    free(cache_path);
+    
+    if (remove(txt_cache) != 0) {
+        free(txt_cache);
+        return -1;
+    }
+    free(txt_cache);
+    return 0;
+}
+
+int del_bio_cache(const char *artist) {
+    
+    char *cache_path = NULL;
+    if (get_cache_path(&cache_path, BIO) == -1)
+        return -1;
+    
+    char *txt_cache = NULL;
+    if (asprintf(&txt_cache, "%s/%s", cache_path, artist) == -1) {
+        free(cache_path);
+        return -1;
+    }
+    
+    if (remove(txt_cache) != 0) {
+        free(cache_path);
+        free(txt_cache);
+        return -1;
+    }
+    free(txt_cache);
+            
+    char *img_cache = NULL;
+    if (asprintf(&img_cache, "%s/%s_img", cache_path, artist) == -1) {
+        free(cache_path);
+        return -1;
+    }
+    
+    if (remove(img_cache) != 0) {
+        free(cache_path);
+        free(img_cache);
+        return -1;
+    }
+    free(cache_path);
+    free(img_cache);
+    return 0;
+}
+
 int get_cache_path(char **path, ContentType type) {
     
     int res = -1;
