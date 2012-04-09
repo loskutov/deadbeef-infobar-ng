@@ -120,7 +120,7 @@ delete_cache_clicked(void) {
             if(res > 0) {
                 res = remove(lyr_file);
                 if(res != 0) {
-                    trace("infobar: failed to remove lyrics cache file\n");
+                    //trace("infobar: failed to remove lyrics cache file\n");
                 }
             }
             free(lyr_path);
@@ -133,7 +133,7 @@ delete_cache_clicked(void) {
             if(res > 0) {
                 res = remove(bio_file);
                 if(res != 0) {
-                    trace("infobar: failed to remove bio cache file\n");
+                    //trace("infobar: failed to remove bio cache file\n");
                 }
             }
             
@@ -142,7 +142,7 @@ delete_cache_clicked(void) {
             if(res > 0) {
                 res = remove(bio_img);
                 if(res != 0) {
-                    trace("infobar: failed to remove bio image file\n");
+                    //trace("infobar: failed to remove bio image file\n");
                 }
             }
         }

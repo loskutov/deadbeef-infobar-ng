@@ -22,16 +22,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <gtk/gtk.h>
 #include <deadbeef/deadbeef.h>
+#include <deadbeef/gtkui_api.h>
 
 #include "infobar_lyr.h"
 #include "infobar_bio.h"
 #include "infobar_ui.h"
 #include "utils.h"
 #include "types.h"
+
+//#define trace(...) { fprintf(stderr, __VA_ARGS__); }
+#define trace(fmt, ...)
 
 #define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
 #define CONF_LYRICSWIKIA_ENABLED "infobar.lyrics.lyricswikia"
@@ -46,8 +48,6 @@
 #define CONF_LYRICS_UPDATE_PERIOD "infobar.lyrics.cache.period"
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
-
-#define trace(...) { fprintf(stderr, __VA_ARGS__); }
 
 char *artist;
 char *title;

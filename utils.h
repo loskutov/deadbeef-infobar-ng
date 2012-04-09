@@ -22,10 +22,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <gtk/gtk.h>
+#include <sys/stat.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 #include <libxml/parser.h>
 #include <libxml/HTMLparser.h>
+#include <deadbeef/deadbeef.h>
 
 #include "infobar.h"
 #include "types.h"

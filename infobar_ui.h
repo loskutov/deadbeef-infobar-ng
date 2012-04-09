@@ -20,12 +20,16 @@
 #ifndef INFOBAR_UI_HEADER
 #define INFOBAR_UI_HEADER
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <gtk/gtk.h>
 #include <deadbeef/deadbeef.h>
 #include <deadbeef/gtkui_api.h>
 
 #include "infobar.h"
 #include "support.h"
+#include "types.h"
+#include "utils.h"
 
 void init_ui_plugin(ddb_gtkui_t *ui_plugin);
 

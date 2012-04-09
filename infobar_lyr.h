@@ -21,6 +21,12 @@
 #define INFOBAR_LYR_HEADER
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gtk/gtk.h>
+#include <deadbeef/deadbeef.h>
+
+#include "infobar.h"
 #include "utils.h"
 #include "types.h"
 

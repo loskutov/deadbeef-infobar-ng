@@ -20,8 +20,13 @@
 #ifndef INFOBAR_BIO_HEADER
 #define INFOBAR_BIO_HEADER
 
-#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <deadbeef/deadbeef.h>
+
 #include "infobar.h"
+#include "utils.h"
 
 #define BIO_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
 
