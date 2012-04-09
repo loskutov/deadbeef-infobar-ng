@@ -314,6 +314,8 @@ int del_nl(const char *txt, char **txt_wo_nl) {
         else
             break;
     }
+    if (num == 0) 
+        return -1;
     
     *txt_wo_nl = calloc(len - num + 1, sizeof(char));
     if (!*txt_wo_nl)
