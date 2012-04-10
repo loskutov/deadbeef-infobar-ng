@@ -401,11 +401,11 @@ void attach_infobar_menu_entry(void) {
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */
-gboolean update_lyrics_view(gpointer data) {
+void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     
-    LyricsViewData *lyr_data = (LyricsViewData*) data;
-
-    if (lyr_buffer) {
+    char *artist = NULL, *title = NULL;
+    
+    if (lyr_buffer && get_track_info(track, &artist, &title) == 0) {
         
         GtkTextIter begin, end;
         
@@ -424,21 +424,13 @@ gboolean update_lyrics_view(gpointer data) {
                 &begin, artist, -1, "italic", NULL);
                 
         gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
+        
+        const char *txt = lyr_txt ? lyr_txt : "Lyrics not found.";
+        gtk_text_buffer_insert(lyr_buffer, &begin, txt, strlen(txt));
 
-        if (lyr_data->txt && lyr_data->len > 0) {
-            
-            gtk_text_buffer_insert(lyr_buffer, &begin, 
-                lyr_data->txt, lyr_data->len);
-        } else {
-            
-            gtk_text_buffer_insert(lyr_buffer, &begin, 
-                "Lyrics not found.", -1);
-        }
+        free(artist);
+        free(title);
     }
-    if (lyr_data->txt) free(lyr_data->txt);
-    if (lyr_data) free(lyr_data);
-    
-    return FALSE;
 }
 
 /* Updates "Biography" tab with the new artist's image and biography text. */

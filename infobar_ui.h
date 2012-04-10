@@ -44,6 +44,6 @@ gboolean infobar_config_changed(void);
 
 gboolean update_bio_view(gpointer data);
 
-gboolean update_lyrics_view(gpointer data);
+void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track);
 
 #endif

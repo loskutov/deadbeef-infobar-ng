@@ -37,6 +37,20 @@ gboolean is_stream(DB_playItem_t *track) {
     return deadbeef->pl_get_item_duration(track) <= 0.000000;
 }
 
+gboolean is_track_changed(DB_playItem_t *track) {
+    
+    DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
+    if (!pl_track)
+        return FALSE;
+        
+    if (track == pl_track) {
+        deadbeef->pl_item_unref(pl_track);
+        return FALSE;
+    } 
+    deadbeef->pl_item_unref(pl_track);
+    return TRUE;
+}
+
 static void
 parser_errors_handler(void *ctx, const char *msg, ...) {}
 
@@ -236,6 +250,27 @@ int del_bio_cache(const char *artist) {
     }
     free(cache_path);
     free(img_cache);
+    return 0;
+}
+
+int create_lyr_cache(const char *artist, const char *title, char **txt_cache) {
+    
+    char *cache_path = NULL;
+    if (get_cache_path(&cache_path, LYRICS) == -1)
+        return -1;
+
+    if (!is_exists(cache_path)) {
+        if (create_dir(cache_path, 0755) == -1) {
+            free(cache_path);
+            return -1;
+        }
+    }
+    
+    if (asprintf(txt_cache, "%s/%s-%s", cache_path, artist, title) == -1) {
+        free(cache_path);
+        return -1;
+    }
+    free(cache_path);
     return 0;
 }
 

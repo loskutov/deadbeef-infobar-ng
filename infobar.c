@@ -21,11 +21,11 @@
 
 static DB_misc_t plugin;
 
-static uintptr_t ifb_mutex;
-static uintptr_t ifb_cond;
-static intptr_t ifb_tid;
+//static uintptr_t ifb_mutex;
+//static uintptr_t ifb_cond;
+//static intptr_t ifb_tid;
 
-static gboolean artist_changed = TRUE;
+//static gboolean artist_changed = TRUE;
 static gboolean infobar_stopped = TRUE;
 
 static void
@@ -102,31 +102,28 @@ update:
 }
 
 static void
-retrieve_track_lyrics(void) {
+retrieve_track_lyrics(void *ctx) {
     
     trace("infobar: retrieving track lyrics\n");
-
-    LyricsViewData *view = calloc(1, sizeof(LyricsViewData));
-    if (!view)
-        return;
-
-    char *cache_path = NULL;
-    if (get_cache_path(&cache_path, LYRICS) == -1)
+    DB_playItem_t *track = (DB_playItem_t*) ctx;
+    
+    char *artist = NULL, *title = NULL;
+    
+    if (get_track_info(track, &artist, &title) == -1)
         goto update;
-
-    if (!is_exists(cache_path)) {
-        if (create_dir(cache_path, 0755) == -1) {
-            free(cache_path);
-            goto update;
-        }
+    
+    if (!is_track_changed(track)) {
+        gdk_threads_enter();
+        update_lyrics_view("Loading...", track);
+        gdk_threads_leave();
     }
 
     char *txt_cache = NULL;
-    if (asprintf(&txt_cache, "%s/%s-%s", cache_path, artist, title) == -1) {
-        free(cache_path);
+    if (create_lyr_cache(artist, title, &txt_cache) == -1) {
+        free(artist);
+        free(title);
         goto update;
     }
-    free(cache_path);
     
     char *lyr_txt = NULL;
     
@@ -154,23 +151,25 @@ retrieve_track_lyrics(void) {
                 free(lyr_txt);
                 lyr_txt = lyr_wo_nl;
             }
-            view->txt = lyr_txt;
-            view->len = strlen(lyr_txt);
             /* Saving lyrics to reuse it later.*/
             save_txt_file(txt_cache, lyr_txt);
         }
         
     } else {
         /* We got a cache for the current track, so just load it. */
-        if (load_txt_file(txt_cache, &lyr_txt) == 0) {
-            view->txt = lyr_txt;
-            view->len = strlen(lyr_txt);
-        }
+        load_txt_file(txt_cache, &lyr_txt);
     }
     free(txt_cache);
+    free(artist);
+    free(title);
     
 update:
-    g_idle_add((GSourceFunc) update_lyrics_view, view);
+    if (!is_track_changed(track)) {
+        gdk_threads_enter();
+        update_lyrics_view(lyr_txt, track);
+        gdk_threads_leave();
+    }
+    free(lyr_txt);
 }
 
 static void
@@ -197,8 +196,9 @@ infobar_songstarted(ddb_event_track_t *ev) {
         !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
         return;
     }
+    deadbeef->thread_start(retrieve_track_lyrics, ev->track);
     
-    deadbeef->mutex_lock(ifb_mutex);
+    /*deadbeef->mutex_lock(ifb_mutex);
     
     if (artist) {
         free(artist);
@@ -218,7 +218,6 @@ infobar_songstarted(ddb_event_track_t *ev) {
         int acmp = strcmp(old_artist, artist);
         int tcmp = strcmp(old_title, title);
         
-        /* Same artist and title as before. */
         if (acmp == 0 && tcmp == 0) {
             deadbeef->mutex_unlock(ifb_mutex);
             return;
@@ -240,10 +239,10 @@ infobar_songstarted(ddb_event_track_t *ev) {
     }
     
     deadbeef->mutex_unlock(ifb_mutex);
-    deadbeef->cond_signal(ifb_cond);
+    deadbeef->cond_signal(ifb_cond);*/
 }
 
-static void
+/*static void
 infobar_thread(void *ctx) {
     
     for (;;) {
@@ -269,13 +268,12 @@ infobar_thread(void *ctx) {
 
         if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
             trace("infobar: retrieving artist's biography...\n");
-            /* Don't retrieve biography again, if we still playing 
-             * the same artist.*/
+
             if (artist_changed)
                 retrieve_artist_bio();
         }
     }
-}
+}*/
 
 static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
@@ -353,9 +351,9 @@ infobar_start(void) {
     trace("infobar: starting the plug-in\n");
     infobar_stopped = FALSE;
     
-    ifb_cond = deadbeef->cond_create();
+    /*ifb_cond = deadbeef->cond_create();
     ifb_mutex = deadbeef->mutex_create_nonrecursive();
-    ifb_tid = deadbeef->thread_start(infobar_thread, NULL);
+    ifb_tid = deadbeef->thread_start(infobar_thread, NULL);*/
     
     return 0;
 }
@@ -380,7 +378,7 @@ infobar_stop(void) {
     if (old_title) 
         free(old_title);
 
-    if (ifb_tid) {
+    /*if (ifb_tid) {
         deadbeef->cond_signal(ifb_cond);
         deadbeef->thread_join(ifb_tid);
     }
@@ -391,7 +389,7 @@ infobar_stop(void) {
     }
 
     if (ifb_cond)
-        deadbeef->cond_free(ifb_cond);
+        deadbeef->cond_free(ifb_cond);*/
         
     return 0;
 }
