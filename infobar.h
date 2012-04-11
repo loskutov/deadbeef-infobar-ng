@@ -51,14 +51,6 @@
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
 
-/* Current playing track info. */
-char *artist;
-char *title;
-
-/* Previously playing track info. */
-char *old_artist;
-char *old_title;
-
 DB_functions_t *deadbeef;
 
 #endif

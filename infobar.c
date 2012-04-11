@@ -41,7 +41,6 @@ retrieve_artist_bio(void *ctx) {
     char *txt_cache = NULL;
     if (create_bio_cache(artist, &txt_cache, &img_cache) == -1) {
         free(artist);
-        free(title);
         goto update;
     }
     
@@ -218,7 +217,7 @@ infobar_connect(void) {
     ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
     if (!ui_plugin)
         return -1;
-         
+    
     init_ui_plugin(ui_plugin);
     
     gdk_threads_enter();

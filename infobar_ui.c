@@ -141,17 +141,20 @@ delete_cache_clicked(void) {
     switch(choise) {
     case GTK_RESPONSE_YES:
     {
-        del_lyr_cache(artist, title);
-        del_bio_cache(artist);
-        
-        if (old_artist) {
-            free(old_artist);
-            old_artist = NULL;
+        DB_playItem_t *track = deadbeef->streamer_get_playing_track();
+        if (track) {
+
+            char *artist = NULL, *title = NULL;
+            if (get_track_info(track, &artist, &title, FALSE) == 0) {
+                del_lyr_cache(artist, title);
+                del_bio_cache(artist);
+                
+                free(artist);
+                free(title);
+            }
+            deadbeef->pl_item_unref(track);
         }
-        if (old_title) {
-            free(old_title);
-            old_title = NULL;
-        }
+        break;
     }
         break;
     case GTK_RESPONSE_NO:
