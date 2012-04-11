@@ -405,7 +405,7 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     
     char *artist = NULL, *title = NULL;
     
-    if (lyr_buffer && get_track_info(track, &artist, &title) == 0) {
+    if (lyr_buffer && get_track_info(track, &artist, &title, FALSE) == 0) {
         
         GtkTextIter begin, end;
         
@@ -434,9 +434,7 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
 }
 
 /* Updates "Biography" tab with the new artist's image and biography text. */
-gboolean update_bio_view(gpointer data) {
-    
-    BioViewData *bio_data = (BioViewData*) data;
+void update_bio_view(const char *bio_txt, const char *img_file) {
 
     /* Drawing artist's image. */
     if (bio_image) {
@@ -445,10 +443,12 @@ gboolean update_bio_view(gpointer data) {
         free_bio_pixbuf();
         
         // TODO: Add check if the image file is exists.
-        bio_pixbuf = gdk_pixbuf_new_from_file(bio_data->img, NULL);
+        if (img_file) {
+            bio_pixbuf = gdk_pixbuf_new_from_file(img_file, NULL);
+        }
         gtk_widget_queue_draw(bio_image);
     }
-
+    
     /* Updating biography text. */
     if (bio_buffer) {
         
@@ -458,21 +458,9 @@ gboolean update_bio_view(gpointer data) {
         gtk_text_buffer_get_end_iter (bio_buffer, &end);
         gtk_text_buffer_delete (bio_buffer, &begin, &end);
 
-        if(bio_data->txt && bio_data->len > 0) {
-            
-            gtk_text_buffer_insert(bio_buffer, &begin, 
-                bio_data->txt, bio_data->len);
-        } else {
-            
-            gtk_text_buffer_insert(bio_buffer, &begin,
-                "Biography not found.", -1);
-        }
+        const char *txt = bio_txt ? bio_txt : "Biography not found.";
+        gtk_text_buffer_insert(bio_buffer, &begin, txt, strlen(txt));
     }
-    if (bio_data->txt) free(bio_data->txt);
-    if (bio_data->img) free(bio_data->img);
-    if (bio_data) free(bio_data);
-    
-    return FALSE;
 }
 
 /* This function should be invoked, when some changes to the plug-in's 

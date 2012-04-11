@@ -274,6 +274,33 @@ int create_lyr_cache(const char *artist, const char *title, char **txt_cache) {
     return 0;
 }
 
+int create_bio_cache(const char *artist, char **txt_cache, char **img_cache) {
+    
+    char *cache_path = NULL;
+    if (get_cache_path(&cache_path, BIO) == -1)
+        return -1;
+        
+    if (!is_exists(cache_path)) {
+        if (create_dir(cache_path, 0755) == -1) {
+            free(cache_path);
+            return -1;
+        }
+    }
+    
+    if (asprintf(txt_cache, "%s/%s", cache_path, artist) == -1) {
+        free(cache_path);
+        return -1;
+    }
+    
+    if (asprintf(img_cache, "%s/%s_img", cache_path, artist) == -1) {
+        free(cache_path);
+        free(*txt_cache);
+        return -1;
+    }
+    free(cache_path);
+    return 0;
+}
+
 int get_cache_path(char **path, ContentType type) {
     
     int res = -1;
@@ -461,7 +488,7 @@ int get_redirect_info(const char *str, char **artist, char **title) {
     return 0;
 }
 
-int get_track_info(DB_playItem_t *track, char **artist, char **title) {
+int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean only_artist) {
     
     deadbeef->pl_lock();
 
@@ -480,18 +507,19 @@ int get_track_info(DB_playItem_t *track, char **artist, char **title) {
         deadbeef->pl_unlock();
         return -1;
     } 
-    
-    int tlen = strlen(cur_title);
-    
-    *title = calloc(tlen + 1, sizeof(char));
-    if (!*title) {
-        deadbeef->pl_unlock();
-        free(*artist);
-        return -1;
-    }
     memcpy(*artist, cur_artist, alen + 1);
-    memcpy(*title, cur_title, tlen + 1);
-
+    
+    if (!only_artist) {
+        int tlen = strlen(cur_title);
+    
+        *title = calloc(tlen + 1, sizeof(char));
+        if (!*title) {
+            deadbeef->pl_unlock();
+            free(*artist);
+            return -1;
+        }
+        memcpy(*title, cur_title, tlen + 1);
+    }
     deadbeef->pl_unlock();
     return 0;
 }

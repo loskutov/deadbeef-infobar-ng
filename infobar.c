@@ -29,76 +29,59 @@ static DB_misc_t plugin;
 static gboolean infobar_stopped = TRUE;
 
 static void
-retrieve_artist_bio() {
+retrieve_artist_bio(void *ctx) {
     
     trace("infobar: retrieving artist's biography\n");
-
-    BioViewData *view = calloc(1, sizeof(BioViewData));
-    if (!view)
-        return;
-
-    char *cache_path = NULL;
-    if (get_cache_path(&cache_path, BIO) == -1)
-        goto update;
-        
-    if (!is_exists(cache_path)) {
-        if (create_dir(cache_path, 0755) == -1) {
-            free(cache_path);
-            goto update;
-        }
+    DB_playItem_t *track = (DB_playItem_t*) ctx;
+    
+    char *bio_txt = NULL, *artist = NULL, *img_cache = NULL;
+    
+    if (!is_track_changed(track)) {
+        gdk_threads_enter();
+        update_bio_view("Loading...", NULL);
+        gdk_threads_leave();
     }
+    
+    if (get_track_info(track, &artist, NULL, TRUE) == -1)
+        goto update;
     
     char *txt_cache = NULL;
-    if (asprintf(&txt_cache, "%s/%s", cache_path, artist) == -1) {
-        free(cache_path);
+    if (create_bio_cache(artist, &txt_cache, &img_cache) == -1) {
+        free(artist);
+        free(title);
         goto update;
     }
-    
-    char *url = NULL;
-    if (form_bio_url(artist, &url) == -1) {
-        free(cache_path);
-        free(txt_cache);
-        goto update;
-    }
-    
-    char *bio_txt = NULL;
     
     if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
-        /* There is no cache for artist's biography or it's too old,
-         * retrieving new one. */
-        if (fetch_bio_txt(url, &bio_txt) == 0) {
-            view->txt = bio_txt;
-            view->len = strlen(bio_txt);
+        /* There is no cache for artist's biography or it's 
+         * too old, retrieving new one. */
+        if (fetch_bio_txt(artist, &bio_txt) == 0) {
             /* Saving biography to reuse it later. */
             save_txt_file(txt_cache, bio_txt);
         }
-        
     } else {
         /* We got a cached biography, just loading it. */
-        if (load_txt_file(txt_cache, &bio_txt) == 0) {
-            view->txt = bio_txt;
-            view->len = strlen(bio_txt);
-        }
+        load_txt_file(txt_cache, &bio_txt);
     }
     free(txt_cache);
     
-    char *img_cache = NULL;
-    if (asprintf(&img_cache, "%s/%s_img", cache_path, artist) == -1) {
-        free(cache_path);
-        free(url);
-        goto update;
-    }
-    free(cache_path);
-    
     /* Retrieving artist's image if we don't have a cached one. */
     if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
-        fetch_bio_image(url, img_cache);
-        
-    view->img = img_cache;
-    free(url);
+        fetch_bio_image(artist, img_cache);
+    
+    free(artist);
 
 update:
-    g_idle_add((GSourceFunc) update_bio_view, view);
+    if (!is_track_changed(track)) {
+        gdk_threads_enter();
+        update_bio_view(bio_txt, img_cache);
+        gdk_threads_leave();
+    }
+    if (bio_txt) 
+        free(bio_txt);
+    
+    if (img_cache) 
+        free(img_cache);
 }
 
 static void
@@ -107,16 +90,16 @@ retrieve_track_lyrics(void *ctx) {
     trace("infobar: retrieving track lyrics\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
     
-    char *artist = NULL, *title = NULL;
-    
-    if (get_track_info(track, &artist, &title) == -1)
-        goto update;
+    char *lyr_txt = NULL, *artist = NULL, *title = NULL;
     
     if (!is_track_changed(track)) {
         gdk_threads_enter();
         update_lyrics_view("Loading...", track);
         gdk_threads_leave();
     }
+    
+    if (get_track_info(track, &artist, &title, FALSE) == -1)
+        goto update;
 
     char *txt_cache = NULL;
     if (create_lyr_cache(artist, title, &txt_cache) == -1) {
@@ -124,8 +107,6 @@ retrieve_track_lyrics(void *ctx) {
         free(title);
         goto update;
     }
-    
-    char *lyr_txt = NULL;
     
     if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
         /* There is no cache for the current track or the previous cache 
@@ -143,10 +124,9 @@ retrieve_track_lyrics(void *ctx) {
             fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
     
         if (lyr_txt) {
-            
             char *lyr_wo_nl = NULL;
-            /* Some lyrics contains new line characters at the beginning of the 
-             * file, so we gonna strip them. */
+            /* Some lyrics contains new line characters at the 
+             * beginning of the file, so we gonna strip them. */
             if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
                 free(lyr_txt);
                 lyr_txt = lyr_wo_nl;
@@ -154,7 +134,6 @@ retrieve_track_lyrics(void *ctx) {
             /* Saving lyrics to reuse it later.*/
             save_txt_file(txt_cache, lyr_txt);
         }
-        
     } else {
         /* We got a cache for the current track, so just load it. */
         load_txt_file(txt_cache, &lyr_txt);
@@ -169,7 +148,8 @@ update:
         update_lyrics_view(lyr_txt, track);
         gdk_threads_leave();
     }
-    free(lyr_txt);
+    if (lyr_txt) 
+        free(lyr_txt);
 }
 
 static void
@@ -197,6 +177,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
         return;
     }
     deadbeef->thread_start(retrieve_track_lyrics, ev->track);
+    deadbeef->thread_start(retrieve_artist_bio, ev->track);
     
     /*deadbeef->mutex_lock(ifb_mutex);
     

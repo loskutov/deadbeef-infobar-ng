@@ -19,9 +19,10 @@
 
 #include "infobar_bio.h"
 
-int form_bio_url(const char *artist, char **url) {
+static int 
+form_bio_url(const char *artist, char **url) {
     
-    int alen = strlen(artist) * 3;
+    int alen = strlen(artist) * 4;
     
     char *eartist = calloc(alen + 1, sizeof(char));
     if (!eartist)
@@ -46,11 +47,18 @@ int form_bio_url(const char *artist, char **url) {
     return 0;
 }
 
-int fetch_bio_txt(const char *url, char **txt) {
+int fetch_bio_txt(const char *artist, char **txt) {
+    
+    char *url = NULL;
+    if (form_bio_url(artist, &url) == -1)
+        return -1;
     
     char *raw_page = NULL;
-    if (retrieve_txt_content(url, &raw_page) == -1)
+    if (retrieve_txt_content(url, &raw_page) == -1) {
+        free(url);
         return -1;
+    }
+    free(url);
 
     char *html_txt = NULL;
     if (parse_content(raw_page, "/lfm/artist/bio/content", &html_txt, XML, 0) == -1) {
@@ -67,7 +75,7 @@ int fetch_bio_txt(const char *url, char **txt) {
     *txt = bio_txt;
     
     char *bio_utf8 = NULL;
-    if(deadbeef->junk_detect_charset(bio_txt)) {
+    if (deadbeef->junk_detect_charset(bio_txt)) {
         if (convert_to_utf8(bio_txt, &bio_utf8) == 0) {
             free(bio_txt);
             *txt = bio_utf8;
@@ -76,11 +84,18 @@ int fetch_bio_txt(const char *url, char **txt) {
     return 0;
 }
 
-int fetch_bio_image(const char *url, const char *path) {
+int fetch_bio_image(const char *artist, const char *path) {
+    
+    char *url = NULL;
+    if (form_bio_url(artist, &url) == -1)
+        return -1;
 
     char *raw_page = NULL;
-    if (retrieve_txt_content(url, &raw_page) == -1)
+    if (retrieve_txt_content(url, &raw_page) == -1) {
+        free(url);
         return -1;
+    }
+    free(url);
     
     char *img_url = NULL;
     if (parse_content(raw_page, "//image[@size=\"extralarge\"]", &img_url, XML, 0) == -1) {

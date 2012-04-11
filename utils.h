@@ -64,7 +64,7 @@ int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr);
 
 int get_redirect_info(const char *str, char **artist, char **title);
 
-int get_track_info(DB_playItem_t *track, char **artist, char **title);
+int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean only_artist);
 
 int update_track_info(const char *artist, const char * title, char **old_artist, char **old_title);
 
@@ -73,6 +73,8 @@ int del_bio_cache(const char *artist);
 int del_lyr_cache(const char *artist, const char *title);
 
 int create_lyr_cache(const char *artist, const char *title, char **txt_cache);
+
+int create_bio_cache(const char *artist, char **txt_cache, char **img_cache);
 
 int get_cache_path(char **path, ContentType type);
 
