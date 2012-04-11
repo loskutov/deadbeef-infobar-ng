@@ -21,13 +21,6 @@
 
 static DB_misc_t plugin;
 
-//static uintptr_t ifb_mutex;
-//static uintptr_t ifb_cond;
-//static intptr_t ifb_tid;
-
-//static gboolean artist_changed = TRUE;
-static gboolean infobar_stopped = TRUE;
-
 static void
 retrieve_artist_bio(void *ctx) {
     
@@ -178,83 +171,7 @@ infobar_songstarted(ddb_event_track_t *ev) {
     }
     deadbeef->thread_start(retrieve_track_lyrics, ev->track);
     deadbeef->thread_start(retrieve_artist_bio, ev->track);
-    
-    /*deadbeef->mutex_lock(ifb_mutex);
-    
-    if (artist) {
-        free(artist);
-        artist = NULL;
-    }
-    if (title) {
-        free(title);
-        title = NULL;
-    }
-    if (get_track_info(ev->track, &artist, &title) == -1) {
-        deadbeef->mutex_unlock(ifb_mutex);
-        return;
-    }
-    
-    if (old_artist && old_title) {
-        
-        int acmp = strcmp(old_artist, artist);
-        int tcmp = strcmp(old_title, title);
-        
-        if (acmp == 0 && tcmp == 0) {
-            deadbeef->mutex_unlock(ifb_mutex);
-            return;
-        } 
-        artist_changed = acmp != 0;
-    }
-    
-    if (old_artist) {
-        free(old_artist);
-        old_artist = NULL;
-    }
-    if (old_title) {
-        free(old_title);
-        old_title = NULL;
-    }
-    if (update_track_info(artist, title, &old_artist, &old_title) == -1){
-        deadbeef->mutex_unlock(ifb_mutex);
-        return;
-    }
-    
-    deadbeef->mutex_unlock(ifb_mutex);
-    deadbeef->cond_signal(ifb_cond);*/
 }
-
-/*static void
-infobar_thread(void *ctx) {
-    
-    for (;;) {
-        
-        trace("infobar: infobar thread started\n");
-    
-        if (infobar_stopped) {
-            deadbeef->mutex_unlock(ifb_mutex);
-            return;
-        }
-        
-        deadbeef->cond_wait(ifb_cond, ifb_mutex);
-        if (infobar_stopped) {
-            deadbeef->mutex_unlock(ifb_mutex);
-            return;
-        }
-        deadbeef->mutex_unlock(ifb_mutex);
-        
-        if (deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
-            trace("infobar: retrieving song's lyrics...\n");
-            retrieve_track_lyrics();
-        }
-
-        if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
-            trace("infobar: retrieving artist's biography...\n");
-
-            if (artist_changed)
-                retrieve_artist_bio();
-        }
-    }
-}*/
 
 static int
 infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
@@ -285,22 +202,12 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
     }
         break;
     case DB_EV_CONFIGCHANGED:
-        g_idle_add((GSourceFunc) infobar_config_changed, NULL);
+        gdk_threads_enter();
+        infobar_config_changed();
+        gdk_threads_leave();
         break;
     }
     return 0;
-}
-
-static gboolean
-infobar_init(void) {
-    
-    trace("infobar: initializing plug-in's ui\n");
-
-    create_infobar_interface();
-    attach_infobar_menu_entry();
-    infobar_config_changed();
-    
-    return FALSE;
 }
 
 static int
@@ -308,13 +215,19 @@ infobar_connect(void) {
     
     trace("infobar: connecting the plug-in\n");
 
-    ddb_gtkui_t* gtkui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
-    if (!gtkui_plugin) {
+    ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
+    if (!ui_plugin)
         return -1;
-    }    
-    init_ui_plugin(gtkui_plugin);
-    g_idle_add((GSourceFunc)infobar_init, NULL);
+         
+    init_ui_plugin(ui_plugin);
     
+    gdk_threads_enter();
+    
+    create_infobar_interface();
+    attach_infobar_menu_entry();
+    infobar_config_changed();
+    
+    gdk_threads_leave();
     return 0;
 }
 
@@ -322,56 +235,8 @@ static int
 infobar_disconnect(void) {
     
     trace("infobar: disconnecting the plug-in\n");
-    free_ui_plugin();
-    return 0;
-}
-
-static int
-infobar_start(void) {
-    
-    trace("infobar: starting the plug-in\n");
-    infobar_stopped = FALSE;
-    
-    /*ifb_cond = deadbeef->cond_create();
-    ifb_mutex = deadbeef->mutex_create_nonrecursive();
-    ifb_tid = deadbeef->thread_start(infobar_thread, NULL);*/
-    
-    return 0;
-}
-
-static int
-infobar_stop(void) {
-    
-    trace("infobar: stopping the plug-in\n");
-
-    infobar_stopped = TRUE;
     free_bio_pixbuf();
-    
-    if (artist) 
-        free(artist);
-    
-    if (title) 
-        free(title);
-        
-    if (old_artist) 
-        free(old_artist);
-    
-    if (old_title) 
-        free(old_title);
-
-    /*if (ifb_tid) {
-        deadbeef->cond_signal(ifb_cond);
-        deadbeef->thread_join(ifb_tid);
-    }
-
-    if (ifb_mutex) {
-        deadbeef->mutex_unlock(ifb_mutex);
-        deadbeef->mutex_free(ifb_mutex);
-    }
-
-    if (ifb_cond)
-        deadbeef->cond_free(ifb_cond);*/
-        
+    free_ui_plugin();
     return 0;
 }
 
@@ -421,9 +286,7 @@ static DB_misc_t plugin = {
         "Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.\n"
     ,
     .plugin.website = "https://bitbucket.org/dsimbiriatin/deadbeef-infobar",
-    .plugin.start = infobar_start,
-    .plugin.stop = infobar_stop,
-    .plugin.connect    = infobar_connect,
+    .plugin.connect = infobar_connect,
     .plugin.disconnect = infobar_disconnect,
     .plugin.configdialog = settings_dlg,
     .plugin.message = infobar_message,
