@@ -30,7 +30,7 @@
 #include "types.h"
 #include "utils.h"
 
-void init_ui_plugin(ddb_gtkui_t *ui_plugin);
+int init_ui_plugin(void);
 
 void free_ui_plugin(void);
 

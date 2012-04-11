@@ -19,8 +19,6 @@
 
 #include "infobar.h"
 
-static DB_misc_t plugin;
-
 static void
 retrieve_artist_bio(void *ctx) {
     
@@ -149,16 +147,6 @@ infobar_songstarted(ddb_event_track_t *ev) {
     
     trace("infobar: infobar song started\n");
     
-    DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
-    if (!pl_track)
-        return;
-        
-    if (ev->track != pl_track) {
-        deadbeef->pl_item_unref(pl_track);
-        return;
-    } 
-    deadbeef->pl_item_unref(pl_track);
-        
     /* Don't retrieve anything as infobar is not visible. */
     if (!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
         return;
@@ -213,13 +201,10 @@ static int
 infobar_connect(void) {
     
     trace("infobar: connecting the plug-in\n");
-
-    ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
-    if (!ui_plugin)
+    
+    if (init_ui_plugin() == -1)
         return -1;
-    
-    init_ui_plugin(ui_plugin);
-    
+        
     gdk_threads_enter();
     
     create_infobar_interface();
@@ -227,6 +212,7 @@ infobar_connect(void) {
     infobar_config_changed();
     
     gdk_threads_leave();
+    
     return 0;
 }
 

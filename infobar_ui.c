@@ -323,8 +323,14 @@ create_infobar(void) {
 
 /* Initializes reference to gtkui plug-in. Should be called on
  * plug-in startup. */
-void init_ui_plugin(ddb_gtkui_t *ui_plugin) {
+int init_ui_plugin(void) {
+    
+    ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
+    if (!ui_plugin)
+        return -1;
+        
     gtkui_plugin = ui_plugin;
+    return 0;
 }
 
 /* Disposes reference to gtkui plug-in. Should be called on 
