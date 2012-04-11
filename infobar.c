@@ -171,7 +171,7 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
         
         if (!event->track) 
             return 0;
-            
+        
         if (!is_stream(event->track))
             infobar_songstarted(event);
     }
@@ -245,9 +245,9 @@ static DB_misc_t plugin = {
     .plugin.api_vmajor = 1,
     .plugin.api_vminor = 0,
     .plugin.version_major = 1,
-    .plugin.version_minor = 0,
+    .plugin.version_minor = 1,
     .plugin.type = DB_PLUGIN_MISC,
-    .plugin.name = "Infobar plugin",
+    .plugin.name = "Infobar",
     .plugin.descr = "Fetches and shows song's lyrics and artist's biography.\n\n"
                     "To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
                     "See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"

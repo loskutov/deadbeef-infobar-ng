@@ -25,13 +25,11 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <deadbeef/deadbeef.h>
-#include <deadbeef/gtkui_api.h>
 
 #include "infobar_lyr.h"
 #include "infobar_bio.h"
 #include "infobar_ui.h"
 #include "utils.h"
-#include "types.h"
 
 //#define trace(...) { fprintf(stderr, __VA_ARGS__); }
 #define trace(fmt, ...)
@@ -51,6 +49,7 @@
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
 
+/* deadbeef API. */
 DB_functions_t *deadbeef;
 
 #endif
