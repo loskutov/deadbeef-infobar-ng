@@ -30,15 +30,11 @@
 #include "types.h"
 #include "utils.h"
 
+gboolean infobar_config_changed(void);
+
 int init_ui_plugin(void);
 
 void free_ui_plugin(void);
-
-void create_infobar_interface(void);
-
-void attach_infobar_menu_entry(void);
-
-gboolean infobar_config_changed(void);
 
 void update_bio_view(const char *bio_txt, const char *img_file);
 

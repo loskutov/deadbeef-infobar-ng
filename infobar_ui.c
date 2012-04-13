@@ -323,46 +323,11 @@ create_infobar(void) {
     gtk_widget_show_all(infobar);
 }
 
-/* Disposes pixbuf allocated for biography image. */
-static void 
-free_bio_pixbuf(void) {
-    
-    if (bio_pixbuf) {
-        g_object_unref(bio_pixbuf);
-        bio_pixbuf = NULL; 
-    }
-}
-
-/* Initializes reference to gtkui plug-in. Should be called on
- * plug-in startup. */
-int init_ui_plugin(void) {
-    
-    ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
-    if (!ui_plugin)
-        return -1;
-        
-    gtkui_plugin = ui_plugin;
-    return 0;
-}
-
-/* Disposes reference to gtkui plug-in and saves ui settings. 
- * Should be called on plug-in shutdown. */
-void free_ui_plugin(void) {
-    
-    free_bio_pixbuf();
-    gtkui_plugin = NULL;
-    
-    int aw = infobar->allocation.width;
-    deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
-    
-    int ah = img_frame->allocation.height;
-    deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
-}
-
 /* Creates infobar and embeds it into deadbeef's interface (at that moment 
  * deadbeef doesn't have an api, which we can use to easily attach infobar, 
  * so we have to manually rearrange its interface). */
-void create_infobar_interface(void) {
+static void 
+create_infobar_interface(void) {
 
     create_infobar();
 
@@ -406,7 +371,8 @@ void create_infobar_interface(void) {
 }
 
 /* Inserts "Infobar" check box inside "View" menu. */
-void attach_infobar_menu_entry(void) {
+static void 
+attach_infobar_menu_entry(void) {
     
     GtkWidget *menu_item = gtk_check_menu_item_new_with_mnemonic ("_Infobar");
     GtkWidget *view_menu = lookup_widget(gtkui_plugin->get_mainwin(), "View_menu");
@@ -418,6 +384,47 @@ void attach_infobar_menu_entry(void) {
 
     g_signal_connect(menu_item, "activate", G_CALLBACK(infobar_menu_toggle), NULL);
     gtk_widget_show(menu_item);
+}
+
+/* Disposes pixbuf allocated for biography image. */
+static void 
+free_bio_pixbuf(void) {
+    
+    if (bio_pixbuf) {
+        g_object_unref(bio_pixbuf);
+        bio_pixbuf = NULL; 
+    }
+}
+
+/* Initializes reference to gtkui plug-in. Should be called on
+ * plug-in startup. */
+int init_ui_plugin(void) {
+    
+    ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
+    if (!ui_plugin)
+        return -1;
+    
+    gtkui_plugin = ui_plugin;
+        
+    create_infobar_interface();
+    attach_infobar_menu_entry();
+    infobar_config_changed();
+        
+    return 0;
+}
+
+/* Disposes reference to gtkui plug-in and saves ui settings. 
+ * Should be called on plug-in shutdown. */
+void free_ui_plugin(void) {
+    
+    free_bio_pixbuf();
+    gtkui_plugin = NULL;
+    
+    int aw = infobar->allocation.width;
+    deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
+    
+    int ah = img_frame->allocation.height;
+    deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */

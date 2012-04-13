@@ -206,18 +206,11 @@ infobar_connect(void) {
     
     trace("infobar: connecting the plug-in\n");
     
-    if (init_ui_plugin() == -1)
-        return -1;
-        
     gdk_threads_enter();
-    
-    create_infobar_interface();
-    attach_infobar_menu_entry();
-    infobar_config_changed();
-    
+    int res = init_ui_plugin();
     gdk_threads_leave();
     
-    return 0;
+    return res;
 }
 
 static int
