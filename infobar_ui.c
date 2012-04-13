@@ -30,6 +30,7 @@ static GtkWidget *dlt_toggle;
 static GtkWidget *lyr_tab;
 static GtkWidget *bio_tab;
 
+static GtkWidget *img_frame;
 static GtkWidget *bio_image;
 static GdkPixbuf *bio_pixbuf;
 
@@ -145,6 +146,7 @@ delete_cache_clicked(void) {
         if (track) {
 
             char *artist = NULL, *title = NULL;
+            
             if (get_track_info(track, &artist, &title, FALSE) == 0) {
                 del_lyr_cache(artist, title);
                 del_bio_cache(artist);
@@ -167,7 +169,7 @@ delete_cache_clicked(void) {
 static void
 set_tab_visible(GtkWidget *toggle, GtkWidget *item, gboolean visible) {
     
-    if(visible) {
+    if (visible) {
         gtk_widget_show(toggle);
         gtk_widget_show(item);
     } else {
@@ -235,7 +237,7 @@ create_bio_tab(void) {
     bio_tab = gtk_vpaned_new();
     bio_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
     
-    GtkWidget *img_frame = gtk_frame_new(NULL);
+    img_frame = gtk_frame_new(NULL);
     gtk_frame_set_shadow_type(GTK_FRAME(img_frame), GTK_SHADOW_IN);
     
     bio_image = gtk_drawing_area_new();
@@ -321,6 +323,16 @@ create_infobar(void) {
     gtk_widget_show_all(infobar);
 }
 
+/* Disposes pixbuf allocated for biography image. */
+static void 
+free_bio_pixbuf(void) {
+    
+    if (bio_pixbuf) {
+        g_object_unref(bio_pixbuf);
+        bio_pixbuf = NULL; 
+    }
+}
+
 /* Initializes reference to gtkui plug-in. Should be called on
  * plug-in startup. */
 int init_ui_plugin(void) {
@@ -333,19 +345,18 @@ int init_ui_plugin(void) {
     return 0;
 }
 
-/* Disposes reference to gtkui plug-in. Should be called on 
- * plug-in shutdown. */
+/* Disposes reference to gtkui plug-in and saves ui settings. 
+ * Should be called on plug-in shutdown. */
 void free_ui_plugin(void) {
-    gtkui_plugin = NULL;
-}
-
-/* Disposes pixbuf allocated for biography image. */
-void free_bio_pixbuf(void) {
     
-    if (bio_pixbuf) {
-        g_object_unref(bio_pixbuf);
-        bio_pixbuf = NULL; 
-    }
+    free_bio_pixbuf();
+    gtkui_plugin = NULL;
+    
+    int aw = infobar->allocation.width;
+    deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
+    
+    int ah = img_frame->allocation.height;
+    deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
 }
 
 /* Creates infobar and embeds it into deadbeef's interface (at that moment 

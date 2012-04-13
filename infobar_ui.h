@@ -34,8 +34,6 @@ int init_ui_plugin(void);
 
 void free_ui_plugin(void);
 
-void free_bio_pixbuf(void);
-
 void create_infobar_interface(void);
 
 void attach_infobar_menu_entry(void);
