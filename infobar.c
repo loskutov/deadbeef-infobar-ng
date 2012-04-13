@@ -156,8 +156,12 @@ infobar_songstarted(ddb_event_track_t *ev) {
         !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
         return;
     }
-    deadbeef->thread_start(retrieve_track_lyrics, ev->track);
-    deadbeef->thread_start(retrieve_artist_bio, ev->track);
+    if (deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
+        deadbeef->thread_start(retrieve_track_lyrics, ev->track);
+    }
+    if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
+        deadbeef->thread_start(retrieve_artist_bio, ev->track);
+    }
 }
 
 static int
