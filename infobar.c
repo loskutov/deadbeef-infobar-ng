@@ -28,39 +28,40 @@ retrieve_artist_bio(void *ctx) {
     char *bio_txt = NULL, *artist = NULL, *img_cache = NULL;
     
     if (!is_track_changed(track)) {
+        
         gdk_threads_enter();
         update_bio_view("Loading...", NULL);
         gdk_threads_leave();
-    }
     
-    if (get_track_info(track, &artist, NULL, TRUE) == -1)
-        goto update;
+        if (get_track_info(track, &artist, NULL, TRUE) == -1)
+            goto update;
     
-    char *txt_cache = NULL;
-    if (create_bio_cache(artist, &txt_cache, &img_cache) == -1) {
-        free(artist);
-        goto update;
-    }
-    
-    if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
-        /* There is no cache for artist's biography or it's 
-         * too old, retrieving new one. */
-        if (fetch_bio_txt(artist, &bio_txt) == 0) {
-            /* Saving biography to reuse it later. */
-            save_txt_file(txt_cache, bio_txt);
+        char *txt_cache = NULL;
+        if (create_bio_cache(artist, &txt_cache, &img_cache) == -1) {
+            free(artist);
+            goto update;
         }
-    } else {
-        /* We got a cached biography, just loading it. */
-        load_txt_file(txt_cache, &bio_txt);
+    
+        if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
+            /* There is no cache for artist's biography or it's 
+            * too old, retrieving new one. */
+            if (fetch_bio_txt(artist, &bio_txt) == 0) {
+                /* Saving biography to reuse it later. */
+                save_txt_file(txt_cache, bio_txt);
+            }
+        } else {
+            /* We got a cached biography, just loading it. */
+            load_txt_file(txt_cache, &bio_txt);
+        }
+        free(txt_cache);
+    
+        /* Retrieving artist's image if we don't have a cached one. */
+        if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
+            fetch_bio_image(artist, img_cache);
+        
+        free(artist);
     }
-    free(txt_cache);
     
-    /* Retrieving artist's image if we don't have a cached one. */
-    if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
-        fetch_bio_image(artist, img_cache);
-    
-    free(artist);
-
 update:
     if (!is_track_changed(track)) {
         gdk_threads_enter();
@@ -83,54 +84,56 @@ retrieve_track_lyrics(void *ctx) {
     char *lyr_txt = NULL, *artist = NULL, *title = NULL;
     
     if (!is_track_changed(track)) {
+        
         gdk_threads_enter();
         update_lyrics_view("Loading...", track);
         gdk_threads_leave();
-    }
-    
-    if (get_track_info(track, &artist, &title, FALSE) == -1)
-        goto update;
 
-    char *txt_cache = NULL;
-    if (create_lyr_cache(artist, title, &txt_cache) == -1) {
+    
+        if (get_track_info(track, &artist, &title, FALSE) == -1)
+            goto update;
+
+        char *txt_cache = NULL;
+        if (create_lyr_cache(artist, title, &txt_cache) == -1) {
+            free(artist);
+            free(title);
+            goto update;
+        }
+    
+        if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
+            /* There is no cache for the current track or the previous cache 
+            * is too old, so start retrieving new one. */
+            if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
+                fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
+
+            if (deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1) && !lyr_txt)
+                fetch_lyrics_from_lyricsmania(artist, title, &lyr_txt);
+    
+            if (deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1) && !lyr_txt)
+                fetch_lyrics_from_lyricstime(artist, title, &lyr_txt);
+    
+            if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
+                fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
+    
+            if (lyr_txt) {
+                char *lyr_wo_nl = NULL;
+                /* Some lyrics contains new line characters at the 
+                * beginning of the file, so we gonna strip them. */
+                if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
+                    free(lyr_txt);
+                    lyr_txt = lyr_wo_nl;
+                }
+                /* Saving lyrics to reuse it later.*/
+                save_txt_file(txt_cache, lyr_txt);
+            }
+        } else {
+            /* We got a cache for the current track, so just load it. */
+            load_txt_file(txt_cache, &lyr_txt);
+        }
+        free(txt_cache);
         free(artist);
         free(title);
-        goto update;
     }
-    
-    if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
-        /* There is no cache for the current track or the previous cache 
-         * is too old, so start retrieving new one. */
-        if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
-            fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
-
-        if (deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1) && !lyr_txt)
-            fetch_lyrics_from_lyricsmania(artist, title, &lyr_txt);
-    
-        if (deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1) && !lyr_txt)
-            fetch_lyrics_from_lyricstime(artist, title, &lyr_txt);
-    
-        if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
-            fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
-    
-        if (lyr_txt) {
-            char *lyr_wo_nl = NULL;
-            /* Some lyrics contains new line characters at the 
-             * beginning of the file, so we gonna strip them. */
-            if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
-                free(lyr_txt);
-                lyr_txt = lyr_wo_nl;
-            }
-            /* Saving lyrics to reuse it later.*/
-            save_txt_file(txt_cache, lyr_txt);
-        }
-    } else {
-        /* We got a cache for the current track, so just load it. */
-        load_txt_file(txt_cache, &lyr_txt);
-    }
-    free(txt_cache);
-    free(artist);
-    free(title);
     
 update:
     if (!is_track_changed(track)) {
