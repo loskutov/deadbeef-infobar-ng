@@ -19,6 +19,55 @@
 
 #include "utils.h"
 
+/* Retrieves a path to the lyrics or biography cache directory. */
+static int 
+get_cache_path(char **path, ContentType type) {
+    
+    int res = -1;
+    
+    const char *home_cache = getenv("XDG_CACHE_HOME");
+
+    switch(type) {
+    case LYRICS:
+        res = asprintf(path, home_cache ? "%s/deadbeef/lyrics" : "%s/.cache/deadbeef/lyrics",
+                home_cache ? home_cache : getenv("HOME"));
+        break;
+    case BIO:
+        res = asprintf(path, home_cache ? "%s/deadbeef/bio" : "%s/.cache/deadbeef/bio",
+                home_cache ? home_cache : getenv("HOME"));
+        break;
+    }
+    return res;
+}
+
+/* Recursively creates directory for cache files. */
+static int 
+create_dir(const char *dir, mode_t mode) {
+    
+    struct stat st;
+    
+    char *tmp = strdup(dir);
+    char *slash = tmp;
+    
+    do {
+        slash = strstr(slash + 1, "/");
+        if (slash) *slash = 0;
+            
+        if (stat(tmp, &st) == -1) {
+            if (mkdir(tmp, mode) != 0) {
+                free(tmp);
+                return -1;
+            }
+        }
+        if (slash) *slash = '/';
+        
+    } while(slash);
+
+    free(tmp);
+    return 0;
+}
+
+/* Checks if the specified text contains redirect information. */
 gboolean is_redirect(const char *str) {
     
     if (!str) return FALSE;
@@ -27,16 +76,19 @@ gboolean is_redirect(const char *str) {
            strstr(str, "#redirect");
 }
 
+/* Checks if specified file or directory is exists. */
 gboolean is_exists(const char *obj) {
     
     struct stat st = {0};
     return stat(obj, &st) == 0;
 }
 
+/* Checks if the specified track item is a local track or a stream. */
 gboolean is_stream(DB_playItem_t *track) {
     return deadbeef->pl_get_item_duration(track) <= 0.000000;
 }
 
+/* Checks if the current track item is differs from specified one. */
 gboolean is_track_changed(DB_playItem_t *track) {
     
     DB_playItem_t *pl_track = deadbeef->streamer_get_playing_track();
@@ -54,6 +106,7 @@ gboolean is_track_changed(DB_playItem_t *track) {
 static void
 parser_errors_handler(void *ctx, const char *msg, ...) {}
 
+/* Parses content in HTML or XML format using XPath expression. */
 int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num) {
     
     xmlDocPtr doc = NULL;
@@ -104,6 +157,7 @@ cleanup:
     return res;
 }
 
+/* Retrieves text data from the specified URL.*/
 int retrieve_txt_content(const char *url, char **content) {
     
     DB_FILE *stream = deadbeef->fopen(url);
@@ -126,6 +180,7 @@ int retrieve_txt_content(const char *url, char **content) {
     return 0;
 }
 
+/* Retrieves image file from the specified URL and saves it locally. */
 int retrieve_img_content(const char *url, const char *img) {
     
     DB_FILE *stream = deadbeef->fopen(url);
@@ -153,6 +208,7 @@ int retrieve_img_content(const char *url, const char *img) {
     return 0;
 }
 
+/* Loads content of the specified text file. */
 int load_txt_file(const char *file, char **content) {
     
     FILE *in_file = fopen(file, "r");
@@ -183,6 +239,7 @@ int load_txt_file(const char *file, char **content) {
     return 0;
 }
 
+/* Saves specified content to the text file. */
 int save_txt_file(const char *file, const char *content) {
     
     FILE *out_file = fopen(file, "w+");
@@ -199,6 +256,7 @@ int save_txt_file(const char *file, const char *content) {
     return 0;
 }
 
+/* Executes external script and reads its output. */
 int execute_script(const char *cmd, char **out) {
     
     FILE *script = popen(cmd, "r");
@@ -221,6 +279,7 @@ int execute_script(const char *cmd, char **out) {
     return 0;
 }
 
+/* Deletes lyrics cache for specified track. */
 int del_lyr_cache(const char *artist, const char *title) {
     
     char *cache_path = NULL;
@@ -242,6 +301,7 @@ int del_lyr_cache(const char *artist, const char *title) {
     return 0;
 }
 
+/* Deletes biography cache for specified artist. */
 int del_bio_cache(const char *artist) {
     
     char *cache_path = NULL;
@@ -277,6 +337,7 @@ int del_bio_cache(const char *artist) {
     return 0;
 }
 
+/* Creates lyrics cache file for the specified track. */
 int create_lyr_cache(const char *artist, const char *title, char **txt_cache) {
     
     char *cache_path = NULL;
@@ -298,6 +359,7 @@ int create_lyr_cache(const char *artist, const char *title, char **txt_cache) {
     return 0;
 }
 
+/* Creates biography cache file for the specified artist. */
 int create_bio_cache(const char *artist, char **txt_cache, char **img_cache) {
     
     char *cache_path = NULL;
@@ -325,25 +387,7 @@ int create_bio_cache(const char *artist, char **txt_cache, char **img_cache) {
     return 0;
 }
 
-int get_cache_path(char **path, ContentType type) {
-    
-    int res = -1;
-    
-    const char *home_cache = getenv("XDG_CACHE_HOME");
-
-    switch(type) {
-    case LYRICS:
-        res = asprintf(path, home_cache ? "%s/deadbeef/lyrics" : "%s/.cache/deadbeef/lyrics",
-                home_cache ? home_cache : getenv("HOME"));
-        break;
-    case BIO:
-        res = asprintf(path, home_cache ? "%s/deadbeef/bio" : "%s/.cache/deadbeef/bio",
-                home_cache ? home_cache : getenv("HOME"));
-        break;
-    }
-    return res;
-}
-
+/* Checks if the specified cache file is old. */
 gboolean is_old_cache(const char *cache_file, CacheType type) {
     
     int uperiod = 0;
@@ -368,31 +412,7 @@ gboolean is_old_cache(const char *cache_file, CacheType type) {
     return TRUE;
 }
 
-int create_dir(const char *dir, mode_t mode) {
-    
-    struct stat st;
-    
-    char *tmp = strdup(dir);
-    char *slash = tmp;
-    
-    do {
-        slash = strstr(slash + 1, "/");
-        if (slash) *slash = 0;
-            
-        if (stat(tmp, &st) == -1 ) {
-            if (mkdir(tmp, mode) != 0) {
-                free(tmp);
-                return -1;
-            }
-        }
-        if (slash) *slash = '/';
-        
-    } while(slash);
-
-    free(tmp);
-    return 0;
-}
-
+/* Encodes specified string. */
 int uri_encode(char *out, int outl, const char *str, char space) {
     
     int l = outl;
@@ -426,6 +446,7 @@ int uri_encode(char *out, int outl, const char *str, char space) {
     return l - outl;
 }
 
+/* Encodes artist name and song title. */
 int lyr_uri_encode(const char *artist, const char *title, char **eartist, char **etitle) {
     
     int alen = strlen(artist) * 4;
@@ -451,6 +472,7 @@ int lyr_uri_encode(const char *artist, const char *title, char **eartist, char *
     return 0;
 }
 
+/* Converts specified string encoding to UTF-8. */
 int convert_to_utf8(const char *str, char **str_utf8) {
     
     int len = strlen(str);
@@ -470,6 +492,7 @@ int convert_to_utf8(const char *str, char **str_utf8) {
     return 0;
 }
 
+/* Deletes new lines at the beginning of specified text data. */
 int del_nl(const char *txt, char **txt_wo_nl) {
     
     int num = 0;
@@ -492,6 +515,7 @@ int del_nl(const char *txt, char **txt_wo_nl) {
     return 0;
 }
 
+/* Concatenates two lyrics texts into one, using simple separator to visually divide them. */
 int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
     
     const char *sep = "\n**************\n";
@@ -511,6 +535,7 @@ int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
     return 0;
 }
 
+/* Parses redirect information and retrieves correct artist name and song title. */
 int get_redirect_info(const char *str, char **artist, char **title) {
     
     char *bp = strchr(str, '[');
@@ -537,6 +562,7 @@ int get_redirect_info(const char *str, char **artist, char **title) {
     return 0;
 }
 
+/* Retrieves information about current artist and song title. */
 int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean only_artist) {
     
     deadbeef->pl_lock();
@@ -573,27 +599,7 @@ int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean o
     return 0;
 }
 
-int update_track_info(const char *artist, const char * title, char **old_artist, char **old_title) {
-    
-    int alen = strlen(artist);
-    int tlen = strlen(title);
-    
-    *old_artist = calloc(alen + 1, sizeof(char));
-    if (!*old_artist) 
-        return -1;
-        
-    *old_title = calloc(tlen + 1, sizeof(char));
-    if (!*old_title) {
-        free(*old_artist);
-        return -1;
-    }
-    
-    memcpy(*old_artist, artist, alen + 1);
-    memcpy(*old_title, title, tlen + 1);
-    
-    return 0;
-}
-
+/* Calculates new resolution to respectively resize image. */
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     
     float w = 0, h = 0;
@@ -615,7 +621,6 @@ void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
         h = ah;
         w = h / ratio;
     }
-    
     res->width = w;
     res->height = h;
 }

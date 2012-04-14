@@ -60,8 +60,6 @@ gboolean is_track_changed(DB_playItem_t *track);
 
 gboolean is_old_cache(const char *cache_file, CacheType type);
 
-int create_dir(const char *dir, mode_t mode);
-
 int retrieve_txt_content(const char *url, char **content);
 
 int retrieve_img_content(const char *url, const char *img);
@@ -82,8 +80,6 @@ int get_redirect_info(const char *str, char **artist, char **title);
 
 int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean only_artist);
 
-int update_track_info(const char *artist, const char * title, char **old_artist, char **old_title);
-
 int del_bio_cache(const char *artist);
 
 int del_lyr_cache(const char *artist, const char *title);
@@ -91,8 +87,6 @@ int del_lyr_cache(const char *artist, const char *title);
 int create_lyr_cache(const char *artist, const char *title, char **txt_cache);
 
 int create_bio_cache(const char *artist, char **txt_cache, char **img_cache);
-
-int get_cache_path(char **path, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);
 
