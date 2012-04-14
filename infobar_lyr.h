@@ -28,7 +28,6 @@
 
 #include "infobar.h"
 #include "utils.h"
-#include "types.h"
 
 #define LYRICSWIKIA_URL_TEMPLATE "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s"
 #define LYRICSMANIA_URL_TEMPLATE "http://www.lyricsmania.com/%s_lyrics_%s.html"

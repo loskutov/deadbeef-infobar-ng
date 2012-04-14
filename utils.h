@@ -32,9 +32,23 @@
 #include <deadbeef/deadbeef.h>
 
 #include "infobar.h"
-#include "types.h"
 
 #define MAX_TXT_SIZE 100000
+
+typedef enum {
+    HTML = 1,
+    XML = 2,
+} ContentType;
+
+typedef enum {
+    LYRICS = 1,
+    BIO = 2,
+} CacheType;
+
+typedef struct {
+    float width;
+    float height;
+} Res;
 
 gboolean is_exists(const char *obj);
 

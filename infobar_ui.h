@@ -27,7 +27,6 @@
 #include <deadbeef/gtkui_api.h>
 
 #include "infobar.h"
-#include "types.h"
 #include "utils.h"
 
 gboolean infobar_config_changed(void);
