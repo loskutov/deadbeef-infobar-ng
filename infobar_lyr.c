@@ -19,6 +19,7 @@
 
 #include "infobar_lyr.h"
 
+/* Forms URL, which is used to retrieve lyrics for specified track. */
 static int
 form_lyr_url(const char *artist, const char* title, const char* template, char **url) {
     
@@ -37,6 +38,7 @@ form_lyr_url(const char *artist, const char* title, const char* template, char *
     return 0;
 }
 
+/* Forms command string, which is used to execute external lyrics fetch script. */
 static int
 form_script_cmd(const char *artist, const char* title, const char *script, const char* template, char **cmd) {
     
@@ -55,6 +57,7 @@ form_script_cmd(const char *artist, const char* title, const char *script, const
     return 0;
 }
 
+/* Fetches lyrics from specified URL and parses it. */
 static int
 fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt) {
     
@@ -70,6 +73,8 @@ fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt)
     free(raw_page);
     *txt = lyr_txt;
     
+    /* Making sure, that retrieved text has UTF-8 encoding,
+     * otherwise converting it. */
     char *lyr_utf8 = NULL;
     if (deadbeef->junk_detect_charset(lyr_txt)) {
         if (convert_to_utf8(lyr_txt, &lyr_utf8) == 0) {
@@ -80,6 +85,7 @@ fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt)
     return 0;
 }
 
+/* Fetches lyrics from "http://lyricsmania.com". */
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
@@ -96,6 +102,7 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
     return 0;
 }
 
+/* Fetches lyrics from "http://lyricstime.com". */
 int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
@@ -112,6 +119,7 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
     return 0;
 }
 
+/* Fetches lyrics from "http://megalyrics.ru". */
 int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
@@ -128,6 +136,7 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
     return 0;
 }
 
+/* Fetches lyrics from "http://lyrics.wikia.com". */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
@@ -140,7 +149,9 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
         return -1;
     }
     free(url);
-
+    
+    /* Checking if we got a redirect. Read more about redirects 
+     * here: "http://lyrics.wikia.com/Help:Redirect". */
     if (is_redirect(raw_page)) {
         
         char *rartist = NULL;
@@ -150,6 +161,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
             
             free(raw_page);
             
+            /* Retrieving lyrics again, using correct artist name and title. */
             url = NULL;
             if (form_lyr_url(rartist, rtitle, LYRICSWIKIA_URL_TEMPLATE, &url) == -1) {
                 free(rartist);
@@ -175,10 +187,13 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
         return -1;
     }
     *txt = fst_lyr_txt;
-
+    
+    /* Some tracks on lyrics wikia have multiply lyrics, so we gonna
+     * check this. */
     char *multi_lyr = NULL;
     if (parse_content(raw_page, LYRICSWIKIA_HTML_PATTERN, &snd_lyr_txt, HTML, 1) == 0) {
         
+        /* We got multiply lyrics, concatenating them into one. */
         if (concat_lyrics(fst_lyr_txt, snd_lyr_txt, &multi_lyr) == 0) {
             free(fst_lyr_txt);
             *txt = multi_lyr;
@@ -189,6 +204,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
     return 0;
 }
 
+/* Fetches lyrics, using external bash script. */
 int fetch_lyrics_from_script(const char *artist, const char *title, char **txt) {
 
     deadbeef->conf_lock();
@@ -208,6 +224,8 @@ int fetch_lyrics_from_script(const char *artist, const char *title, char **txt) 
     }
     free(cmd);
     
+    /* Making sure, that retrieved text has UTF-8 encoding,
+     * otherwise converting it. */
     char *txt_utf8 = NULL;
     if (deadbeef->junk_detect_charset(*txt)) {
         if (convert_to_utf8(*txt, &txt_utf8) == 0) {

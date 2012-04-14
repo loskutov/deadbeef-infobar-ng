@@ -19,7 +19,7 @@
 
 #include "infobar_bio.h"
 
-/* Forms URL, which will be used to retrieve artists's biography and image. */
+/* Forms URL, which is used to retrieve artists's biography and image. */
 static int 
 form_bio_url(const char *artist, char **url) {
     

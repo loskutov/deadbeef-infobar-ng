@@ -29,26 +29,38 @@
 #include "infobar.h"
 #include "utils.h"
 
+/* URL templates to retrieve lyrics from different sources. */
 #define LYRICSWIKIA_URL_TEMPLATE "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s"
 #define LYRICSMANIA_URL_TEMPLATE "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LYRICSTIME_URL_TEMPLATE "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define MEGALYRICS_URL_TEMPLATE "http://megalyrics.ru/lyric/%s/%s.htm"
 #define SCRIPT_CMD_TEMPLATE "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
 
-#define LYRICSWIKIA_HTML_PATTERN "//lyrics"
-#define LYRICSWIKIA_XML_PATTERN "//rev"
+/* XPath patterns to parse lyrics from different sources. */
 #define LYRICSMANIA_PATTERN "//*[@id=\"songlyrics_h\"]"
 #define LYRICSTIME_PATTERN "//*[@id=\"songlyrics\"]"
 #define MEGALYRICS_PATTERN "//pre[@class=\"lyric\"]"
+#define LYRICSWIKIA_HTML_PATTERN "//lyrics"
+#define LYRICSWIKIA_XML_PATTERN "//rev"
 
+/* Fetches lyrics from "http://lyrics.wikia.com". 
+ * Returns 0 on success and -1 if failed. */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
 
+/* Fetches lyrics from "http://megalyrics.ru". 
+ * Returns 0 on success and -1 if failed. */
 int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt);
 
+/* Fetches lyrics from "http://lyricstime.com". 
+ * Returns 0 on success and -1 if failed. */
 int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt);
 
+/* Fetches lyrics from "http://lyricsmania.com". 
+ * Returns 0 on success and -1 if failed. */
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt);
 
+/* Fetches lyrics, using external bash script. 
+ * Returns 0 on success and -1 if failed. */
 int fetch_lyrics_from_script(const char *artist, const char *title, char **txt);
 
 #endif
