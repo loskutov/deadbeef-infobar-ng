@@ -93,7 +93,7 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
         return -1;
     
     char *lyr_txt = NULL;
-    if (fetch_lyrics(url, LYRICSMANIA_PATTERN, HTML, &lyr_txt) == -1) {
+    if (fetch_lyrics(url, LYRICSMANIA_EXP, HTML, &lyr_txt) == -1) {
         free(url);
         return -1;
     }
@@ -110,7 +110,7 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
         return -1;
     
     char *lyr_txt = NULL;
-    if (fetch_lyrics(url, LYRICSTIME_PATTERN, HTML, &lyr_txt) == -1) {
+    if (fetch_lyrics(url, LYRICSTIME_EXP, HTML, &lyr_txt) == -1) {
         free(url);
         return -1;
     }
@@ -127,7 +127,7 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
         return -1;
     
     char *lyr_txt = NULL;
-    if (fetch_lyrics(url, MEGALYRICS_PATTERN, HTML, &lyr_txt) == -1) {
+    if (fetch_lyrics(url, MEGALYRICS_EXP, HTML, &lyr_txt) == -1) {
         free(url);
         return -1;
     }
@@ -144,7 +144,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
         return -1;
 
     char *raw_page = NULL;
-    if (fetch_lyrics(url, LYRICSWIKIA_XML_PATTERN, XML, &raw_page) == -1) {
+    if (fetch_lyrics(url, LYRICSWIKIA_XML_EXP, XML, &raw_page) == -1) {
         free(url);
         return -1;
     }
@@ -172,7 +172,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
             free(rtitle);
             
             raw_page = NULL;
-            if (fetch_lyrics(url, LYRICSWIKIA_XML_PATTERN, XML, &raw_page) == -1) {
+            if (fetch_lyrics(url, LYRICSWIKIA_XML_EXP, XML, &raw_page) == -1) {
                 free(url);
                 return -1;
             }
@@ -182,7 +182,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
     char *fst_lyr_txt = NULL;
     char *snd_lyr_txt = NULL;
 
-    if (parse_content(raw_page, LYRICSWIKIA_HTML_PATTERN, &fst_lyr_txt, HTML, 0) == -1) {
+    if (parse_content(raw_page, LYRICSWIKIA_HTML_EXP, &fst_lyr_txt, HTML, 0) == -1) {
         free(raw_page);
         return -1;
     }
@@ -191,7 +191,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
     /* Some tracks on lyrics wikia have multiply lyrics, so we gonna
      * check this. */
     char *multi_lyr = NULL;
-    if (parse_content(raw_page, LYRICSWIKIA_HTML_PATTERN, &snd_lyr_txt, HTML, 1) == 0) {
+    if (parse_content(raw_page, LYRICSWIKIA_HTML_EXP, &snd_lyr_txt, HTML, 1) == 0) {
         
         /* We got multiply lyrics, concatenating them into one. */
         if (concat_lyrics(fst_lyr_txt, snd_lyr_txt, &multi_lyr) == 0) {

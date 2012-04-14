@@ -36,12 +36,12 @@
 #define MEGALYRICS_URL_TEMPLATE "http://megalyrics.ru/lyric/%s/%s.htm"
 #define SCRIPT_CMD_TEMPLATE "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
 
-/* XPath patterns to parse lyrics from different sources. */
-#define LYRICSMANIA_PATTERN "//*[@id=\"songlyrics_h\"]"
-#define LYRICSTIME_PATTERN "//*[@id=\"songlyrics\"]"
-#define MEGALYRICS_PATTERN "//pre[@class=\"lyric\"]"
-#define LYRICSWIKIA_HTML_PATTERN "//lyrics"
-#define LYRICSWIKIA_XML_PATTERN "//rev"
+/* XPath expressions to parse lyrics from different sources. */
+#define LYRICSMANIA_EXP "//*[@id=\"songlyrics_h\"]"
+#define LYRICSTIME_EXP "//*[@id=\"songlyrics\"]"
+#define MEGALYRICS_EXP "//pre[@class=\"lyric\"]"
+#define LYRICSWIKIA_HTML_EXP "//lyrics"
+#define LYRICSWIKIA_XML_EXP "//rev"
 
 /* Fetches lyrics from "http://lyrics.wikia.com". */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
