@@ -119,6 +119,7 @@ int retrieve_txt_content(const char *url, char **content) {
     if (deadbeef->fread(*content, 1, MAX_TXT_SIZE, stream) <= 0) {
         deadbeef->fclose(stream);
         free(*content);
+        *content = NULL;
         return -1;
     }
     deadbeef->fclose(stream);
@@ -175,6 +176,7 @@ int load_txt_file(const char *file, char **content) {
     if (fread(*content, 1, size, in_file) != size) {
         fclose(in_file);
         free(*content);
+        *content = NULL;
         return -1;
     }
     fclose(in_file);
