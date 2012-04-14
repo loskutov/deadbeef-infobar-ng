@@ -396,8 +396,8 @@ free_bio_pixbuf(void) {
     }
 }
 
-/* Initializes reference to gtkui plug-in. Should be called on
- * plug-in startup. */
+/* Initializes reference to gtkui plug-in and creates infobar interface. 
+ * Should be called on plug-in startup. */
 int init_ui_plugin(void) {
     
     ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
@@ -469,7 +469,6 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
         /* Previous image has to be disposed (if exists). */
         free_bio_pixbuf();
         
-        // TODO: Add check if the image file is exists.
         if (img_file) {
             bio_pixbuf = gdk_pixbuf_new_from_file(img_file, NULL);
         }
@@ -484,7 +483,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
         gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
         gtk_text_buffer_get_end_iter (bio_buffer, &end);
         gtk_text_buffer_delete (bio_buffer, &begin, &end);
-
+        
         const char *txt = bio_txt ? bio_txt : "Biography not found.";
         gtk_text_buffer_insert(bio_buffer, &begin, txt, strlen(txt));
     }
@@ -493,7 +492,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
 /* This function should be invoked, when some changes to the plug-in's 
  * configuration were made. It updates infobar view according to the 
  * new changes. */
-gboolean infobar_config_changed(void) {
+void infobar_config_changed(void) {
 
     gboolean state = FALSE;
     
@@ -508,5 +507,4 @@ gboolean infobar_config_changed(void) {
     if (bio_toggle && bio_tab) {
         set_tab_visible(bio_toggle, bio_tab, state);
     }
-    return FALSE;
 }

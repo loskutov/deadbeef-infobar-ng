@@ -29,14 +29,24 @@
 #include "infobar.h"
 #include "utils.h"
 
-gboolean infobar_config_changed(void);
-
+/* Initializes reference to gtkui plug-in and creates infobar interface. 
+ * Should be called on plug-in startup. 
+ * Returns 0 on success and -1 if failed. */
 int init_ui_plugin(void);
 
+/* Disposes reference to gtkui plug-in and saves ui settings. 
+ * Should be called on plug-in shutdown. */
 void free_ui_plugin(void);
 
+/* Updates "Biography" tab with the new artist's image and biography text. */
 void update_bio_view(const char *bio_txt, const char *img_file);
 
+/* Updates "Lyrics" tab with the new lyrics. */
 void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track);
+
+/* This function should be invoked, when some changes to the plug-in's 
+ * configuration were made. It updates infobar view according to the 
+ * new changes. */
+void infobar_config_changed(void);
 
 #endif
