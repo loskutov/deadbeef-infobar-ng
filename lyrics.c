@@ -17,7 +17,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "infobar_lyr.h"
+#include "lyrics.h"
 
 /* Forms URL, which is used to retrieve lyrics for specified track. */
 static int

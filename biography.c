@@ -17,7 +17,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "infobar_bio.h"
+#include "biography.h"
 
 /* Forms URL, which is used to retrieve artists's biography and image. */
 static int 

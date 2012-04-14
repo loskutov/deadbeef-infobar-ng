@@ -17,7 +17,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "infobar_ui.h"
+#include "ui.h"
 
 static GtkWidget *infobar;
 static GtkWidget *infobar_tabs;

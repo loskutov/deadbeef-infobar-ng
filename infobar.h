@@ -26,10 +26,10 @@
 #include <gtk/gtk.h>
 #include <deadbeef/deadbeef.h>
 
-#include "infobar_lyr.h"
-#include "infobar_bio.h"
-#include "infobar_ui.h"
+#include "ui.h"
 #include "utils.h"
+#include "lyrics.h"
+#include "biography.h"
 
 //#define trace(...) { fprintf(stderr, __VA_ARGS__); }
 #define trace(fmt, ...)
