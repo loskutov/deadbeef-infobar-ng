@@ -43,24 +43,19 @@
 #define LYRICSWIKIA_HTML_PATTERN "//lyrics"
 #define LYRICSWIKIA_XML_PATTERN "//rev"
 
-/* Fetches lyrics from "http://lyrics.wikia.com". 
- * Returns 0 on success and -1 if failed. */
+/* Fetches lyrics from "http://lyrics.wikia.com". */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
 
-/* Fetches lyrics from "http://megalyrics.ru". 
- * Returns 0 on success and -1 if failed. */
+/* Fetches lyrics from "http://megalyrics.ru".  */
 int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt);
 
-/* Fetches lyrics from "http://lyricstime.com". 
- * Returns 0 on success and -1 if failed. */
+/* Fetches lyrics from "http://lyricstime.com". */
 int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt);
 
-/* Fetches lyrics from "http://lyricsmania.com". 
- * Returns 0 on success and -1 if failed. */
+/* Fetches lyrics from "http://lyricsmania.com". */
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt);
 
-/* Fetches lyrics, using external bash script. 
- * Returns 0 on success and -1 if failed. */
+/* Fetches lyrics, using external bash script. */
 int fetch_lyrics_from_script(const char *artist, const char *title, char **txt);
 
 #endif

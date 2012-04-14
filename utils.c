@@ -359,7 +359,7 @@ int create_lyr_cache(const char *artist, const char *title, char **txt_cache) {
     return 0;
 }
 
-/* Creates biography cache file for the specified artist. */
+/* Creates biography cache files for the specified artist. */
 int create_bio_cache(const char *artist, char **txt_cache, char **img_cache) {
     
     char *cache_path = NULL;

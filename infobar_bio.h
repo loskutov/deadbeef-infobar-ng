@@ -36,13 +36,11 @@
 #define BIO_TXT_XML_PATTERN "/lfm/artist/bio/content"
 #define BIO_IMG_PATTERN "//image[@size=\"extralarge\"]"
 
-/* Fetches artist's biography from lastfm. 
- * Returns 0 on success and -1 if failed. */
+/* Fetches artist's biography from lastfm. */
 int fetch_bio_txt(const char *artist, char **txt);
 
 /* Fetches artist's image from lastfm. Retrieved image will
- * be saved to the specified path. 
- * Returns 0 on success and -1 if failed. */
+ * be saved to the specified path. */
 int fetch_bio_image(const char *artist, const char *path);
 
 #endif

@@ -30,8 +30,7 @@
 #include "utils.h"
 
 /* Initializes reference to gtkui plug-in and creates infobar interface. 
- * Should be called on plug-in startup. 
- * Returns 0 on success and -1 if failed. */
+ * Should be called on plug-in startup. */
 int init_ui_plugin(void);
 
 /* Disposes reference to gtkui plug-in and saves ui settings. 
