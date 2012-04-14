@@ -34,6 +34,7 @@
 #define LYRICSMANIA_URL_TEMPLATE "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LYRICSTIME_URL_TEMPLATE "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define MEGALYRICS_URL_TEMPLATE "http://megalyrics.ru/lyric/%s/%s.htm"
+#define SCRIPT_CMD_TEMPLATE "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
 
 #define LYRICSWIKIA_HTML_PATTERN "//lyrics"
 #define LYRICSWIKIA_XML_PATTERN "//rev"
@@ -48,5 +49,7 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
 int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt);
 
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt);
+
+int fetch_lyrics_from_script(const char *artist, const char *title, char **txt);
 
 #endif

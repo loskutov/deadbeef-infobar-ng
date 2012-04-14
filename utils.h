@@ -56,6 +56,8 @@ int load_txt_file(const char *file, char **content);
 
 int save_txt_file(const char *file, const char *content);
 
+int execute_script(const char *cmd, char **out);
+
 int convert_to_utf8(const char *str, char **str_utf8);
 
 int del_nl(const char *txt, char **txt_wo_nl);

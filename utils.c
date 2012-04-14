@@ -197,6 +197,28 @@ int save_txt_file(const char *file, const char *content) {
     return 0;
 }
 
+int execute_script(const char *cmd, char **out) {
+    
+    FILE *script = popen(cmd, "r");
+    if (!script)
+        return -1;
+    
+    *out = calloc(MAX_TXT_SIZE + 1, sizeof(char));
+    if (!*out) {
+        pclose(script);
+        return -1;
+    }
+    
+    if (fread(*out, 1, MAX_TXT_SIZE, script) <= 0) {
+        pclose(script);
+        free(*out);
+        *out = NULL;
+        return -1;
+    }
+    pclose(script);
+    return 0;
+}
+
 int del_lyr_cache(const char *artist, const char *title) {
     
     char *cache_path = NULL;

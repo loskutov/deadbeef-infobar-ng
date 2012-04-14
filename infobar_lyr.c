@@ -54,6 +54,40 @@ form_lyr_url(const char *artist, const char* title, const char* template, char *
 }
 
 static int
+form_script_cmd(const char *artist, const char* title, const char *script, const char* template, char **cmd) {
+    
+    int alen = strlen(artist) * 4;
+    int tlen = strlen(title) * 4;
+    
+    char *eartist = calloc(alen + 1, sizeof(char));
+    if (!eartist)
+        return -1;
+    
+    char *etitle = calloc(tlen + 1, sizeof(char));
+    if (!etitle) {
+        free(eartist);
+        return -1;
+    }
+    
+    if (uri_encode(eartist, alen, artist, '_') == -1 ||
+        uri_encode(etitle, tlen, title, '_') == -1) 
+    {
+        free(eartist);
+        free(etitle);
+        return -1;
+    }
+    
+    if (asprintf(cmd, template, script, eartist, etitle) == -1) {
+        free(eartist);
+        free(etitle);
+        return -1;
+    }
+    free(eartist);
+    free(etitle);
+    return 0;
+}
+
+static int
 fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt) {
     
     char *raw_page = NULL;
@@ -69,7 +103,7 @@ fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt)
     *txt = lyr_txt;
     
     char *lyr_utf8 = NULL;
-    if(deadbeef->junk_detect_charset(lyr_txt)) {
+    if (deadbeef->junk_detect_charset(lyr_txt)) {
         if (convert_to_utf8(lyr_txt, &lyr_utf8) == 0) {
             free(lyr_txt);
             *txt = lyr_utf8;
@@ -184,5 +218,34 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
         free(snd_lyr_txt);
     }
     free(raw_page);
+    return 0;
+}
+
+int fetch_lyrics_from_script(const char *artist, const char *title, char **txt) {
+
+    deadbeef->conf_lock();
+    
+    const char *path = deadbeef->conf_get_str_fast(CONF_LYRICS_SCRIPT_PATH, "");
+    
+    char *cmd = NULL;
+    if (form_script_cmd(artist, title, path, SCRIPT_CMD_TEMPLATE, &cmd) == -1) {
+        deadbeef->conf_unlock();
+        return -1;
+    }
+    deadbeef->conf_unlock();
+    
+    if (execute_script(cmd, txt) == -1) {
+        free(cmd);
+        return -1;
+    }
+    free(cmd);
+    
+    char *txt_utf8 = NULL;
+    if (deadbeef->junk_detect_charset(*txt)) {
+        if (convert_to_utf8(*txt, &txt_utf8) == 0) {
+            free(*txt);
+            *txt = txt_utf8;
+        }
+    }
     return 0;
 }

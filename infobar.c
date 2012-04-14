@@ -114,6 +114,9 @@ retrieve_track_lyrics(void *ctx) {
     
             if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
+            
+            if (deadbeef->conf_get_int(CONF_LYRICS_SCRIPT_ENABLED, 0) && !lyr_txt)
+                fetch_lyrics_from_script(artist, title, &lyr_txt);
     
             if (lyr_txt) {
                 char *lyr_wo_nl = NULL;
@@ -230,8 +233,10 @@ static const char settings_dlg[] =
     "property \"Fetch from Lyricsmania\" checkbox infobar.lyrics.lyricsmania 1;"
     "property \"Fetch from Lyricstime\" checkbox infobar.lyrics.lyricstime 1;"
     "property \"Fetch from Megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
+    "property \"Fetch from script\" checkbox infobar.lyrics.script 0;"
     "property \"Enable biography\" checkbox infobar.bio.enabled 1;"
     "property \"Biography locale\" entry infobar.bio.locale \"en\";"
+    "property \"Lyrics script path\" entry infobar.lyrics.script.path \"\";"
     "property \"Lyrics alignment type\" entry infobar.lyrics.alignment 1;"
     "property \"Lyrics cache update period (hr)\" entry infobar.lyrics.cache.period 0;"
     "property \"Biography cache update period (hr)\" entry infobar.bio.cache.period 24;"
