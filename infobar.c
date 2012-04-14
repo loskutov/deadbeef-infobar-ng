@@ -88,8 +88,7 @@ retrieve_track_lyrics(void *ctx) {
         gdk_threads_enter();
         update_lyrics_view("Loading...", track);
         gdk_threads_leave();
-
-    
+        
         if (get_track_info(track, &artist, &title, FALSE) == -1)
             goto update;
 

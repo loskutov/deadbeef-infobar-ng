@@ -204,9 +204,9 @@ static void
 create_dlt_btn(void) {
     
     dlt_toggle = gtk_button_new();
-    gtk_widget_set_tooltip_text(dlt_toggle, "Remove current cache files");
+    gtk_widget_set_tooltip_text(dlt_toggle, "Remove current track cache");
     
-    GtkWidget *dlt_img = gtk_image_new_from_stock(GTK_STOCK_REFRESH, GTK_ICON_SIZE_SMALL_TOOLBAR); 
+    GtkWidget *dlt_img = gtk_image_new_from_stock(GTK_STOCK_CLEAR, GTK_ICON_SIZE_SMALL_TOOLBAR); 
     gtk_button_set_image(GTK_BUTTON(dlt_toggle), dlt_img);
     
     g_signal_connect(dlt_toggle, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
@@ -261,7 +261,7 @@ create_bio_tab(void) {
 
 /* Creates "Lyrics" tab. Should be created before the "Biography" tab. */
 static void
-create_lyrics_tab(void) {
+create_lyr_tab(void) {
     
     lyr_toggle = gtk_radio_button_new_with_label(NULL, "Lyrics");
     gtk_toggle_button_set_mode(GTK_TOGGLE_BUTTON(lyr_toggle), FALSE);
@@ -306,7 +306,7 @@ create_infobar(void) {
     
     gtk_notebook_set_show_tabs(GTK_NOTEBOOK(infobar_tabs), FALSE);
 
-    create_lyrics_tab();
+    create_lyr_tab();
     create_bio_tab();
     create_dlt_btn();
 
