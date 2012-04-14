@@ -22,26 +22,10 @@
 static int
 form_lyr_url(const char *artist, const char* title, const char* template, char **url) {
     
-    int alen = strlen(artist) * 4;
-    int tlen = strlen(title) * 4;
+    char *eartist = NULL, *etitle = NULL;
     
-    char *eartist = calloc(alen + 1, sizeof(char));
-    if (!eartist)
+    if (lyr_uri_encode(artist, title, &eartist, &etitle) == -1)
         return -1;
-    
-    char *etitle = calloc(tlen + 1, sizeof(char));
-    if (!etitle) {
-        free(eartist);
-        return -1;
-    }
-    
-    if (uri_encode(eartist, alen, artist, '_') == -1 ||
-        uri_encode(etitle, tlen, title, '_') == -1) 
-    {
-        free(eartist);
-        free(etitle);
-        return -1;
-    }
 
     if (asprintf(url, template, eartist, etitle) == -1) {
         free(eartist);
@@ -56,26 +40,10 @@ form_lyr_url(const char *artist, const char* title, const char* template, char *
 static int
 form_script_cmd(const char *artist, const char* title, const char *script, const char* template, char **cmd) {
     
-    int alen = strlen(artist) * 4;
-    int tlen = strlen(title) * 4;
+    char *eartist = NULL, *etitle = NULL;
     
-    char *eartist = calloc(alen + 1, sizeof(char));
-    if (!eartist)
+    if (lyr_uri_encode(artist, title, &eartist, &etitle) == -1)
         return -1;
-    
-    char *etitle = calloc(tlen + 1, sizeof(char));
-    if (!etitle) {
-        free(eartist);
-        return -1;
-    }
-    
-    if (uri_encode(eartist, alen, artist, '_') == -1 ||
-        uri_encode(etitle, tlen, title, '_') == -1) 
-    {
-        free(eartist);
-        free(etitle);
-        return -1;
-    }
     
     if (asprintf(cmd, template, script, eartist, etitle) == -1) {
         free(eartist);

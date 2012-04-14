@@ -96,6 +96,8 @@ int get_cache_path(char **path, ContentType type);
 
 int uri_encode(char *out, int outl, const char *str, char space);
 
+int lyr_uri_encode(const char *artist, const char *title, char **eartist, char **etitle);
+
 int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num);
 
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res);

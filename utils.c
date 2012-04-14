@@ -426,6 +426,31 @@ int uri_encode(char *out, int outl, const char *str, char space) {
     return l - outl;
 }
 
+int lyr_uri_encode(const char *artist, const char *title, char **eartist, char **etitle) {
+    
+    int alen = strlen(artist) * 4;
+    int tlen = strlen(title) * 4;
+    
+    *eartist = calloc(alen + 1, sizeof(char));
+    if (!*eartist)
+        return -1;
+    
+    *etitle = calloc(tlen + 1, sizeof(char));
+    if (!*etitle) {
+        free(*eartist);
+        return -1;
+    }
+    
+    if (uri_encode(*eartist, alen, artist, '_') == -1 ||
+        uri_encode(*etitle, tlen, title, '_') == -1) 
+    {
+        free(*eartist);
+        free(*etitle);
+        return -1;
+    }
+    return 0;
+}
+
 int convert_to_utf8(const char *str, char **str_utf8) {
     
     int len = strlen(str);
