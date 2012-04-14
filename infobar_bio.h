@@ -28,10 +28,21 @@
 #include "infobar.h"
 #include "utils.h"
 
+/* URL template to access artist's info on lastfm. */
 #define BIO_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
 
+/* XPath patterns. */
+#define BIO_TXT_HTML_PATTERN "/html/body"
+#define BIO_TXT_XML_PATTERN "/lfm/artist/bio/content"
+#define BIO_IMG_PATTERN "//image[@size=\"extralarge\"]"
+
+/* Fetches artist's biography from lastfm. 
+ * Returns 0 on success and -1 if failed. */
 int fetch_bio_txt(const char *artist, char **txt);
 
+/* Fetches artist's image from lastfm. Retrieved image will
+ * be saved to the specified path. 
+ * Returns 0 on success and -1 if failed. */
 int fetch_bio_image(const char *artist, const char *path);
 
 #endif

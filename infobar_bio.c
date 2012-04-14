@@ -19,6 +19,7 @@
 
 #include "infobar_bio.h"
 
+/* Forms URL, which will be used to retrieve artists's biography and image. */
 static int 
 form_bio_url(const char *artist, char **url) {
     
@@ -43,10 +44,10 @@ form_bio_url(const char *artist, char **url) {
     }
     deadbeef->conf_unlock();
     free(eartist);
-    
     return 0;
 }
 
+/* Fetches artist's biography from lastfm. */
 int fetch_bio_txt(const char *artist, char **txt) {
     
     char *url = NULL;
@@ -61,19 +62,21 @@ int fetch_bio_txt(const char *artist, char **txt) {
     free(url);
 
     char *html_txt = NULL;
-    if (parse_content(raw_page, "/lfm/artist/bio/content", &html_txt, XML, 0) == -1) {
+    if (parse_content(raw_page, BIO_TXT_XML_PATTERN, &html_txt, XML, 0) == -1) {
         free(raw_page);
         return -1;
     }
     free(raw_page);
     
     char *bio_txt = NULL;
-    if (parse_content(html_txt, "/html/body", &bio_txt, HTML, 0) == -1) {
+    if (parse_content(html_txt, BIO_TXT_HTML_PATTERN, &bio_txt, HTML, 0) == -1) {
         free(html_txt);
         return -1;
     }
     *txt = bio_txt;
     
+    /* Making sure, that retrieved text has UTF-8 encoding,
+     * otherwise converting it. */
     char *bio_utf8 = NULL;
     if (deadbeef->junk_detect_charset(bio_txt)) {
         if (convert_to_utf8(bio_txt, &bio_utf8) == 0) {
@@ -84,6 +87,8 @@ int fetch_bio_txt(const char *artist, char **txt) {
     return 0;
 }
 
+/* Fetches artist's image from lastfm. Retrieved image will
+ * be saved to the specified path. */
 int fetch_bio_image(const char *artist, const char *path) {
     
     char *url = NULL;
@@ -98,7 +103,7 @@ int fetch_bio_image(const char *artist, const char *path) {
     free(url);
     
     char *img_url = NULL;
-    if (parse_content(raw_page, "//image[@size=\"extralarge\"]", &img_url, XML, 0) == -1) {
+    if (parse_content(raw_page, BIO_IMG_PATTERN, &img_url, XML, 0) == -1) {
         free(raw_page);
         return -1;
     }
