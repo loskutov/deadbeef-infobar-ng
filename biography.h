@@ -29,7 +29,7 @@
 #include "utils.h"
 
 /* URL template to access artist's info on lastfm. */
-#define BIO_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
+#define BIO_URL_TEMP "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
 
 /* XPath expressions. */
 #define BIO_TXT_HTML_EXP "/html/body"

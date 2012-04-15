@@ -37,7 +37,7 @@ form_bio_url(const char *artist, char **url) {
     
     const char *locale = deadbeef->conf_get_str_fast(CONF_BIO_LOCALE, "en");
     
-    if (asprintf(url, BIO_URL_TEMPLATE, eartist, locale) == -1) {
+    if (asprintf(url, BIO_URL_TEMP, eartist, locale) == -1) {
         deadbeef->conf_unlock();
         free(eartist);
         return -1;
