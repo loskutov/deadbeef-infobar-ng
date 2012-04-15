@@ -129,7 +129,7 @@ retrieve_track_lyrics(void *ctx) {
                 save_txt_file(txt_cache, lyr_txt);
             }
         } else {
-            /* We got a cache for the current track, so just load it. */
+            /* We got a cache for the current track, so just loading it. */
             load_txt_file(txt_cache, &lyr_txt);
         }
         free(txt_cache);
@@ -253,7 +253,9 @@ static DB_misc_t plugin = {
                     "To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
                     "See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"
                     "Lyrics alignment types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)\n\n"
-                    "You can set cache update period to 0 if you don't want to update the cache at all.",
+                    "You can set cache update period to 0 if you don't want to update the cache at all.\n\n"
+                    "To use the custom lyrics script, enable \"Fetch from script\" option and specify full\n"
+                    "path to the script in \"Lyrics script path\" field.",
     .plugin.copyright =
         "Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>\n"
         "\n"

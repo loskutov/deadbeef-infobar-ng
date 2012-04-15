@@ -61,14 +61,14 @@ form_script_cmd(const char *artist, const char* title, const char *script, const
 
 /* Fetches lyrics from specified URL and parses it. */
 static int
-fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt) {
+fetch_lyrics(const char *url, const char *exp, ContentType type, char **txt) {
     
     char *raw_page = NULL;
     if (retrieve_txt_content(url, &raw_page) == -1)
         return -1;
     
     char *lyr_txt = NULL;
-    if (parse_content(raw_page, pattern, &lyr_txt, type, 0) == -1) {
+    if (parse_content(raw_page, exp, &lyr_txt, type, 0) == -1) {
         free(raw_page);
         return -1;
     }
@@ -160,7 +160,6 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
         char *rtitle = NULL;
         
         if (get_redirect_info(raw_page, &rartist, &rtitle) == 0) {
-            
             free(raw_page);
             
             /* Retrieving lyrics again, using correct artist name and title. */
@@ -194,7 +193,6 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
      * check this. */
     char *multi_lyr = NULL;
     if (parse_content(raw_page, LW_HTML_EXP, &snd_lyr_txt, HTML, 1) == 0) {
-        
         /* We got multiply lyrics, concatenating them into one. */
         if (concat_lyrics(fst_lyr_txt, snd_lyr_txt, &multi_lyr) == 0) {
             free(fst_lyr_txt);
@@ -210,7 +208,6 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
 int fetch_lyrics_from_script(const char *artist, const char *title, char **txt) {
 
     deadbeef->conf_lock();
-    
     const char *path = deadbeef->conf_get_str_fast(CONF_LYRICS_SCRIPT_PATH, "");
     
     char *cmd = NULL;

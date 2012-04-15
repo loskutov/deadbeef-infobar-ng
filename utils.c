@@ -24,7 +24,6 @@ static int
 get_cache_path(char **path, ContentType type) {
     
     int res = -1;
-    
     const char *home_cache = getenv("XDG_CACHE_HOME");
 
     switch(type) {
@@ -44,34 +43,31 @@ get_cache_path(char **path, ContentType type) {
 static int 
 create_dir(const char *dir, mode_t mode) {
     
-    struct stat st;
-    
     char *tmp = strdup(dir);
     char *slash = tmp;
     
     do {
         slash = strstr(slash + 1, "/");
-        if (slash) *slash = 0;
-            
-        if (stat(tmp, &st) == -1) {
+        if (slash) 
+            *slash = 0;
+        
+        if (!is_exists(tmp)) {
             if (mkdir(tmp, mode) != 0) {
                 free(tmp);
                 return -1;
             }
         }
-        if (slash) *slash = '/';
+        if (slash) 
+            *slash = '/';
         
     } while(slash);
-
+    
     free(tmp);
     return 0;
 }
 
 /* Checks if the specified text contains redirect information. */
 gboolean is_redirect(const char *str) {
-    
-    if (!str) return FALSE;
-        
     return strstr(str, "#REDIRECT") || 
            strstr(str, "#redirect");
 }
@@ -119,10 +115,9 @@ int parse_content(const char *content, const char *pattern, char **parsed, Conte
                 XML_PARSE_NONET | HTML_PARSE_NOWARNING | HTML_PARSE_NOERROR));
         break;
     }
-        
     if (!doc) 
         return -1;
-        
+    
     int res = 0;
     
     xmlXPathContextPtr ctx = xmlXPathNewContext(doc);
@@ -493,7 +488,8 @@ int del_nl(const char *txt, char **txt_wo_nl) {
     int len = strlen(txt);
     
     for (int i = 0; i < len; ++i) {
-        if (txt[i] == '\n')
+        if (txt[i] == '\n' ||
+            txt[i] == '\r')
             ++num;
         else
             break;
@@ -525,7 +521,6 @@ int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
     memcpy(*lyr, fst_lyr, fst_len + 1);
     memcpy(*lyr + fst_len, sep, sep_len + 1);
     memcpy(*lyr + fst_len + sep_len, snd_lyr, snd_len + 1);
-
     return 0;
 }
 
@@ -552,7 +547,6 @@ int get_redirect_info(const char *str, char **artist, char **title) {
         
     memcpy(*artist, str + bi, (mi - bi) - 1);
     memcpy(*title, str + mi, (ei - mi) - 1);
-    
     return 0;
 }
 
@@ -568,7 +562,6 @@ int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean o
         deadbeef->pl_unlock();
         return -1;
     }
-    
     int alen = strlen(cur_artist);
     
     *artist = calloc(alen + 1, sizeof(char));

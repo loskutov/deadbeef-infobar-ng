@@ -409,7 +409,6 @@ int init_ui_plugin(void) {
     create_infobar_interface();
     attach_infobar_menu_entry();
     infobar_config_changed();
-        
     return 0;
 }
 
@@ -465,7 +464,6 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
 
     /* Drawing artist's image. */
     if (bio_image) {
-        
         /* Previous image has to be disposed (if exists). */
         free_bio_pixbuf();
         
