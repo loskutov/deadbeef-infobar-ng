@@ -91,11 +91,11 @@ fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt)
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, LYRICSMANIA_URL_TEMPLATE, TRUE, &url) == -1)
+    if (form_lyr_url(artist, title, LM_URL_TEMP, TRUE, &url) == -1)
         return -1;
     
     char *lyr_txt = NULL;
-    if (fetch_lyrics(url, LYRICSMANIA_EXP, HTML, &lyr_txt) == -1) {
+    if (fetch_lyrics(url, LM_EXP, HTML, &lyr_txt) == -1) {
         free(url);
         return -1;
     }
@@ -108,11 +108,11 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
 int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, LYRICSTIME_URL_TEMPLATE, FALSE, &url) == -1)
+    if (form_lyr_url(artist, title, LT_URL_TEMP, FALSE, &url) == -1)
         return -1;
     
     char *lyr_txt = NULL;
-    if (fetch_lyrics(url, LYRICSTIME_EXP, HTML, &lyr_txt) == -1) {
+    if (fetch_lyrics(url, LT_EXP, HTML, &lyr_txt) == -1) {
         free(url);
         return -1;
     }
@@ -125,11 +125,11 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
 int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, MEGALYRICS_URL_TEMPLATE, FALSE, &url) == -1)
+    if (form_lyr_url(artist, title, ML_URL_TEMP, FALSE, &url) == -1)
         return -1;
     
     char *lyr_txt = NULL;
-    if (fetch_lyrics(url, MEGALYRICS_EXP, HTML, &lyr_txt) == -1) {
+    if (fetch_lyrics(url, ML_EXP, HTML, &lyr_txt) == -1) {
         free(url);
         return -1;
     }
@@ -142,11 +142,11 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, LYRICSWIKIA_URL_TEMPLATE, FALSE, &url) == -1)
+    if (form_lyr_url(artist, title, LW_URL_TEMP, FALSE, &url) == -1)
         return -1;
 
     char *raw_page = NULL;
-    if (fetch_lyrics(url, LYRICSWIKIA_XML_EXP, XML, &raw_page) == -1) {
+    if (fetch_lyrics(url, LW_XML_EXP, XML, &raw_page) == -1) {
         free(url);
         return -1;
     }
@@ -165,7 +165,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
             
             /* Retrieving lyrics again, using correct artist name and title. */
             url = NULL;
-            if (form_lyr_url(rartist, rtitle, LYRICSWIKIA_URL_TEMPLATE, FALSE, &url) == -1) {
+            if (form_lyr_url(rartist, rtitle, LW_URL_TEMP, FALSE, &url) == -1) {
                 free(rartist);
                 free(rtitle);
                 return -1;
@@ -174,7 +174,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
             free(rtitle);
             
             raw_page = NULL;
-            if (fetch_lyrics(url, LYRICSWIKIA_XML_EXP, XML, &raw_page) == -1) {
+            if (fetch_lyrics(url, LW_XML_EXP, XML, &raw_page) == -1) {
                 free(url);
                 return -1;
             }
@@ -184,7 +184,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
     char *fst_lyr_txt = NULL;
     char *snd_lyr_txt = NULL;
 
-    if (parse_content(raw_page, LYRICSWIKIA_HTML_EXP, &fst_lyr_txt, HTML, 0) == -1) {
+    if (parse_content(raw_page, LW_HTML_EXP, &fst_lyr_txt, HTML, 0) == -1) {
         free(raw_page);
         return -1;
     }
@@ -193,7 +193,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
     /* Some tracks on lyrics wikia have multiply lyrics, so we gonna
      * check this. */
     char *multi_lyr = NULL;
-    if (parse_content(raw_page, LYRICSWIKIA_HTML_EXP, &snd_lyr_txt, HTML, 1) == 0) {
+    if (parse_content(raw_page, LW_HTML_EXP, &snd_lyr_txt, HTML, 1) == 0) {
         
         /* We got multiply lyrics, concatenating them into one. */
         if (concat_lyrics(fst_lyr_txt, snd_lyr_txt, &multi_lyr) == 0) {
@@ -214,7 +214,7 @@ int fetch_lyrics_from_script(const char *artist, const char *title, char **txt) 
     const char *path = deadbeef->conf_get_str_fast(CONF_LYRICS_SCRIPT_PATH, "");
     
     char *cmd = NULL;
-    if (form_script_cmd(artist, title, path, SCRIPT_CMD_TEMPLATE, &cmd) == -1) {
+    if (form_script_cmd(artist, title, path, SR_CMD_TEMP, &cmd) == -1) {
         deadbeef->conf_unlock();
         return -1;
     }

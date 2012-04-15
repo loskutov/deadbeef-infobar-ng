@@ -30,18 +30,18 @@
 #include "utils.h"
 
 /* URL templates to retrieve lyrics from different sources. */
-#define LYRICSWIKIA_URL_TEMPLATE "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s"
-#define LYRICSMANIA_URL_TEMPLATE "http://www.lyricsmania.com/%s_lyrics_%s.html"
-#define LYRICSTIME_URL_TEMPLATE "http://www.lyricstime.com/%s-%s-lyrics.html"
-#define MEGALYRICS_URL_TEMPLATE "http://megalyrics.ru/lyric/%s/%s.htm"
-#define SCRIPT_CMD_TEMPLATE "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
+#define LW_URL_TEMP "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s"
+#define LM_URL_TEMP "http://www.lyricsmania.com/%s_lyrics_%s.html"
+#define LT_URL_TEMP "http://www.lyricstime.com/%s-%s-lyrics.html"
+#define ML_URL_TEMP "http://megalyrics.ru/lyric/%s/%s.htm"
+#define SR_CMD_TEMP "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
 
 /* XPath expressions to parse lyrics from different sources. */
-#define LYRICSMANIA_EXP "//*[@id=\"songlyrics_h\"]"
-#define LYRICSTIME_EXP "//*[@id=\"songlyrics\"]"
-#define MEGALYRICS_EXP "//pre[@class=\"lyric\"]"
-#define LYRICSWIKIA_HTML_EXP "//lyrics"
-#define LYRICSWIKIA_XML_EXP "//rev"
+#define LM_EXP "//*[@id=\"songlyrics_h\"]"
+#define LT_EXP "//*[@id=\"songlyrics\"]"
+#define ML_EXP "//pre[@class=\"lyric\"]"
+#define LW_HTML_EXP "//lyrics"
+#define LW_XML_EXP "//rev"
 
 /* Fetches lyrics from "http://lyrics.wikia.com". */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
