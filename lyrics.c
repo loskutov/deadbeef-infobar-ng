@@ -21,14 +21,16 @@
 
 /* Forms URL, which is used to retrieve lyrics for specified track. */
 static int
-form_lyr_url(const char *artist, const char* title, const char* template, char **url) {
+form_lyr_url(const char *artist, const char* title, const char* template, gboolean rev, char **url) {
     
     char *eartist = NULL, *etitle = NULL;
     
     if (lyr_uri_encode(artist, title, &eartist, &etitle) == -1)
         return -1;
-
-    if (asprintf(url, template, eartist, etitle) == -1) {
+    
+    if (asprintf(url, template, rev ? etitle : eartist, 
+                                rev ? eartist : etitle) == -1) 
+    {
         free(eartist);
         free(etitle);
         return -1;
@@ -89,7 +91,7 @@ fetch_lyrics(const char *url, const char *pattern, ContentType type, char **txt)
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, LYRICSMANIA_URL_TEMPLATE, &url) == -1)
+    if (form_lyr_url(artist, title, LYRICSMANIA_URL_TEMPLATE, TRUE, &url) == -1)
         return -1;
     
     char *lyr_txt = NULL;
@@ -106,7 +108,7 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
 int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, LYRICSTIME_URL_TEMPLATE, &url) == -1)
+    if (form_lyr_url(artist, title, LYRICSTIME_URL_TEMPLATE, FALSE, &url) == -1)
         return -1;
     
     char *lyr_txt = NULL;
@@ -123,7 +125,7 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
 int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, MEGALYRICS_URL_TEMPLATE, &url) == -1)
+    if (form_lyr_url(artist, title, MEGALYRICS_URL_TEMPLATE, FALSE, &url) == -1)
         return -1;
     
     char *lyr_txt = NULL;
@@ -140,7 +142,7 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt) {
     
     char *url = NULL;
-    if (form_lyr_url(artist, title, LYRICSWIKIA_URL_TEMPLATE, &url) == -1)
+    if (form_lyr_url(artist, title, LYRICSWIKIA_URL_TEMPLATE, FALSE, &url) == -1)
         return -1;
 
     char *raw_page = NULL;
@@ -163,7 +165,7 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
             
             /* Retrieving lyrics again, using correct artist name and title. */
             url = NULL;
-            if (form_lyr_url(rartist, rtitle, LYRICSWIKIA_URL_TEMPLATE, &url) == -1) {
+            if (form_lyr_url(rartist, rtitle, LYRICSWIKIA_URL_TEMPLATE, FALSE, &url) == -1) {
                 free(rartist);
                 free(rtitle);
                 return -1;
