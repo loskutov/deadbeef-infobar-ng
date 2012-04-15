@@ -531,7 +531,7 @@ int get_redirect_info(const char *str, char **artist, char **title) {
     char *mp = strchr(str, ':');
     char *ep = strchr(str, ']');
     
-    int bi = bp - str + 1;
+    int bi = bp - str + 2;
     int mi = mp - str + 1;
     int ei = ep - str + 1;
     

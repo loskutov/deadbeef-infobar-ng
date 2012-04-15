@@ -42,8 +42,8 @@ EXP="//div[@id=\"lyric_space\"]"
 URL_TEMP="http://www.lyrics.com/$TITLE-lyrics-$ARTIST.html"
 
 # I'm using xml_grep utility from "xml twig" package here (you can easily find 
-# this package in your favorite distro) to parse html page, and "w3m" to form
-# pretty-looking lyrics text. 
+# this package in your favorite distro) to parse an html page, and "w3m" to form
+# a pretty-looking lyrics text. 
 xml_grep -html $EXP $URL_TEMP | w3m -dump -T text/html;
 
 exit 0;
