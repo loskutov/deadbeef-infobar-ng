@@ -34,7 +34,7 @@
 #define LM_URL_TEMP "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LT_URL_TEMP "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define ML_URL_TEMP "http://megalyrics.ru/lyric/%s/%s.htm"
-#define SR_CMD_TEMP "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
+#define SR_CMD_TEMP "\"%s\" \"%s\" \"%s\" 2>&-"
 
 /* XPath expressions to parse lyrics from different sources. */
 #define LM_EXP "//*[@id=\"songlyrics_h\"]"
