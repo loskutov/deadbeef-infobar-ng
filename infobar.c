@@ -162,10 +162,12 @@ infobar_songstarted(ddb_event_track_t *ev) {
         return;
     }
     if (deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
-        deadbeef->thread_start(retrieve_track_lyrics, ev->track);
+        intptr_t tid = deadbeef->thread_start(retrieve_track_lyrics, ev->track);
+        deadbeef->thread_detach(tid);
     }
     if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
-        deadbeef->thread_start(retrieve_artist_bio, ev->track);
+        intptr_t tid = deadbeef->thread_start(retrieve_artist_bio, ev->track);
+        deadbeef->thread_detach(tid);
     }
 }
 
