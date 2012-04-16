@@ -120,13 +120,16 @@ int parse_content(const char *content, const char *pattern, char **parsed, Conte
     
     int res = 0;
     
-    xmlXPathContextPtr ctx = xmlXPathNewContext(doc);
+    xmlXPathObjectPtr obj = NULL;
+    xmlXPathContextPtr ctx = NULL;
+    
+    ctx = xmlXPathNewContext(doc);
     if (!ctx) {
         res = -1;
         goto cleanup;
     }
         
-    xmlXPathObjectPtr obj = xmlXPathEvalExpression((xmlChar*) pattern, ctx);
+    obj = xmlXPathEvalExpression((xmlChar*) pattern, ctx);
     if (!obj || !obj->nodesetval->nodeMax) {
         res = -1;
         goto cleanup;
