@@ -184,17 +184,17 @@ static int
 get_align_type(void) {
     
     int type = 0;
-    int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 1);
+    int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 0);
     
     switch (align) {
-    case 1: type = GTK_JUSTIFY_LEFT; 
+    case 0: type = GTK_JUSTIFY_LEFT; 
         break;
-    case 2: type = GTK_JUSTIFY_CENTER; 
+    case 1: type = GTK_JUSTIFY_CENTER; 
         break;
-    case 3: type = GTK_JUSTIFY_RIGHT; 
+    case 2: type = GTK_JUSTIFY_RIGHT; 
         break;
     default:
-        type = GTK_JUSTIFY_CENTER;
+        break;
     }
     return type;
 } 

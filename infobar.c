@@ -235,12 +235,12 @@ static const char settings_dlg[] =
     "property \"Fetch from Lyricstime\" checkbox infobar.lyrics.lyricstime 1;"
     "property \"Fetch from Megalyrics\" checkbox infobar.lyrics.megalyrics 1;"
     "property \"Fetch from script\" checkbox infobar.lyrics.script 0;"
+    "property \"Lyrics script path\" file infobar.lyrics.script.path \"\";"
+    "property \"Lyrics alignment type\" select[3] infobar.lyrics.alignment 0 left center right;"
+    "property \"Lyrics cache update period (hr)\" spinbtn[0,99,1] infobar.lyrics.cache.period 0;"
     "property \"Enable biography\" checkbox infobar.bio.enabled 1;"
     "property \"Biography locale\" entry infobar.bio.locale \"en\";"
-    "property \"Lyrics script path\" entry infobar.lyrics.script.path \"\";"
-    "property \"Lyrics alignment type\" entry infobar.lyrics.alignment 1;"
-    "property \"Lyrics cache update period (hr)\" entry infobar.lyrics.cache.period 0;"
-    "property \"Biography cache update period (hr)\" entry infobar.bio.cache.period 24;"
+    "property \"Biography cache update period (hr)\" spinbtn[0,99,1] infobar.bio.cache.period 24;"
 ;
 
 static DB_misc_t plugin = {
@@ -248,13 +248,12 @@ static DB_misc_t plugin = {
     .plugin.api_vmajor = 1,
     .plugin.api_vminor = 0,
     .plugin.version_major = 1,
-    .plugin.version_minor = 1,
+    .plugin.version_minor = 2,
     .plugin.type = DB_PLUGIN_MISC,
     .plugin.name = "Infobar",
     .plugin.descr = "Fetches and shows song's lyrics and artist's biography.\n\n"
                     "To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
                     "See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"
-                    "Lyrics alignment types:\n1 - Left\n2 - Center\n3 - Right\n(changing requires restart)\n\n"
                     "You can set cache update period to 0 if you don't want to update the cache at all.\n\n"
                     "To use the custom lyrics script, enable \"Fetch from script\" option and specify full\n"
                     "path to the script in \"Lyrics script path\" field.",
