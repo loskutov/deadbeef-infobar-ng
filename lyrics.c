@@ -25,7 +25,7 @@ form_lyr_url(const char *artist, const char* title, const char* template, gboole
     
     char *eartist = NULL, *etitle = NULL;
     
-    if (lyr_uri_encode(artist, title, &eartist, &etitle) == -1)
+    if (encode_artist_and_title(artist, title, &eartist, &etitle) == -1)
         return -1;
     
     if (asprintf(url, template, rev ? etitle : eartist, 
@@ -46,7 +46,7 @@ form_script_cmd(const char *artist, const char* title, const char *script, const
     
     char *eartist = NULL, *etitle = NULL;
     
-    if (lyr_uri_encode(artist, title, &eartist, &etitle) == -1)
+    if (encode_artist_and_title(artist, title, &eartist, &etitle) == -1)
         return -1;
     
     if (asprintf(cmd, template, script, eartist, etitle) == -1) {

@@ -66,6 +66,41 @@ create_dir(const char *dir, mode_t mode) {
     return 0;
 }
 
+/* Encodes specified string. */
+static int 
+uri_encode(char *out, int outl, const char *str, char space) {
+    
+    int l = outl;
+
+    while (*str) {
+        
+        if (outl <= 1) 
+            return -1;
+
+        if (!(
+            (*str >= '0' && *str <= '9') ||
+            (*str >= 'a' && *str <= 'z') ||
+            (*str >= 'A' && *str <= 'Z') ||
+            (*str == ' ') ||
+            (*str == '\'') ||
+            (*str == '/')
+        ))
+        {
+            if (outl <= 3) 
+                return -1;
+
+            snprintf (out, outl, "%%%02x", (uint8_t)*str);
+            outl -= 3; str++; out += 3;
+        }
+        else {
+            *out = *str == ' ' ? space : *str;
+            out++; str++; outl--;
+        }
+    }
+    *out = 0;
+    return l - outl;
+}
+
 /* Checks if the specified text contains redirect information. */
 gboolean is_redirect(const char *str) {
     return strstr(str, "#REDIRECT") || 
@@ -404,61 +439,63 @@ gboolean is_old_cache(const char *cache_file, CacheType type) {
     return TRUE;
 }
 
-/* Encodes specified string. */
-int uri_encode(char *out, int outl, const char *str, char space) {
+/* Encodes artist name. */
+int encode_artist(const char *artist, char **eartist, const char space) {
     
-    int l = outl;
-
-    while (*str) {
-        
-        if (outl <= 1) 
-            return -1;
-
-        if (!(
-            (*str >= '0' && *str <= '9') ||
-            (*str >= 'a' && *str <= 'z') ||
-            (*str >= 'A' && *str <= 'Z') ||
-            (*str == ' ') ||
-            (*str == '\'') ||
-            (*str == '/')
-        ))
-        {
-            if (outl <= 3) 
-                return -1;
-
-            snprintf (out, outl, "%%%02x", (uint8_t)*str);
-            outl -= 3; str++; out += 3;
-        }
-        else {
-            *out = *str == ' ' ? space : *str;
-            out++; str++; outl--;
-        }
-    }
-    *out = 0;
-    return l - outl;
-}
-
-/* Encodes artist name and song title. */
-int lyr_uri_encode(const char *artist, const char *title, char **eartist, char **etitle) {
+    int ealen = strlen(artist) * 4;
     
-    int alen = strlen(artist) * 4;
-    int tlen = strlen(title) * 4;
-    
-    *eartist = calloc(alen + 1, sizeof(char));
+    *eartist = calloc(ealen + 1, sizeof(char));
     if (!*eartist)
         return -1;
     
-    *etitle = calloc(tlen + 1, sizeof(char));
+    if (uri_encode(*eartist, ealen, artist, space) == -1) {
+        free(*eartist);
+        return -1;
+    }
+    return 0;
+}
+
+/* Encodes artist name and song title. */
+int encode_artist_and_title(const char *artist, const char *title, char **eartist, char **etitle) {
+    
+    if (encode_artist(artist, eartist, '_') == -1)
+        return -1;
+    
+    int etlen = strlen(title) * 4;
+    
+    *etitle = calloc(etlen + 1, sizeof(char));
     if (!*etitle) {
         free(*eartist);
         return -1;
     }
     
-    if (uri_encode(*eartist, alen, artist, '_') == -1 ||
-        uri_encode(*etitle, tlen, title, '_') == -1) 
-    {
+    if (uri_encode(*etitle, etlen, title, '_') == -1) {
         free(*eartist);
         free(*etitle);
+        return -1;
+    }
+    return 0;
+}
+
+/* Encodes artist name, song title and album name. */
+int encode_full(const char *artist, const char *title, const char *album, char **eartist, char **etitle, char **ealbum) {
+    
+    if (encode_artist_and_title(artist, title, eartist, etitle) == -1)
+        return -1;
+    
+    int ealen = strlen(album) * 4;
+    
+    *ealbum = calloc(ealen + 1, sizeof(char));
+    if (!*ealbum) {
+        free(*eartist);
+        free(*etitle);
+        return -1;
+    }
+    
+    if (uri_encode(*ealbum, ealen, album, '_') == -1) {
+        free(*eartist);
+        free(*etitle);
+        free(*ealbum);
         return -1;
     }
     return 0;

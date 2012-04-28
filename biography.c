@@ -23,18 +23,11 @@
 static int 
 form_bio_url(const char *artist, char **url) {
     
-    int alen = strlen(artist) * 4;
-    
-    char *eartist = calloc(alen + 1, sizeof(char));
-    if (!eartist)
+    char *eartist = NULL;
+    if (encode_artist(artist, &eartist, '+') == -1)
         return -1;
     
-    if (uri_encode(eartist, alen, artist, '+') == -1) {
-        free(eartist);
-        return -1;
-    }
     deadbeef->conf_lock();
-    
     const char *locale = deadbeef->conf_get_str_fast(CONF_BIO_LOCALE, "en");
     
     if (asprintf(url, BIO_URL_TEMP, eartist, locale) == -1) {

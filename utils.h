@@ -117,11 +117,14 @@ int create_lyr_cache(const char *artist, const char *title, char **txt_cache);
 /* Creates biography cache files for the specified artist. */
 int create_bio_cache(const char *artist, char **txt_cache, char **img_cache);
 
-/* Encodes specified string. */
-int uri_encode(char *out, int outl, const char *str, char space);
+/* Encodes artist name. */
+int encode_artist(const char *artist, char **eartist, const char space);
 
 /* Encodes artist name and song title. */
-int lyr_uri_encode(const char *artist, const char *title, char **eartist, char **etitle);
+int encode_artist_and_title(const char *artist, const char *title, char **eartist, char **etitle);
+
+/* Encodes artist name, song title and album name. */
+int encode_full(const char *artist, const char *title, const char *album, char **eartist, char **etitle, char **ealbum);
 
 /* Parses content in HTML or XML format using XPath expression. */
 int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num);
