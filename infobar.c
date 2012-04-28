@@ -81,7 +81,7 @@ retrieve_track_lyrics(void *ctx) {
     trace("infobar: retrieving track lyrics\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
     
-    char *lyr_txt = NULL, *artist = NULL, *title = NULL;
+    char *lyr_txt = NULL, *artist = NULL, *title = NULL, *album = NULL;
     
     if (!is_track_changed(track)) {
         
@@ -89,34 +89,35 @@ retrieve_track_lyrics(void *ctx) {
         update_lyrics_view("Loading...", track);
         gdk_threads_leave();
         
-        if (get_artist_and_title_info(track, &artist, &title) == -1)
+        if (get_full_track_info(track, &artist, &title, &album) == -1)
             goto update;
-
+        
         char *txt_cache = NULL;
         if (create_lyr_cache(artist, title, &txt_cache) == -1) {
             free(artist);
             free(title);
+            free(album);
             goto update;
         }
-    
+        
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
             /* There is no cache for the current track or the previous cache 
             * is too old, so start retrieving new one. */
             if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
-
+            
             if (deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricsmania(artist, title, &lyr_txt);
-    
+            
             if (deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricstime(artist, title, &lyr_txt);
-    
+            
             if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
             
             if (deadbeef->conf_get_int(CONF_LYRICS_SCRIPT_ENABLED, 0) && !lyr_txt)
-                fetch_lyrics_from_script(artist, title, &lyr_txt);
-    
+                fetch_lyrics_from_script(artist, title, album, &lyr_txt);
+            
             if (lyr_txt) {
                 char *lyr_wo_nl = NULL;
                 /* Some lyrics contains new line characters at the 
@@ -135,6 +136,7 @@ retrieve_track_lyrics(void *ctx) {
         free(txt_cache);
         free(artist);
         free(title);
+        free(album);
     }
     
 update:

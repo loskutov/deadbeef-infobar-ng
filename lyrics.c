@@ -42,20 +42,23 @@ form_lyr_url(const char *artist, const char* title, const char* template, gboole
 
 /* Forms command string, which is used to execute external lyrics fetch script. */
 static int
-form_script_cmd(const char *artist, const char* title, const char *script, const char* template, char **cmd) {
+form_script_cmd(const char *artist, const char* title, const char *album, 
+                const char *script, const char* template, char **cmd) {
     
-    char *eartist = NULL, *etitle = NULL;
+    char *eartist = NULL, *etitle = NULL, *ealbum = NULL;
     
-    if (encode_artist_and_title(artist, title, &eartist, &etitle) == -1)
+    if (encode_full(artist, title, album, &eartist, &etitle, &ealbum) == -1)
         return -1;
     
-    if (asprintf(cmd, template, script, eartist, etitle) == -1) {
+    if (asprintf(cmd, template, script, eartist, etitle, ealbum) == -1) {
         free(eartist);
         free(etitle);
+        free(ealbum);
         return -1;
     }
     free(eartist);
     free(etitle);
+    free(ealbum);
     return 0;
 }
 
@@ -205,13 +208,13 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
 }
 
 /* Fetches lyrics, using external bash script. */
-int fetch_lyrics_from_script(const char *artist, const char *title, char **txt) {
+int fetch_lyrics_from_script(const char *artist, const char *title, const char *album, char **txt) {
 
     deadbeef->conf_lock();
     const char *path = deadbeef->conf_get_str_fast(CONF_LYRICS_SCRIPT_PATH, "");
     
     char *cmd = NULL;
-    if (form_script_cmd(artist, title, path, SR_CMD_TEMP, &cmd) == -1) {
+    if (form_script_cmd(artist, title, album, path, SR_CMD_TEMP, &cmd) == -1) {
         deadbeef->conf_unlock();
         return -1;
     }
