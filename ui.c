@@ -147,7 +147,7 @@ delete_cache_clicked(void) {
 
             char *artist = NULL, *title = NULL;
             
-            if (get_track_info(track, &artist, &title, FALSE) == 0) {
+            if (get_artist_and_title_info(track, &artist, &title) == 0) {
                 del_lyr_cache(artist, title);
                 del_bio_cache(artist);
                 
@@ -431,7 +431,7 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     
     char *artist = NULL, *title = NULL;
     
-    if (lyr_buffer && get_track_info(track, &artist, &title, FALSE) == 0) {
+    if (lyr_buffer && get_artist_and_title_info(track, &artist, &title) == 0) {
         
         GtkTextIter begin, end;
         

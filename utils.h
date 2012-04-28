@@ -96,8 +96,14 @@ int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr);
  * and song title. */
 int get_redirect_info(const char *str, char **artist, char **title);
 
-/* Retrieves information about current artist and song title. */
-int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean only_artist);
+/* Retrieves infomation about current artist. */
+int get_artist_info(DB_playItem_t *track, char **artist);
+
+/* Retrieves infomation about current artist and title */
+int get_artist_and_title_info(DB_playItem_t *track, char **artist, char **title);
+
+/* Retrieves information about current artist, title and album. */
+int get_full_track_info(DB_playItem_t *track, char **artist, char **title, char **album);
 
 /* Deletes biography cache for specified artist. */
 int del_bio_cache(const char *artist);

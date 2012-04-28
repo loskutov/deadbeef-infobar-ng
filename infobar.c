@@ -33,7 +33,7 @@ retrieve_artist_bio(void *ctx) {
         update_bio_view("Loading...", NULL);
         gdk_threads_leave();
     
-        if (get_track_info(track, &artist, NULL, TRUE) == -1)
+        if (get_artist_info(track, &artist) == -1)
             goto update;
     
         char *txt_cache = NULL;
@@ -89,7 +89,7 @@ retrieve_track_lyrics(void *ctx) {
         update_lyrics_view("Loading...", track);
         gdk_threads_leave();
         
-        if (get_track_info(track, &artist, &title, FALSE) == -1)
+        if (get_artist_and_title_info(track, &artist, &title) == -1)
             goto update;
 
         char *txt_cache = NULL;

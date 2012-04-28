@@ -553,15 +553,13 @@ int get_redirect_info(const char *str, char **artist, char **title) {
     return 0;
 }
 
-/* Retrieves information about current artist and song title. */
-int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean only_artist) {
+/* Retrieves infomation about current artist. */
+int get_artist_info(DB_playItem_t *track, char **artist) {
     
     deadbeef->pl_lock();
-
+    
     const char *cur_artist = deadbeef->pl_find_meta(track, "artist");
-    const char *cur_title =  deadbeef->pl_find_meta(track, "title");
-
-    if (!cur_artist || !cur_title) {
+    if (!cur_artist) {
         deadbeef->pl_unlock();
         return -1;
     }
@@ -571,20 +569,64 @@ int get_track_info(DB_playItem_t *track, char **artist, char **title, gboolean o
     if (!*artist) {
         deadbeef->pl_unlock();
         return -1;
-    } 
-    memcpy(*artist, cur_artist, alen + 1);
-    
-    if (!only_artist) {
-        int tlen = strlen(cur_title);
-    
-        *title = calloc(tlen + 1, sizeof(char));
-        if (!*title) {
-            deadbeef->pl_unlock();
-            free(*artist);
-            return -1;
-        }
-        memcpy(*title, cur_title, tlen + 1);
     }
+    memcpy(*artist, cur_artist, alen + 1);
+    deadbeef->pl_unlock();
+    return 0;
+}
+
+/* Retrieves infomation about current artist and title */
+int get_artist_and_title_info(DB_playItem_t *track, char **artist, char **title) {
+    
+    if (get_artist_info(track, artist) == -1)
+        return -1;
+    
+    deadbeef->pl_lock();
+    
+    const char *cur_title = deadbeef->pl_find_meta(track, "title");
+    if (!cur_title) {
+        deadbeef->pl_unlock();
+        free(*artist);
+        return -1;
+    }
+    int tlen = strlen(cur_title);
+
+    *title = calloc(tlen + 1, sizeof(char));
+    if (!*title) {
+        deadbeef->pl_unlock();
+        free(*artist);
+        return -1;
+    }
+    memcpy(*title, cur_title, tlen + 1);
+    deadbeef->pl_unlock();
+    return 0;
+}
+
+/* Retrieves information about current artist, title and album. */
+int get_full_track_info(DB_playItem_t *track, char **artist, char **title, char **album) {
+    
+    if (get_artist_and_title_info(track, artist, title) == -1)
+        return -1;
+    
+    deadbeef->pl_lock();
+    
+    const char *cur_album = deadbeef->pl_find_meta(track, "album");
+    if (!cur_album) {
+        deadbeef->pl_unlock();
+        free(*artist);
+        free(*title);
+        return -1;
+    }
+    int alen = strlen(cur_album);
+    
+    *album = calloc(alen + 1, sizeof(char));
+    if (!*album) {
+        deadbeef->pl_unlock();
+        free(*artist);
+        free(*title);
+        return -1;
+    }
+    memcpy(*album, cur_album, alen + 1);
     deadbeef->pl_unlock();
     return 0;
 }
