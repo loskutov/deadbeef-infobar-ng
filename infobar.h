@@ -50,6 +50,8 @@
 #define CONF_LYRICS_UPDATE_PERIOD "infobar.lyrics.cache.period"
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
+#define CONF_SIM_ENABLED "infobar.similar.enabled"
+#define CONF_SIM_MAX_ARTISTS "infobar.similar.max.artists"
 
 /* deadbeef API. */
 DB_functions_t *deadbeef;

@@ -243,6 +243,8 @@ static const char settings_dlg[] =
     "property \"Enable biography\" checkbox infobar.bio.enabled 1;"
     "property \"Biography locale\" entry infobar.bio.locale \"en\";"
     "property \"Biography cache update period (hr)\" spinbtn[0,99,1] infobar.bio.cache.period 24;"
+    "property \"Enable similar artists\" checkbox infobar.similar.enabled 1;"
+    "property \"Maximal artists number\" spinbtn[0,99,1] infobar.similar.max.artists 10;"
 ;
 
 static DB_misc_t plugin = {
