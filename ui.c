@@ -25,13 +25,16 @@ static GtkWidget *infobar_toggles;
 
 static GtkWidget *lyr_toggle;
 static GtkWidget *bio_toggle;
+static GtkWidget *sim_toggle;
 static GtkWidget *dlt_toggle;
 
 static GtkWidget *lyr_tab;
 static GtkWidget *bio_tab;
+static GtkWidget *sim_tab;
 
 static GtkWidget *img_frame;
 static GtkWidget *bio_image;
+static GtkWidget *sim_list;
 static GdkPixbuf *bio_pixbuf;
 
 static GtkTextBuffer *lyr_buffer;
@@ -212,6 +215,34 @@ create_dlt_btn(void) {
     g_signal_connect(dlt_toggle, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
 } 
 
+/* Creates "Similar" tab. Should be called after the "Biography" tab
+ * was created. */
+static void
+create_sim_tab(void) {
+    
+    sim_toggle = gtk_radio_button_new_with_label_from_widget(
+            GTK_RADIO_BUTTON(bio_toggle), "Similar");
+    
+    gtk_toggle_button_set_mode(GTK_TOGGLE_BUTTON(sim_toggle), FALSE);
+    
+    sim_tab = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sim_tab),
+            GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    
+    GtkListStore *sim_store = gtk_list_store_new(1, G_TYPE_STRING);
+    sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
+    g_object_unref(G_OBJECT(sim_store));
+    
+    GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+    GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Similar artists", renderer, NULL);
+    
+    gtk_tree_view_append_column (GTK_TREE_VIEW(sim_list), column);
+    
+    gtk_container_add(GTK_CONTAINER(sim_tab), sim_list);
+    g_signal_connect(sim_toggle, "toggled", G_CALLBACK(infobar_tab_changed), sim_tab);
+    
+}
+
 /* Creates "Biography" tab. Should be called after the "Lyrics" 
  * tab was created. */
 static void
@@ -308,14 +339,17 @@ create_infobar(void) {
 
     create_lyr_tab();
     create_bio_tab();
+    create_sim_tab();
     create_dlt_btn();
 
     gtk_box_pack_start(GTK_BOX(infobar_toggles), lyr_toggle, FALSE, FALSE, 1);
     gtk_box_pack_start(GTK_BOX(infobar_toggles), bio_toggle, FALSE, FALSE, 1);
+    gtk_box_pack_start(GTK_BOX(infobar_toggles), sim_toggle, FALSE, FALSE, 1);
     gtk_box_pack_start(GTK_BOX(infobar_toggles), dlt_toggle, FALSE, FALSE, 1);
     
     gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), lyr_tab, NULL);
     gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), bio_tab, NULL);
+    gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), sim_tab, NULL);
 
     gtk_box_pack_start(GTK_BOX(infobar), infobar_toggles, FALSE, TRUE, 1);
     gtk_box_pack_start(GTK_BOX(infobar), infobar_tabs, TRUE, TRUE, 1);
