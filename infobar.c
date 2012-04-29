@@ -20,6 +20,12 @@
 #include "infobar.h"
 
 static void
+retrieve_similar_artists(void *ctx) {
+    
+    trace("infobar: retrieving similar artists\n");
+}
+
+static void
 retrieve_artist_bio(void *ctx) {
     
     trace("infobar: retrieving artist's biography\n");
@@ -158,9 +164,10 @@ infobar_songstarted(ddb_event_track_t *ev) {
     if (!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
         return;
         
-    /* Don't retrieve anything as lyrics and biography tabs are invisible. */
+    /* Don't retrieve anything as all tabs are invisible. */
     if (!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
-        !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
+        !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1) &&
+        !deadbeef->conf_get_int(CONF_SIM_ENABLED, 1)) {
         return;
     }
     if (deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
@@ -169,6 +176,10 @@ infobar_songstarted(ddb_event_track_t *ev) {
     }
     if (deadbeef->conf_get_int(CONF_BIO_ENABLED, 1)) {
         intptr_t tid = deadbeef->thread_start(retrieve_artist_bio, ev->track);
+        deadbeef->thread_detach(tid);
+    }
+    if (deadbeef->conf_get_int(CONF_SIM_ENABLED, 1)) {
+        intptr_t tid = deadbeef->thread_start(retrieve_similar_artists, ev->track);
         deadbeef->thread_detach(tid);
     }
 }

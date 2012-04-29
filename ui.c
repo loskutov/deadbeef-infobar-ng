@@ -539,4 +539,10 @@ void infobar_config_changed(void) {
     if (bio_toggle && bio_tab) {
         set_tab_visible(bio_toggle, bio_tab, state);
     }
+    
+    /* Showing/hiding "Similar" tab. */
+    state = deadbeef->conf_get_int(CONF_SIM_ENABLED, 1);
+    if (sim_toggle && sim_tab) {
+        set_tab_visible(sim_toggle, sim_tab, state);
+    }
 }
