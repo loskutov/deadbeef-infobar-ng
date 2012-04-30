@@ -129,6 +129,15 @@ int encode_full(const char *artist, const char *title, const char *album, char *
 /* Parses content in HTML or XML format using XPath expression. */
 int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num);
 
+/* Parses XML from lastfm and forms list of similar artists. */
+int parse_similar(const char *content, char ***artists);
+
+/* Creates an empty list of similar artists  with "Loading..." status. */
+int new_sim_list(char ***list);
+
+/* Frees list of similar artists */
+void free_sim_list(char **ptr);
+
 /* Calculates new resolution to respectively resize image. */
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res);
 

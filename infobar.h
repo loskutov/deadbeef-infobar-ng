@@ -29,6 +29,7 @@
 #include "ui.h"
 #include "utils.h"
 #include "lyrics.h"
+#include "similar.h"
 #include "biography.h"
 
 //#define trace(...) { fprintf(stderr, __VA_ARGS__); }

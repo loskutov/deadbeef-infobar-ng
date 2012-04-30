@@ -231,16 +231,19 @@ create_sim_tab(void) {
     
     GtkListStore *sim_store = gtk_list_store_new(1, G_TYPE_STRING);
     sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
-    g_object_unref(G_OBJECT(sim_store));
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(sim_list), FALSE);
     
-    GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-    GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Similar artists", renderer, NULL);
+    GtkCellRenderer *txt_renderer = gtk_cell_renderer_text_new();
+    g_object_set(G_OBJECT(txt_renderer), "weight", PANGO_WEIGHT_BOLD, NULL);
     
-    gtk_tree_view_append_column (GTK_TREE_VIEW(sim_list), column);
+    GtkTreeViewColumn *txt_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_pack_start(txt_column, txt_renderer, TRUE);
+    gtk_tree_view_column_add_attribute(txt_column, txt_renderer, "text", 0);
     
+    gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), txt_column);
     gtk_container_add(GTK_CONTAINER(sim_tab), sim_list);
+
     g_signal_connect(sim_toggle, "toggled", G_CALLBACK(infobar_tab_changed), sim_tab);
-    
 }
 
 /* Creates "Biography" tab. Should be called after the "Lyrics" 
@@ -518,6 +521,28 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
         
         const char *txt = bio_txt ? bio_txt : "Biography not found.";
         gtk_text_buffer_insert(bio_buffer, &begin, txt, strlen(txt));
+    }
+}
+
+/* Updates "Similar" tab with the new list of similar artists. */
+void update_similar_view(char **artists) {
+    
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
+    GtkListStore *store = GTK_LIST_STORE(model);
+    if (store) {
+        /* Removing previous list from model. */
+        gtk_list_store_clear(store);
+        GtkTreeIter it;
+        
+        if (artists) {
+            for (; *artists; ++artists) {
+                gtk_list_store_append(store, &it);
+                gtk_list_store_set(store, &it, 0, *artists, -1);
+            }
+        } else {
+            gtk_list_store_append(store, &it);
+            gtk_list_store_set(store, &it, 0, "Similar artists not found.", -1);
+        }
     }
 }
 

@@ -19,7 +19,7 @@
 
 #include "lyrics.h"
 
-/* Forms URL, which is used to retrieve lyrics for specified track. */
+/* Forms an URL, which is used to retrieve lyrics for specified track. */
 static int
 form_lyr_url(const char *artist, const char* title, const char* template, gboolean rev, char **url) {
     

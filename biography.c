@@ -19,7 +19,7 @@
 
 #include "biography.h"
 
-/* Forms URL, which is used to retrieve artists's biography and image. */
+/* Forms an URL, which is used to retrieve artists's biography and image. */
 static int 
 form_bio_url(const char *artist, char **url) {
     

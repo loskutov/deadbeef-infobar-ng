@@ -37,6 +37,9 @@ int init_ui_plugin(void);
  * Should be called on plug-in shutdown. */
 void free_ui_plugin(void);
 
+/* Updates "Similar" tab with the new list of similar artists. */
+void update_similar_view(char **artists);
+
 /* Updates "Biography" tab with the new artist's image and biography text. */
 void update_bio_view(const char *bio_txt, const char *img_file);
 

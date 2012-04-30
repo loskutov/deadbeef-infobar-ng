@@ -23,6 +23,40 @@ static void
 retrieve_similar_artists(void *ctx) {
     
     trace("infobar: retrieving similar artists\n");
+    DB_playItem_t *track = (DB_playItem_t*) ctx;
+    
+    char *artist = NULL, **artists = NULL;
+    
+    if (!is_track_changed(track)) {
+        
+        char **list = NULL;
+        if (new_sim_list(&list) == -1)
+            goto update;
+        
+        gdk_threads_enter();
+        update_similar_view(list);
+        gdk_threads_leave();
+        
+        free(list);
+        
+        if (get_artist_info(track, &artist) == -1)
+            goto update;
+        
+        if (fetch_similar_artists(artist, &artists) == -1) {
+            free(artist);
+            goto update;
+        }
+        free(artist);
+    }
+    
+update:
+    if (!is_track_changed(track)) {
+        gdk_threads_enter();
+        update_similar_view(artists);
+        gdk_threads_leave();
+    }
+    if (artists)
+        free_sim_list(artists);
 }
 
 static void
