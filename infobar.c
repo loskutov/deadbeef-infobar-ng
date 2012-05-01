@@ -25,6 +25,7 @@ retrieve_similar_artists(void *ctx) {
     trace("infobar: retrieving similar artists\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
     
+    int size = 0;
     char *artist = NULL, **artists = NULL;
     
     if (!is_track_changed(track)) {
@@ -42,7 +43,7 @@ retrieve_similar_artists(void *ctx) {
         if (get_artist_info(track, &artist) == -1)
             goto update;
         
-        if (fetch_similar_artists(artist, &artists) == -1) {
+        if (fetch_similar_artists(artist, &artists, &size) == -1) {
             free(artist);
             goto update;
         }

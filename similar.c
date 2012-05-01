@@ -21,7 +21,7 @@
 
 /* Parses XML from lastfm and forms list of similar artists. */
 static int
-parse_similar(const char *content, char ***artists) {
+parse_similar(const char *content, char ***artists, int *size) {
     
     xmlDocPtr doc = NULL;
     if (init_doc_obj(content, XML, &doc) == -1)
@@ -61,6 +61,7 @@ parse_similar(const char *content, char ***artists) {
             }
         }
     }
+    *size = nodeSet->nodeNr;
     xmlXPathFreeObject(xpath);
     xmlFreeDoc(doc);
     return 0;
@@ -107,7 +108,7 @@ void free_sim_list(char **list) {
 }
 
 /* Fetches the list of similar artists from lastfm. */
-int fetch_similar_artists(const char *artist, char ***artists) {
+int fetch_similar_artists(const char *artist, char ***artists, int *size) {
     
     int limit = deadbeef->conf_get_int(CONF_SIM_MAX_ARTISTS, 10);
     
@@ -122,7 +123,7 @@ int fetch_similar_artists(const char *artist, char ***artists) {
     }
     free(url);
     
-    if (parse_similar(raw_page, artists) == -1) {
+    if (parse_similar(raw_page, artists, size) == -1) {
         free(raw_page);
         return -1;
     }

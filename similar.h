@@ -35,4 +35,4 @@ int new_sim_list(char ***list);
 void free_sim_list(char **ptr);
 
 /* Fetches the list of similar artists from lastfm. */
-int fetch_similar_artists(const char *artist, char ***artists);
+int fetch_similar_artists(const char *artist, char ***artists, int *size);
