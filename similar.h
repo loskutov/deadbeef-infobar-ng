@@ -28,5 +28,11 @@
 /* XPath expressions. */
 #define SIM_EXP "/lfm/similarartists/artist"
 
+/* Creates an empty list of similar artists  with "Loading..." status. */
+int new_sim_list(char ***list);
+
+/* Frees list of similar artists */
+void free_sim_list(char **ptr);
+
 /* Fetches the list of similar artists from lastfm. */
 int fetch_similar_artists(const char *artist, char ***artists);

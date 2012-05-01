@@ -19,6 +19,53 @@
 
 #include "similar.h"
 
+/* Parses XML from lastfm and forms list of similar artists. */
+static int
+parse_similar(const char *content, char ***artists) {
+    
+    xmlDocPtr doc = NULL;
+    if (init_doc_obj(content, XML, &doc) == -1)
+        return -1;
+    
+    xmlXPathObjectPtr xpath = NULL;
+    if (get_xpath_obj(doc, SIM_EXP, &xpath) == -1) {
+        xmlFreeDoc(doc);
+        return -1;
+    }
+    xmlNodeSetPtr nodeSet = xpath->nodesetval;
+    if (nodeSet->nodeNr == 0) {
+        xmlXPathFreeObject(xpath);
+        xmlFreeDoc(doc);
+        return -1;
+    }
+    
+    *artists = calloc(nodeSet->nodeNr, sizeof(char*));
+    if (!*artists) {
+        xmlXPathFreeObject(xpath);
+        xmlFreeDoc(doc);
+        return -1;
+    }
+    
+    for (int i = 0; i < nodeSet->nodeNr; ++i) {
+        /* Looping through the "artist" nodes. */
+        xmlNodePtr node = nodeSet->nodeTab[i];
+        xmlNodePtr child = node->children;
+        
+        for (; child; child = child->next){
+            /* Looking for "name" tag. */
+            if (child->type == XML_ELEMENT_NODE && 
+                xmlStrcasecmp(child->name, (xmlChar*) "name") == 0) 
+            {
+                *(*artists + i) = (char*) xmlNodeGetContent(child);
+                break;
+            }
+        }
+    }
+    xmlXPathFreeObject(xpath);
+    xmlFreeDoc(doc);
+    return 0;
+}
+
 /* Forms an URL, which is used to retrieve the list of similar artists. */
 static int
 form_similar_url(const char *artist, char **url, int limit) {
@@ -34,6 +81,30 @@ form_similar_url(const char *artist, char **url, int limit) {
     free(eartist);
     return 0;
 } 
+
+/* Creates an empty list of similar artists with "Loading..." status. */
+int new_sim_list(char ***list) {
+    
+    *list = calloc(1, sizeof(char*));
+    if (!*list)
+        return -1;
+    
+    *(*list) = "Loading...";
+    return 0;
+}
+
+/* Frees list of similar artists */
+void free_sim_list(char **list) {
+    
+    int elem = 0;
+    for(; *list; ++list) 
+        ++elem;
+    
+    list-=elem;
+    for (int i = 0; i < elem; ++i)
+        if (list[i]) free(list[i]);
+    free(list);
+}
 
 /* Fetches the list of similar artists from lastfm. */
 int fetch_similar_artists(const char *artist, char ***artists) {
