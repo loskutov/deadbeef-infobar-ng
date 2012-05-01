@@ -229,18 +229,26 @@ create_sim_tab(void) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sim_tab),
             GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     
-    GtkListStore *sim_store = gtk_list_store_new(1, G_TYPE_STRING);
+    GtkListStore *sim_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
     sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
     gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(sim_list), FALSE);
     
-    GtkCellRenderer *txt_renderer = gtk_cell_renderer_text_new();
-    g_object_set(G_OBJECT(txt_renderer), "weight", PANGO_WEIGHT_BOLD, NULL);
+    GtkCellRenderer *name_renderer = gtk_cell_renderer_text_new();
+    g_object_set(G_OBJECT(name_renderer), "weight", PANGO_WEIGHT_BOLD, NULL);
     
-    GtkTreeViewColumn *txt_column = gtk_tree_view_column_new();
-    gtk_tree_view_column_pack_start(txt_column, txt_renderer, TRUE);
-    gtk_tree_view_column_add_attribute(txt_column, txt_renderer, "text", 0);
+    GtkCellRenderer *match_renderer = gtk_cell_renderer_text_new();
+    g_object_set(G_OBJECT(match_renderer), "style", PANGO_STYLE_ITALIC, NULL);
     
-    gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), txt_column);
+    GtkTreeViewColumn *name_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_pack_start(name_column, name_renderer, TRUE);
+    gtk_tree_view_column_add_attribute(name_column, name_renderer, "text", 0);
+    
+    GtkTreeViewColumn *match_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_pack_start(match_column, match_renderer, TRUE);
+    gtk_tree_view_column_add_attribute(match_column, match_renderer, "text", 1);
+    
+    gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), name_column);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), match_column);
     gtk_container_add(GTK_CONTAINER(sim_tab), sim_list);
 
     g_signal_connect(sim_toggle, "toggled", G_CALLBACK(infobar_tab_changed), sim_tab);
