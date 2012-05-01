@@ -32,25 +32,10 @@
 #include <deadbeef/deadbeef.h>
 
 #include "infobar.h"
+#include "types.h"
 
 /* Defines maximum number of characters that can be retrieved. */
 #define MAX_TXT_SIZE 100000
-
-/* Custom types. */
-typedef enum {
-    HTML = 1,
-    XML = 2,
-} ContentType;
-
-typedef enum {
-    LYRICS = 1,
-    BIO = 2,
-} CacheType;
-
-typedef struct {
-    float width;
-    float height;
-} Res;
 
 /* Checks if specified file or directory is exists. */
 gboolean is_exists(const char *obj);
