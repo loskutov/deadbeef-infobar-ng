@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <deadbeef/deadbeef.h>
 
+#include "types.h"
 #include "utils.h"
 
 /* URL template to access similar artists on lastfm. */
@@ -28,11 +29,11 @@
 /* XPath expressions. */
 #define SIM_EXP "/lfm/similarartists/artist"
 
-/* Creates an empty list of similar artists  with "Loading..." status. */
-int new_sim_list(char ***list);
-
 /* Frees list of similar artists */
-void free_sim_list(char **ptr);
+void free_sim_list(SimilarInfo *similar, int size);
+
+/* Creates an empty list of similar artists  with "Loading..." status. */
+int empty_sim_list(SimilarInfo **similar);
 
 /* Fetches the list of similar artists from lastfm. */
-int fetch_similar_artists(const char *artist, char ***artists, int *size);
+int fetch_similar_artists(const char *artist, SimilarInfo **similar, int *size);

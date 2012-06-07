@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
     char *name;
-    float match;
+    char *match;
 } SimilarInfo;
 
 #endif

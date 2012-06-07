@@ -533,7 +533,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
 }
 
 /* Updates "Similar" tab with the new list of similar artists. */
-void update_similar_view(char **artists) {
+void update_similar_view(SimilarInfo *similar, int size) {
     
     GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
     GtkListStore *store = GTK_LIST_STORE(model);
@@ -542,10 +542,11 @@ void update_similar_view(char **artists) {
         gtk_list_store_clear(store);
         GtkTreeIter it;
         
-        if (artists) {
-            for (; *artists; ++artists) {
+        if (similar) {
+            for (int i = 0; i < size; ++i) {
                 gtk_list_store_append(store, &it);
-                gtk_list_store_set(store, &it, 0, *artists, -1);
+                gtk_list_store_set(store, &it, 0, similar[i].name, -1);
+                gtk_list_store_set(store, &it, 1, similar[i].match, -1);
             }
         } else {
             gtk_list_store_append(store, &it);

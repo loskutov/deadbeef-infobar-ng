@@ -25,25 +25,26 @@ retrieve_similar_artists(void *ctx) {
     trace("infobar: retrieving similar artists\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
     
-    int size = 0;
-    char *artist = NULL, **artists = NULL;
+    char *artist = NULL;
+    SimilarInfo *similar = NULL; int size = 0;
     
     if (!is_track_changed(track)) {
         
-        char **list = NULL;
-        if (new_sim_list(&list) == -1)
+        SimilarInfo *empty = NULL;
+        if (empty_sim_list(&empty) == -1)
             goto update;
         
+        /* Showing loading status. */
         gdk_threads_enter();
-        update_similar_view(list);
+        update_similar_view(empty, 1);
         gdk_threads_leave();
         
-        free(list);
+        free(empty);
         
         if (get_artist_info(track, &artist) == -1)
             goto update;
         
-        if (fetch_similar_artists(artist, &artists, &size) == -1) {
+        if (fetch_similar_artists(artist, &similar, &size) == -1) {
             free(artist);
             goto update;
         }
@@ -53,11 +54,11 @@ retrieve_similar_artists(void *ctx) {
 update:
     if (!is_track_changed(track)) {
         gdk_threads_enter();
-        update_similar_view(artists);
+        update_similar_view(similar, size);
         gdk_threads_leave();
     }
-    if (artists)
-        free_sim_list(artists);
+    if (similar)
+        free_sim_list(similar, size);
 }
 
 static void
