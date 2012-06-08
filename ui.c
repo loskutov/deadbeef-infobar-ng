@@ -231,19 +231,21 @@ create_sim_tab(void) {
     
     GtkListStore *sim_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
     sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(sim_list), FALSE);
     
     GtkCellRenderer *name_renderer = gtk_cell_renderer_text_new();
-    g_object_set(G_OBJECT(name_renderer), "weight", PANGO_WEIGHT_BOLD, NULL);
     
     GtkCellRenderer *match_renderer = gtk_cell_renderer_text_new();
     g_object_set(G_OBJECT(match_renderer), "style", PANGO_STYLE_ITALIC, NULL);
     
     GtkTreeViewColumn *name_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_expand(name_column, TRUE);
+    gtk_tree_view_column_set_title(name_column, "Artist name");
     gtk_tree_view_column_pack_start(name_column, name_renderer, TRUE);
     gtk_tree_view_column_add_attribute(name_column, name_renderer, "text", 0);
     
     GtkTreeViewColumn *match_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_expand(match_column, FALSE);
+    gtk_tree_view_column_set_title(match_column, "Match");
     gtk_tree_view_column_pack_start(match_column, match_renderer, TRUE);
     gtk_tree_view_column_add_attribute(match_column, match_renderer, "text", 1);
     
