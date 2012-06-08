@@ -701,6 +701,16 @@ int get_full_track_info(DB_playItem_t *track, char **artist, char **title, char 
     return 0;
 }
 
+/*Converts string to persentage representation */
+int string_to_perc(const char* str, char *perc) {
+    
+    float num = 0.0;
+    sscanf(str, "%f", &num);
+    
+    int res = sprintf(perc, "%.1f%%", num * 100);
+    return  res < 0 ? -1 : 0;
+}
+
 /* Calculates new resolution to respectively resize image. */
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res) {
     

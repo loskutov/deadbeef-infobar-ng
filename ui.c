@@ -552,7 +552,11 @@ void update_similar_view(SimilarInfo *similar, int size) {
                     gtk_list_store_set(store, &it, 0, similar[i].name, -1);
                 }
                 if (similar[i].match) {
-                    gtk_list_store_set(store, &it, 1, similar[i].match, -1);
+                    /* Converting match value to percentage representation. */
+                    char perc[10] = {0};
+                    if (string_to_perc(similar[i].match, perc) != -1) {
+                        gtk_list_store_set(store, &it, 1, perc, -1);
+                    }
                 }
             }
         } else {

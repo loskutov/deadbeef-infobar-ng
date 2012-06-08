@@ -120,6 +120,9 @@ int init_doc_obj(const char *content, ContentType type, xmlDocPtr *doc);
 /* Creates an instance of XPath object for specified expression. */
 int get_xpath_obj(const xmlDocPtr doc, const char *exp, xmlXPathObjectPtr *obj);
 
+/* Converts string to persentage representation */
+int string_to_perc(const char* str, char *perc);
+
 /* Calculates new resolution to respectively resize image. */
 void find_new_resolution(float ww, float wh, float aw, float ah, Res *res);
 
