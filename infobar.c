@@ -30,16 +30,12 @@ retrieve_similar_artists(void *ctx) {
     
     if (!is_track_changed(track)) {
         
-        SimilarInfo *empty = NULL;
-        if (empty_sim_list(&empty) == -1)
-            goto update;
+        SimilarInfo loading = {0};
+        loading.name = "Loading...";
         
-        /* Showing loading status. */
         gdk_threads_enter();
-        update_similar_view(empty, 1);
+        update_similar_view(&loading, 1);
         gdk_threads_leave();
-        
-        free(empty);
         
         if (get_artist_info(track, &artist) == -1)
             goto update;

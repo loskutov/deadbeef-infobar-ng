@@ -87,23 +87,10 @@ form_similar_url(const char *artist, char **url, int limit) {
     return 0;
 } 
 
-/* Creates an empty list of similar artists with "Loading..." status. */
-int empty_sim_list(SimilarInfo **similar) {
-    
-    *similar = calloc(1, sizeof(SimilarInfo));
-    if (!*similar)
-        return -1;
-    
-    (*similar)[0].name = "Loading...";
-    (*similar)[0].match = "";
-    return 0;
-}
-
 /* Frees list of similar artists */
 void free_sim_list(SimilarInfo *similar, int size) {
     
     for (int i = 0; i < size; ++i) {
-        
         if (similar[i].name) 
             free(similar[i].name);
 

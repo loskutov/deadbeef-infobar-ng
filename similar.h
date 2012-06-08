@@ -32,8 +32,5 @@
 /* Frees list of similar artists */
 void free_sim_list(SimilarInfo *similar, int size);
 
-/* Creates an empty list of similar artists  with "Loading..." status. */
-int empty_sim_list(SimilarInfo **similar);
-
 /* Fetches the list of similar artists from lastfm. */
 int fetch_similar_artists(const char *artist, SimilarInfo **similar, int *size);

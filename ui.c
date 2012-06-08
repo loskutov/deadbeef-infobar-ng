@@ -545,8 +545,13 @@ void update_similar_view(SimilarInfo *similar, int size) {
         if (similar) {
             for (int i = 0; i < size; ++i) {
                 gtk_list_store_append(store, &it);
-                gtk_list_store_set(store, &it, 0, similar[i].name, -1);
-                gtk_list_store_set(store, &it, 1, similar[i].match, -1);
+                
+                if (similar[i].name) {
+                    gtk_list_store_set(store, &it, 0, similar[i].name, -1);
+                }
+                if (similar[i].match) {
+                    gtk_list_store_set(store, &it, 1, similar[i].match, -1);
+                }
             }
         } else {
             gtk_list_store_append(store, &it);
