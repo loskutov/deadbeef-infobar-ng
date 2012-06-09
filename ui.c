@@ -138,6 +138,36 @@ sim_list_dis_key(GtkWidget *widget, GdkEvent *event, gpointer data) {
     return TRUE;
 }
 
+/* Called when user double-clicks on similar list row. */
+static gboolean
+sim_list_row_active(GtkTreeView *view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data) {
+    
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
+    if (model) {
+        GtkTreeIter it = {0};
+        if (gtk_tree_model_get_iter(model, &it, path)) {
+
+            GValue value = {0};
+            /* Urls are stored in the third hidden column. */
+            gtk_tree_model_get_value(model, &it, 2, &value);
+            
+            if (G_IS_VALUE(&value) && G_VALUE_HOLDS_STRING(&value)) {
+                
+                const char *url = g_value_get_string(&value);
+                if (url) {
+                    char *cmd = NULL;
+                    if (asprintf(&cmd, "xdg-open http://%s", url) != -1) {
+                        system(cmd);
+                        free(cmd);
+                    }
+                }
+                g_value_unset(&value);
+            }
+        }
+    }
+    return FALSE;
+}
+
 /* Called when user clicks on delete cache button. */
 static void
 delete_cache_clicked(void) {
@@ -235,7 +265,8 @@ create_sim_tab(void) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sim_tab),
             GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     
-    GtkListStore *sim_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+    GtkListStore *sim_store = gtk_list_store_new(3, G_TYPE_STRING, 
+            G_TYPE_STRING, G_TYPE_STRING);
     
     sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
     gtk_tree_view_set_grid_lines(GTK_TREE_VIEW(sim_list), GTK_TREE_VIEW_GRID_LINES_BOTH);
@@ -264,6 +295,7 @@ create_sim_tab(void) {
 
     g_signal_connect(sim_toggle, "toggled", G_CALLBACK(infobar_tab_changed), sim_tab);
     g_signal_connect(sim_list, "key-press-event", G_CALLBACK(sim_list_dis_key), NULL);
+    g_signal_connect(sim_list, "row-activated", G_CALLBACK(sim_list_row_active), NULL);
 }
 
 /* Creates "Biography" tab. Should be called after the "Lyrics" 
@@ -567,6 +599,9 @@ void update_similar_view(SimilarInfo *similar, int size) {
                     if (string_to_perc(similar[i].match, perc) != -1) {
                         gtk_list_store_set(store, &it, 1, perc, -1);
                     }
+                }
+                if (similar[i].url) {
+                    gtk_list_store_set(store, &it, 2, similar[i].url, -1);
                 }
             }
         } else {

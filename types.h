@@ -39,6 +39,7 @@ typedef struct {
 typedef struct {
     char *name;
     char *match;
+    char *url;
 } SimilarInfo;
 
 #endif

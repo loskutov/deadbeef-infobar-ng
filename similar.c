@@ -61,6 +61,10 @@ parse_similar(const char *content, SimilarInfo **similar, int *size) {
                 if (xmlStrcasecmp(child->name, (xmlChar*) "match") == 0) {
                     (*similar)[i].match = (char*) xmlNodeGetContent(child);
                 }
+                
+                if (xmlStrcasecmp(child->name, (xmlChar*) "url") == 0) {
+                    (*similar)[i].url = (char*) xmlNodeGetContent(child);
+                }
             } 
         }
     }
@@ -96,6 +100,9 @@ void free_sim_list(SimilarInfo *similar, int size) {
 
         if (similar[i].match) 
             free(similar[i].match);
+        
+        if (similar[i].url)
+            free(similar[i].url);
     }
     free(similar);
 }
