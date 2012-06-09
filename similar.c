@@ -33,11 +33,6 @@ parse_similar(const char *content, SimilarInfo **similar, int *size) {
         return -1;
     }
     xmlNodeSetPtr nodeSet = xpath->nodesetval;
-    if (nodeSet->nodeNr == 0) {
-        xmlXPathFreeObject(xpath);
-        xmlFreeDoc(doc);
-        return -1;
-    }
     
     *similar = calloc(nodeSet->nodeNr, sizeof(SimilarInfo));
     if (!*similar) {
