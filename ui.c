@@ -231,9 +231,10 @@ create_sim_tab(void) {
     
     GtkListStore *sim_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
     sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
+    gtk_tree_view_set_grid_lines(GTK_TREE_VIEW(sim_list), GTK_TREE_VIEW_GRID_LINES_BOTH);
     
     GtkCellRenderer *name_renderer = gtk_cell_renderer_text_new();
-    
+
     GtkCellRenderer *match_renderer = gtk_cell_renderer_text_new();
     g_object_set(G_OBJECT(match_renderer), "style", PANGO_STYLE_ITALIC, NULL);
     
