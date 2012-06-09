@@ -132,6 +132,12 @@ bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
     return FALSE;
 }
 
+/* Disables any keyboard events in the "Similar" list. */
+static gboolean
+sim_list_dis_key(GtkWidget *widget, GdkEvent *event, gpointer data) {
+    return TRUE;
+}
+
 /* Called when user clicks on delete cache button. */
 static void
 delete_cache_clicked(void) {
@@ -213,7 +219,7 @@ create_dlt_btn(void) {
     gtk_button_set_image(GTK_BUTTON(dlt_toggle), dlt_img);
     
     g_signal_connect(dlt_toggle, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
-} 
+}
 
 /* Creates "Similar" tab. Should be called after the "Biography" tab
  * was created. */
@@ -257,6 +263,7 @@ create_sim_tab(void) {
     gtk_container_add(GTK_CONTAINER(sim_tab), sim_list);
 
     g_signal_connect(sim_toggle, "toggled", G_CALLBACK(infobar_tab_changed), sim_tab);
+    g_signal_connect(sim_list, "key-press-event", G_CALLBACK(sim_list_dis_key), NULL);
 }
 
 /* Creates "Biography" tab. Should be called after the "Lyrics" 
