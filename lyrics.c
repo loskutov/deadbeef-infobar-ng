@@ -19,6 +19,67 @@
 
 #include "lyrics.h"
 
+/* Formats lyrics fetched from "http://megalyrics.ru". */
+static int
+format_megalyrics(const char *txt, char **fmd) {
+    
+    /* Removing <pre> and <h2> tags from the beginning. */
+    char *wo_bpre = NULL;
+    if (replace_all(txt, ML_LYR_BEG, "", &wo_bpre) == -1)
+        return -1;
+    
+    *fmd = wo_bpre;
+    
+    /* Removing </pre> tag from the end. */
+    char *wo_epre = NULL;
+    if (replace_all(*fmd, ML_LYR_END, "", &wo_epre) == -1) {
+        free(*fmd);
+        return -1;
+    }
+    free(*fmd);
+    *fmd = wo_epre;
+    
+    /* Replacing <br/> tags with new line characters. */
+    char *wo_br = NULL;
+    if (replace_all(*fmd, "<br/>", "\n", &wo_br) == -1) {
+        free(*fmd);
+        return -1;
+    }
+    free(*fmd);
+    *fmd = wo_br;
+    return 0;
+}
+
+/* Parses lyrics fetched from "http://megalyrics.ru". */
+static int
+parse_megalyrics(const char *content, char **parsed) {
+    
+    xmlDocPtr doc = NULL;
+    if (init_doc_obj(content, HTML, &doc) == -1)
+        return -1;
+    
+    xmlXPathObjectPtr xpath = NULL;
+    if (get_xpath_obj(doc, ML_EXP, &xpath) == -1) {
+        xmlFreeDoc(doc);
+        return -1;
+    }
+    xmlNodePtr node = xpath->nodesetval->nodeTab[0];
+    xmlBufferPtr nb = xmlBufferCreate();
+    xmlNodeDump(nb, doc, node, 0, 1);
+    
+    xmlXPathFreeObject(xpath);
+    xmlFreeDoc(doc);
+    
+    *parsed = calloc(nb->size + 1, sizeof(char));
+    if (!*parsed) {
+        xmlBufferFree(nb);
+        return -1;
+    }
+    memcpy(*parsed, nb->content, nb->size + 1);
+    xmlBufferFree(nb);
+    return 0;
+}
+
 /* Forms an URL, which is used to retrieve lyrics for specified track. */
 static int
 form_lyr_url(const char *artist, const char* title, const char* template, gboolean rev, char **url) {
@@ -131,13 +192,34 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
     if (form_lyr_url(artist, title, ML_URL_TEMP, FALSE, &url) == -1)
         return -1;
     
-    char *lyr_txt = NULL;
-    if (fetch_lyrics(url, ML_EXP, HTML, &lyr_txt) == -1) {
+    char *raw_page = NULL;
+    if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
         return -1;
     }
     free(url);
-    *txt = lyr_txt;
+    
+    if (parse_megalyrics(raw_page, txt) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    
+    char *fmd_lyr = NULL;
+    if (format_megalyrics(*txt, &fmd_lyr) != -1) {
+        free(*txt);
+        *txt = fmd_lyr;
+    }
+    
+    /* Making sure, that retrieved text has UTF-8 encoding,
+     * otherwise converting it. */
+    char *lyr_utf8 = NULL;
+    if (deadbeef->junk_detect_charset(*txt)) {
+        if (convert_to_utf8(*txt, &lyr_utf8) == 0) {
+            free(*txt);
+            *txt = lyr_utf8;
+        }
+    }
     return 0;
 }
 

@@ -77,6 +77,9 @@ int del_nl(const char *txt, char **txt_wo_nl);
  * to visually divide them. */
 int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr);
 
+/* Replaces each substring of this string with the given replacement. */
+int replace_all(const char *str, const char *orig, const char *with, char **repl);
+
 /* Parses redirect information and retrieves correct artist name 
  * and song title. */
 int get_redirect_info(const char *str, char **artist, char **title);

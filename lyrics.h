@@ -43,6 +43,10 @@
 #define LW_HTML_EXP "//lyrics"
 #define LW_XML_EXP "//rev"
 
+/* Lyrics parts. */
+#define ML_LYR_BEG "<pre class=\"lyric\"><h2>Текст песни</h2>"
+#define ML_LYR_END "</pre>"
+
 /* Fetches lyrics from "http://lyrics.wikia.com". */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
 

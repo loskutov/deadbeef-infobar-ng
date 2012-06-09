@@ -209,7 +209,7 @@ int get_xpath_obj(const xmlDocPtr doc, const char *exp, xmlXPathObjectPtr *obj) 
         return -1;
     
     *obj = xmlXPathEvalExpression((xmlChar*) exp, ctx);
-    if (!*obj) {
+    if (!*obj || (*obj)->nodesetval->nodeNr == 0) {
         xmlXPathFreeContext(ctx);
         return -1;
     }
@@ -594,6 +594,51 @@ int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
     memcpy(*lyr, fst_lyr, fst_len + 1);
     memcpy(*lyr + fst_len, sep, sep_len + 1);
     memcpy(*lyr + fst_len + sep_len, snd_lyr, snd_len + 1);
+    return 0;
+}
+
+/* Replaces each substring of this string with the given replacement. */
+int replace_all(const char *str, const char *orig, const char *with, char **repl) {
+    
+    int str_len = strlen(str);
+    int orig_len = strlen(orig);
+    int with_len = strlen(with);
+    
+    int count = 0;
+    char *cur = NULL;
+    
+    const char *ins = str;
+    while ((cur = strstr(ins, orig))) {
+        ins = cur + orig_len;
+        ++count;
+    }
+    if (count == 0)
+        return -1;
+    
+    int repl_len = str_len - (orig_len * count)
+                           + (with_len * count);
+    
+    *repl = calloc(repl_len + 1, sizeof(char));
+    if (!*repl)
+        return -1;
+    
+    int copied = 0;
+    char *to = *repl;
+    
+    while ((cur = strstr(str, orig))) {
+        
+        int copy = cur - str;
+        memcpy(to, str, copy);
+        to+=copy; str = cur;
+        
+        memcpy(to, with, with_len + 1);
+        to+=with_len; str+=orig_len;
+        
+        copied+=copy + with_len;
+        /* We've already found all the occurences. */
+        if (--count == 0) break;
+    }
+    memcpy(to, str, repl_len - copied);
     return 0;
 }
 
