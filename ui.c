@@ -32,6 +32,7 @@ static GtkWidget *lyr_tab;
 static GtkWidget *bio_tab;
 static GtkWidget *sim_tab;
 
+static GtkWidget *lyr_view;
 static GtkWidget *img_frame;
 static GtkWidget *bio_image;
 static GtkWidget *sim_list;
@@ -355,8 +356,7 @@ create_lyr_tab(void) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(lyr_tab), 
             GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     
-    GtkWidget *lyr_view = gtk_text_view_new();
-    
+    lyr_view = gtk_text_view_new();
     gtk_text_view_set_editable(GTK_TEXT_VIEW(lyr_view), FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyr_view), GTK_WRAP_WORD);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(lyr_view), FALSE);
@@ -614,7 +614,7 @@ void update_similar_view(SimilarInfo *similar, int size) {
  * configuration were made. It updates infobar view according to the 
  * new changes. */
 void infobar_config_changed(void) {
-
+    
     gboolean state = FALSE;
     
     /* Showing/hiding "Lyrics" tab. */
@@ -634,4 +634,8 @@ void infobar_config_changed(void) {
     if (sim_toggle && sim_tab) {
         set_tab_visible(sim_toggle, sim_tab, state);
     }
+    
+    /* Updating lyrics alignment. */
+    int type = get_align_type();
+    gtk_text_view_set_justification(GTK_TEXT_VIEW(lyr_view), type);
 }
