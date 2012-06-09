@@ -31,6 +31,12 @@ typedef enum {
     BIO = 2,
 } CacheType;
 
+typedef enum {
+    NAME = 0,
+    MATCH = 1,
+    URL = 2,
+} SimColumnName;
+
 typedef struct {
     float width;
     float height;

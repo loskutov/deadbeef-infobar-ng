@@ -148,8 +148,7 @@ sim_list_row_active(GtkTreeView *view, GtkTreePath *path, GtkTreeViewColumn *col
         if (gtk_tree_model_get_iter(model, &it, path)) {
 
             GValue value = {0};
-            /* Urls are stored in the third hidden column. */
-            gtk_tree_model_get_value(model, &it, 2, &value);
+            gtk_tree_model_get_value(model, &it, URL, &value);
             
             if (G_IS_VALUE(&value) && G_VALUE_HOLDS_STRING(&value)) {
                 
@@ -281,13 +280,13 @@ create_sim_tab(void) {
     gtk_tree_view_column_set_expand(name_column, TRUE);
     gtk_tree_view_column_set_title(name_column, "Artist name");
     gtk_tree_view_column_pack_start(name_column, name_renderer, TRUE);
-    gtk_tree_view_column_add_attribute(name_column, name_renderer, "text", 0);
+    gtk_tree_view_column_add_attribute(name_column, name_renderer, "text", NAME);
     
     GtkTreeViewColumn *match_column = gtk_tree_view_column_new();
     gtk_tree_view_column_set_expand(match_column, FALSE);
     gtk_tree_view_column_set_title(match_column, "Match");
     gtk_tree_view_column_pack_start(match_column, match_renderer, TRUE);
-    gtk_tree_view_column_add_attribute(match_column, match_renderer, "text", 1);
+    gtk_tree_view_column_add_attribute(match_column, match_renderer, "text", MATCH);
     
     gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), name_column);
     gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), match_column);
@@ -591,22 +590,22 @@ void update_similar_view(SimilarInfo *similar, int size) {
                 gtk_list_store_append(store, &it);
                 
                 if (similar[i].name) {
-                    gtk_list_store_set(store, &it, 0, similar[i].name, -1);
+                    gtk_list_store_set(store, &it, NAME, similar[i].name, -1);
                 }
                 if (similar[i].match) {
                     /* Converting match value to percentage representation. */
                     char perc[10] = {0};
                     if (string_to_perc(similar[i].match, perc) != -1) {
-                        gtk_list_store_set(store, &it, 1, perc, -1);
+                        gtk_list_store_set(store, &it, MATCH, perc, -1);
                     }
                 }
                 if (similar[i].url) {
-                    gtk_list_store_set(store, &it, 2, similar[i].url, -1);
+                    gtk_list_store_set(store, &it, URL, similar[i].url, -1);
                 }
             }
         } else {
             gtk_list_store_append(store, &it);
-            gtk_list_store_set(store, &it, 0, "Similar artists not found.", -1);
+            gtk_list_store_set(store, &it, NAME, "Similar artists not found.", -1);
         }
     }
 }
