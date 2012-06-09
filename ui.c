@@ -230,13 +230,15 @@ create_sim_tab(void) {
             GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     
     GtkListStore *sim_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+    
     sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
     gtk_tree_view_set_grid_lines(GTK_TREE_VIEW(sim_list), GTK_TREE_VIEW_GRID_LINES_BOTH);
     
     GtkCellRenderer *name_renderer = gtk_cell_renderer_text_new();
+    g_object_set(G_OBJECT(name_renderer), "style", PANGO_STYLE_OBLIQUE, NULL);
 
     GtkCellRenderer *match_renderer = gtk_cell_renderer_text_new();
-    g_object_set(G_OBJECT(match_renderer), "style", PANGO_STYLE_ITALIC, NULL);
+    g_object_set(G_OBJECT(match_renderer), "weight", PANGO_WEIGHT_BOLD, NULL);
     
     GtkTreeViewColumn *name_column = gtk_tree_view_column_new();
     gtk_tree_view_column_set_expand(name_column, TRUE);
