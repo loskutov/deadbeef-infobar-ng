@@ -505,13 +505,16 @@ int init_ui_plugin(void) {
 void free_ui_plugin(void) {
     
     free_bio_pixbuf();
+    
+    if (gtkui_plugin) {
+        
+        int aw = infobar->allocation.width;
+        deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
+    
+        int ah = img_frame->allocation.height;
+        deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
+    }
     gtkui_plugin = NULL;
-    
-    int aw = infobar->allocation.width;
-    deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
-    
-    int ah = img_frame->allocation.height;
-    deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */
