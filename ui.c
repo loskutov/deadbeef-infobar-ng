@@ -522,7 +522,7 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     
     if (lyr_buffer && get_artist_and_title_info(track, &artist, &title) == 0) {
         
-        GtkTextIter begin, end;
+        GtkTextIter begin = {0}, end = {0};
         
         gtk_text_buffer_get_iter_at_line (lyr_buffer, &begin, 0);
         gtk_text_buffer_get_end_iter (lyr_buffer, &end);
@@ -565,7 +565,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
     /* Updating biography text. */
     if (bio_buffer) {
         
-        GtkTextIter begin, end;
+        GtkTextIter begin = {0}, end = {0};
         
         gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
         gtk_text_buffer_get_end_iter (bio_buffer, &end);
@@ -584,7 +584,7 @@ void update_similar_view(SimilarInfo *similar, int size) {
     if (store) {
         /* Removing previous list from model. */
         gtk_list_store_clear(store);
-        GtkTreeIter it;
+        GtkTreeIter it = {0};
         
         if (similar) {
             for (int i = 0; i < size; ++i) {
