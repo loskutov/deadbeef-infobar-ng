@@ -114,8 +114,8 @@ int encode_artist_and_title(const char *artist, const char *title, char **eartis
 /* Encodes artist name, song title and album name. */
 int encode_full(const char *artist, const char *title, const char *album, char **eartist, char **etitle, char **ealbum);
 
-/* Parses content in HTML or XML format using XPath expression. */
-int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num);
+/* Common function to parse XML and HTML content using XPath expression. */
+int parse_common(const char *content, const char *exp, ContentType type, char **psd);
 
 /* Initializes xmlDoc object depending on content type. */
 int init_doc_obj(const char *content, ContentType type, xmlDocPtr *doc);

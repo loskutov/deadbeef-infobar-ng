@@ -91,27 +91,6 @@ format_megalyrics(const char *lyr, char **fmd) {
     return 0;
 }
 
-/* Parses lyrics from XML and HTML pages. */
-static int
-parse_common(const char *content, const char *exp, ContentType type, char **psd) {
-    
-    xmlDocPtr doc = NULL;
-    if (init_doc_obj(content, type, &doc) == -1)
-        return -1;
-    
-    xmlXPathObjectPtr xpath = NULL;
-    if (get_xpath_obj(doc, exp, &xpath) == -1) {
-        xmlFreeDoc(doc);
-        return -1;
-    }
-    xmlNodePtr node = xpath->nodesetval->nodeTab[0];
-    *psd = (char*) xmlNodeGetContent(node);
-    
-    xmlXPathFreeObject(xpath);
-    xmlFreeDoc(doc);
-    return 0;
-}
-
 /* Parses lyrics fetched from "http://megalyrics.ru". */
 static int
 parse_megalyrics(const char *content, char **psd) {

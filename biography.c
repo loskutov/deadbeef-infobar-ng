@@ -55,14 +55,14 @@ int fetch_bio_txt(const char *artist, char **txt) {
     free(url);
 
     char *html_txt = NULL;
-    if (parse_content(raw_page, BIO_TXT_XML_EXP, &html_txt, XML, 0) == -1) {
+    if (parse_common(raw_page, BIO_TXT_XML_EXP, XML,  &html_txt) == -1) {
         free(raw_page);
         return -1;
     }
     free(raw_page);
     
     char *bio_txt = NULL;
-    if (parse_content(html_txt, BIO_TXT_HTML_EXP, &bio_txt, HTML, 0) == -1) {
+    if (parse_common(html_txt, BIO_TXT_HTML_EXP, HTML, &bio_txt) == -1) {
         free(html_txt);
         return -1;
     }
@@ -96,7 +96,7 @@ int fetch_bio_image(const char *artist, const char *path) {
     free(url);
     
     char *img_url = NULL;
-    if (parse_content(raw_page, BIO_IMG_EXP, &img_url, XML, 0) == -1) {
+    if (parse_common(raw_page, BIO_IMG_EXP, XML, &img_url) == -1) {
         free(raw_page);
         return -1;
     }

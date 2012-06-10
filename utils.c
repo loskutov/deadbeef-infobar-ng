@@ -134,54 +134,24 @@ gboolean is_track_changed(DB_playItem_t *track) {
     return TRUE;
 }
 
-/* Parses content in HTML or XML format using XPath expression. */
-int parse_content(const char *content, const char *pattern, char **parsed, ContentType type, int num) {
+/* Common function to parse XML and HTML content using XPath expression. */
+int parse_common(const char *content, const char *exp, ContentType type, char **psd) {
     
     xmlDocPtr doc = NULL;
-    int size = strlen(content);
-
-    switch (type) {
-    case HTML:
-        doc = htmlReadMemory(content, size, NULL, "utf-8", (HTML_PARSE_RECOVER | 
-                HTML_PARSE_NONET | HTML_PARSE_NOWARNING | HTML_PARSE_NOERROR));
-        break;
-    case XML:
-        doc = xmlReadMemory(content, size, NULL, "utf-8", (XML_PARSE_RECOVER | 
-                XML_PARSE_NONET | HTML_PARSE_NOWARNING | HTML_PARSE_NOERROR));
-        break;
-    }
-    if (!doc) 
+    if (init_doc_obj(content, type, &doc) == -1)
         return -1;
     
-    int res = 0;
-    
-    xmlXPathObjectPtr obj = NULL;
-    xmlXPathContextPtr ctx = NULL;
-    
-    ctx = xmlXPathNewContext(doc);
-    if (!ctx) {
-        res = -1;
-        goto cleanup;
+    xmlXPathObjectPtr xpath = NULL;
+    if (get_xpath_obj(doc, exp, &xpath) == -1) {
+        xmlFreeDoc(doc);
+        return -1;
     }
-        
-    obj = xmlXPathEvalExpression((xmlChar*) pattern, ctx);
-    if (!obj || !obj->nodesetval->nodeMax) {
-        res = -1;
-        goto cleanup;
-    }
+    xmlNodePtr node = xpath->nodesetval->nodeTab[0];
+    *psd = (char*) xmlNodeGetContent(node);
     
-    xmlNodePtr node = obj->nodesetval->nodeTab[num];
-    if (!node) {
-        res = -1;
-        goto cleanup;
-    }
-    *parsed = (char*) xmlNodeGetContent(node);
-
-cleanup:
-    if (obj) xmlXPathFreeObject(obj);
-    if (ctx) xmlXPathFreeContext(ctx);
-    if (doc) xmlFreeDoc(doc);
-    return res;
+    xmlXPathFreeObject(xpath);
+    xmlFreeDoc(doc);
+    return 0;
 }
 
 /* Initializes xmlDoc object depending on content type. */
