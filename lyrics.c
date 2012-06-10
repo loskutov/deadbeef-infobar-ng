@@ -80,6 +80,26 @@ parse_megalyrics(const char *content, char **parsed) {
     return 0;
 }
 
+static int
+parse_common(const char *content, const char *exp, char **parsed) {
+    
+    xmlDocPtr doc = NULL;
+    if (init_doc_obj(content, HTML, &doc) == -1)
+        return -1;
+    
+    xmlXPathObjectPtr xpath = NULL;
+    if (get_xpath_obj(doc, exp, &xpath) == -1) {
+        xmlFreeDoc(doc);
+        return -1;
+    }
+    xmlNodePtr node = xpath->nodesetval->nodeTab[0];
+    *parsed = (char*) xmlNodeGetContent(node);
+    
+    xmlXPathFreeObject(xpath);
+    xmlFreeDoc(doc);
+    return 0;
+}
+
 /* Forms an URL, which is used to retrieve lyrics for specified track. */
 static int
 form_lyr_url(const char *artist, const char* title, const char* template, gboolean rev, char **url) {
@@ -158,13 +178,28 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
     if (form_lyr_url(artist, title, LM_URL_TEMP, TRUE, &url) == -1)
         return -1;
     
-    char *lyr_txt = NULL;
-    if (fetch_lyrics(url, LM_EXP, HTML, &lyr_txt) == -1) {
+    char *raw_page = NULL;
+    if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
         return -1;
     }
     free(url);
-    *txt = lyr_txt;
+    
+    if (parse_common(raw_page, LM_EXP, txt) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    
+    /* Making sure, that retrieved text has UTF-8 encoding,
+     * otherwise converting it. */
+    char *lyr_utf8 = NULL;
+    if (deadbeef->junk_detect_charset(*txt)) {
+        if (convert_to_utf8(*txt, &lyr_utf8) == 0) {
+            free(*txt);
+            *txt = lyr_utf8;
+        }
+    }
     return 0;
 }
 
