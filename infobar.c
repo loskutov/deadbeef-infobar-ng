@@ -308,7 +308,7 @@ static const char settings_dlg[] =
     "property \"Biography locale\" entry infobar.bio.locale \"en\";"
     "property \"Biography cache update period (hr)\" spinbtn[0,99,1] infobar.bio.cache.period 24;"
     "property \"Enable similar artists\" checkbox infobar.similar.enabled 1;"
-    "property \"Maximal artists number\" spinbtn[0,99,1] infobar.similar.max.artists 10;"
+    "property \"Max number of similar artists\" spinbtn[0,99,1] infobar.similar.max.artists 10;"
 ;
 
 static DB_misc_t plugin = {
@@ -319,12 +319,11 @@ static DB_misc_t plugin = {
     .plugin.version_minor = 2,
     .plugin.type = DB_PLUGIN_MISC,
     .plugin.name = "Infobar",
-    .plugin.descr = "Fetches and shows song's lyrics and artist's biography.\n\n"
-                    "To change the biography's locale, set an appropriate ISO 639-2 locale code.\n"
-                    "See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes for more infomation.\n\n"
-                    "You can set cache update period to 0 if you don't want to update the cache at all.\n\n"
-                    "To use the custom lyrics script, enable \"Fetch from script\" option and specify full\n"
-                    "path to the script in \"Lyrics script path\" field.",
+    .plugin.descr = "Infobar plugin for DeadBeeF audio player.\nFetches and shows:\n"
+                    "- song's lyrics;\n- artist's biography;\n- list of similar artists.\n\n"
+                    "To change the biography's locale, set an appropriate\nISO 639-2 locale code.\n"
+                    "See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\nfor more infomation.\n\n"
+                    "You can set cache update period to 0 if you don't want to update\nthe cache at all.",
     .plugin.copyright =
         "Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>\n"
         "\n"
