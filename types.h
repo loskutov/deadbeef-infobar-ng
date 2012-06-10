@@ -22,13 +22,13 @@
 
 /* Custom types. */
 typedef enum {
-    HTML = 1,
-    XML = 2,
+    HTML = 0,
+    XML = 1,
 } ContentType;
 
 typedef enum {
-    LYRICS = 1,
-    BIO = 2,
+    LYRICS = 0,
+    BIO = 1,
 } CacheType;
 
 typedef enum {

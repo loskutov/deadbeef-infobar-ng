@@ -25,8 +25,9 @@ retrieve_similar_artists(void *ctx) {
     trace("infobar: retrieving similar artists\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
     
+    size_t size = 0;
     char *artist = NULL;
-    SimilarInfo *similar = NULL; int size = 0;
+    SimilarInfo *similar = NULL;
     
     if (!is_track_changed(track)) {
         
@@ -82,7 +83,7 @@ retrieve_artist_bio(void *ctx) {
         
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
             /* There is no cache for artist's biography or it's 
-            * too old, retrieving new one. */
+             * too old, retrieving new one. */
             if (fetch_bio_txt(artist, &bio_txt) == 0) {
                 
                 /* Making sure, that retrieved text has UTF-8 encoding,
@@ -150,7 +151,7 @@ retrieve_track_lyrics(void *ctx) {
         
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
             /* There is no cache for the current track or the previous cache 
-            * is too old, so start retrieving new one. */
+             * is too old, so start retrieving new one. */
             if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
             

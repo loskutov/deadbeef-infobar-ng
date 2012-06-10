@@ -21,7 +21,7 @@
 
 /* Parses XML from lastfm and forms list of similar artists. */
 static int
-parse_similar(const char *content, SimilarInfo **similar, int *size) {
+parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
     
     xmlDocPtr doc = NULL;
     if (init_doc_obj(content, XML, &doc) == -1)
@@ -42,9 +42,10 @@ parse_similar(const char *content, SimilarInfo **similar, int *size) {
     }
     
     for (int i = 0; i < nodeSet->nodeNr; ++i) {
-        xmlNodePtr root = nodeSet->nodeTab[i];
         
+        xmlNodePtr root = nodeSet->nodeTab[i];
         xmlNodePtr child = root->children;
+        
         for (; child; child = child->next) {
            
             if (child->type == XML_ELEMENT_NODE) {
@@ -72,13 +73,13 @@ parse_similar(const char *content, SimilarInfo **similar, int *size) {
 
 /* Forms an URL, which is used to retrieve the list of similar artists. */
 static int
-form_similar_url(const char *artist, char **url, int limit) {
+form_similar_url(const char *artist, char **url, size_t limit) {
     
     char *eartist = NULL;
     if (encode_artist(artist, &eartist, '+') == -1)
         return -1;
     
-    if (asprintf(url, SIM_URL_TEMPLATE, eartist, limit) == -1) {
+    if (asprintf(url, SIM_URL_TEMPLATE, eartist, (int) limit) == -1) {
         free(eartist);
         return -1;
     }
@@ -87,9 +88,9 @@ form_similar_url(const char *artist, char **url, int limit) {
 } 
 
 /* Frees list of similar artists */
-void free_sim_list(SimilarInfo *similar, int size) {
+void free_sim_list(SimilarInfo *similar, size_t size) {
     
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         if (similar[i].name) 
             free(similar[i].name);
 
@@ -103,7 +104,7 @@ void free_sim_list(SimilarInfo *similar, int size) {
 }
 
 /* Fetches the list of similar artists from lastfm. */
-int fetch_similar_artists(const char *artist, SimilarInfo **similar, int *size) {
+int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *size) {
     
     int limit = deadbeef->conf_get_int(CONF_SIM_MAX_ARTISTS, 10);
     

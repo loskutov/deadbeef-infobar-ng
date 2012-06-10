@@ -30,7 +30,7 @@
 #define SIM_EXP "/lfm/similarartists/artist"
 
 /* Frees list of similar artists */
-void free_sim_list(SimilarInfo *similar, int size);
+void free_sim_list(SimilarInfo *similar, size_t size);
 
 /* Fetches the list of similar artists from lastfm. */
-int fetch_similar_artists(const char *artist, SimilarInfo **similar, int *size);
+int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *size);

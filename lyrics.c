@@ -150,7 +150,7 @@ parse_lyricswikia(const char *content, char **psd) {
     *psd = fst;
     
     /* Some tracks on lyricswikia have multiply lyrics,
-       so we gonna check this. */
+     * so we gonna check this. */
     if (xpath->nodesetval->nodeNr > 1) {
         
         xmlNodePtr sndNode = xpath->nodesetval->nodeTab[1];

@@ -68,10 +68,10 @@ create_dir(const char *dir, mode_t mode) {
 
 /* Encodes specified string. */
 static int 
-uri_encode(char *out, int outl, const char *str, char space) {
+uri_encode(char *out, size_t outl, const char *str, char space) {
     
-    int l = outl;
-
+    size_t l = outl;
+    
     while (*str) {
         
         if (outl <= 1) 
@@ -157,7 +157,7 @@ int parse_common(const char *content, const char *exp, ContentType type, char **
 /* Initializes xmlDoc object depending on content type. */
 int init_doc_obj(const char *content, ContentType type, xmlDocPtr *doc) {
     
-    int len = strlen(content);
+    size_t len = strlen(content);
     
     switch(type) {
     case XML:
@@ -223,7 +223,7 @@ int retrieve_img_content(const char *url, const char *img) {
         return -1;
     }
 
-    int len = 0;
+    size_t len = 0;
     char temp[4096] = {0};
 
     while ((len = deadbeef->fread(temp, 1, sizeof(temp), stream)) > 0) {
@@ -250,7 +250,7 @@ int load_txt_file(const char *file, char **content) {
         return -1;
     }
     
-    int size = ftell(in_file);
+    size_t size = ftell(in_file);
     rewind(in_file);
 
     *content = calloc(size + 1, sizeof(char));
@@ -276,7 +276,7 @@ int save_txt_file(const char *file, const char *content) {
     if (!out_file)
         return -1;
         
-    int size = strlen(content);
+    size_t size = strlen(content);
     
     if (fwrite(content, 1, size, out_file) <= 0) {
         fclose(out_file);
@@ -420,7 +420,7 @@ int create_bio_cache(const char *artist, char **txt_cache, char **img_cache) {
 /* Checks if the specified cache file is old. */
 gboolean is_old_cache(const char *cache_file, CacheType type) {
     
-    int uperiod = 0;
+    size_t uperiod = 0;
     time_t tm = time(NULL);
 
     struct stat st;
@@ -445,7 +445,7 @@ gboolean is_old_cache(const char *cache_file, CacheType type) {
 /* Encodes artist name. */
 int encode_artist(const char *artist, char **eartist, const char space) {
     
-    int ealen = strlen(artist) * 4;
+    size_t ealen = strlen(artist) * 4;
     
     *eartist = calloc(ealen + 1, sizeof(char));
     if (!*eartist)
@@ -464,7 +464,7 @@ int encode_artist_and_title(const char *artist, const char *title, char **eartis
     if (encode_artist(artist, eartist, '_') == -1)
         return -1;
     
-    int etlen = strlen(title) * 4;
+    size_t etlen = strlen(title) * 4;
     
     *etitle = calloc(etlen + 1, sizeof(char));
     if (!*etitle) {
@@ -486,7 +486,7 @@ int encode_full(const char *artist, const char *title, const char *album, char *
     if (encode_artist_and_title(artist, title, eartist, etitle) == -1)
         return -1;
     
-    int ealen = strlen(album) * 4;
+    size_t ealen = strlen(album) * 4;
     
     *ealbum = calloc(ealen + 1, sizeof(char));
     if (!*ealbum) {
@@ -507,8 +507,7 @@ int encode_full(const char *artist, const char *title, const char *album, char *
 /* Converts specified string encoding to UTF-8. */
 int convert_to_utf8(const char *str, char **str_utf8) {
     
-    int len = strlen(str);
-
+    size_t len = strlen(str);
     const char *str_cs = deadbeef->junk_detect_charset(str);
     if (!str_cs) 
         return -1;
@@ -525,79 +524,81 @@ int convert_to_utf8(const char *str, char **str_utf8) {
 }
 
 /* Deletes new lines at the beginning of specified text data. */
-int del_nl(const char *txt, char **txt_wo_nl) {
+int del_nl(const char *txt, char **wo_nl) {
     
-    int num = 0;
-    int len = strlen(txt);
+    size_t num = 0;
+    size_t len = strlen(txt);
     
-    for (int i = 0; i < len; ++i) {
-        if (txt[i] == '\n' ||
-            txt[i] == '\r')
+    for (; *txt; ++txt) {
+        if (*txt == '\n' ||
+            *txt == '\r')
+        {
             ++num;
-        else
-            break;
+            continue;
+        }
+        break;
     }
-    if (num == 0) 
+    txt-=num;
+    
+    if (num == 0)
         return -1;
     
-    *txt_wo_nl = calloc(len - num + 1, sizeof(char));
-    if (!*txt_wo_nl)
+    *wo_nl = calloc(len - num + 1, sizeof(char));
+    if (!*wo_nl)
         return -1;
     
-    memcpy(*txt_wo_nl, txt + num, len - num + 1);
+    memcpy(*wo_nl, txt + num, len - num + 1);
     return 0;
 }
 
 /* Concatenates two lyrics texts into one, using simple separator to visually divide them. */
-int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
+int concat_lyrics(const char *fst, const char *snd, char **lyr) {
     
-    if (!fst_lyr || !snd_lyr)
-        return -1;
-    
-    const char *sep = "\n**************\n";
-    
-    int fst_len = strlen(fst_lyr);
-    int snd_len = strlen(snd_lyr);
-    int sep_len = strlen(sep);
+    size_t fst_len = strlen(fst);
+    size_t snd_len = strlen(snd);
+    size_t sep_len = strlen(SEP);
     
     *lyr = calloc(fst_len + snd_len + sep_len + 1, sizeof(char));
     if (!*lyr) 
         return -1;
     
-    memcpy(*lyr, fst_lyr, fst_len + 1);
-    memcpy(*lyr + fst_len, sep, sep_len + 1);
-    memcpy(*lyr + fst_len + sep_len, snd_lyr, snd_len + 1);
+    memcpy(*lyr, fst, fst_len + 1);
+    memcpy(*lyr + fst_len, SEP, sep_len + 1);
+    memcpy(*lyr + fst_len + sep_len, snd, snd_len + 1);
     return 0;
 }
 
 /* Replaces each substring of this string with the given replacement. */
 int replace_all(const char *str, const char *orig, const char *with, char **repl) {
     
-    int str_len = strlen(str);
-    int orig_len = strlen(orig);
-    int with_len = strlen(with);
+    size_t str_len = strlen(str);
+    size_t orig_len = strlen(orig);
+    size_t with_len = strlen(with);
     
-    int count = 0;
     char *cur = NULL;
+    size_t count = 0;
     
+    /* Counting occurences of the substring. */
     const char *ins = str;
     while ((cur = strstr(ins, orig))) {
         ins = cur + orig_len;
         ++count;
     }
+    /* No occurences found. */
     if (count == 0)
         return -1;
     
-    int repl_len = str_len - (orig_len * count)
-                           + (with_len * count);
+    size_t repl_len = str_len - (orig_len * count)
+                              + (with_len * count);
     
     *repl = calloc(repl_len + 1, sizeof(char));
     if (!*repl)
         return -1;
     
-    int copied = 0;
     char *to = *repl;
+    size_t copied = 0;
     
+    /* Replacing substrings. */
     while ((cur = strstr(str, orig))) {
         
         int copy = cur - str;
@@ -608,7 +609,7 @@ int replace_all(const char *str, const char *orig, const char *with, char **repl
         to+=with_len; str+=orig_len;
         
         copied+=copy + with_len;
-        /* We've already found all the occurences. */
+        /* We've already replaced all the substrings. */
         if (--count == 0) break;
     }
     memcpy(to, str, repl_len - copied);
@@ -635,7 +636,7 @@ int get_redirect_info(const char *str, char **artist, char **title) {
         free(*artist);
         return -1;
     }
-        
+    
     memcpy(*artist, str + bi, (mi - bi) - 1);
     memcpy(*title, str + mi, (ei - mi) - 1);
     return 0;
@@ -651,7 +652,7 @@ int get_artist_info(DB_playItem_t *track, char **artist) {
         deadbeef->pl_unlock();
         return -1;
     }
-    int alen = strlen(cur_artist);
+    size_t alen = strlen(cur_artist);
     
     *artist = calloc(alen + 1, sizeof(char));
     if (!*artist) {
@@ -677,8 +678,8 @@ int get_artist_and_title_info(DB_playItem_t *track, char **artist, char **title)
         free(*artist);
         return -1;
     }
-    int tlen = strlen(cur_title);
-
+    size_t tlen = strlen(cur_title);
+    
     *title = calloc(tlen + 1, sizeof(char));
     if (!*title) {
         deadbeef->pl_unlock();
@@ -705,7 +706,7 @@ int get_full_track_info(DB_playItem_t *track, char **artist, char **title, char 
         free(*title);
         return -1;
     }
-    int alen = strlen(cur_album);
+    size_t alen = strlen(cur_album);
     
     *album = calloc(alen + 1, sizeof(char));
     if (!*album) {

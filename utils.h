@@ -36,6 +36,7 @@
 
 /* Defines maximum number of characters that can be retrieved. */
 #define MAX_TXT_SIZE 100000
+#define SEP "\n**************\n"
 
 /* Checks if specified file or directory is exists. */
 gboolean is_exists(const char *obj);
@@ -71,7 +72,7 @@ int save_txt_file(const char *file, const char *content);
 int convert_to_utf8(const char *str, char **str_utf8);
 
 /* Deletes new lines at the beginning of specified text data. */
-int del_nl(const char *txt, char **txt_wo_nl);
+int del_nl(const char *txt, char **wo_nl);
 
 /* Concatenates two lyrics texts into one, using simple separator 
  * to visually divide them. */
