@@ -80,11 +80,49 @@ parse_megalyrics(const char *content, char **parsed) {
     return 0;
 }
 
+/* Parses lyrics fetched from "http://lyricswikia.com". */
 static int
-parse_common(const char *content, const char *exp, char **parsed) {
+parse_lyricswikia(const char *content, char **parsed) {
     
     xmlDocPtr doc = NULL;
     if (init_doc_obj(content, HTML, &doc) == -1)
+        return -1;
+    
+    xmlXPathObjectPtr xpath = NULL;
+    if (get_xpath_obj(doc, LW_HTML_EXP, &xpath) == -1) {
+        xmlFreeDoc(doc);
+        return -1;
+    }
+    xmlNodePtr fstNode = xpath->nodesetval->nodeTab[0];
+    *parsed = (char*) xmlNodeGetContent(fstNode);
+    
+    /* Some tracks on lyricswikia have multiply lyrics,
+       so we gonna check this. */
+    if (xpath->nodesetval->nodeNr > 1) {
+        
+        char *snd = NULL;
+        xmlNodePtr sndNode = xpath->nodesetval->nodeTab[1];
+        snd = (char*) xmlNodeGetContent(sndNode);
+        
+        /* We got multiply lyrics, concatenating them into one. */
+        char *multi = NULL;
+        if (concat_lyrics(*parsed, snd, &multi) == 0) {
+            free(*parsed);
+            *parsed = multi;
+        }
+        if (snd) free(snd);
+    }
+    xmlXPathFreeObject(xpath);
+    xmlFreeDoc(doc);
+    return 0;
+}
+
+/* Parses lyrics from XML and HTML pages. */
+static int
+parse_common(const char *content, const char *exp, ContentType type, char **parsed) {
+    
+    xmlDocPtr doc = NULL;
+    if (init_doc_obj(content, type, &doc) == -1)
         return -1;
     
     xmlXPathObjectPtr xpath = NULL;
@@ -143,34 +181,6 @@ form_script_cmd(const char *artist, const char* title, const char *album,
     return 0;
 }
 
-/* Fetches lyrics from specified URL and parses it. */
-static int
-fetch_lyrics(const char *url, const char *exp, ContentType type, char **txt) {
-    
-    char *raw_page = NULL;
-    if (retrieve_txt_content(url, &raw_page) == -1)
-        return -1;
-    
-    char *lyr_txt = NULL;
-    if (parse_content(raw_page, exp, &lyr_txt, type, 0) == -1) {
-        free(raw_page);
-        return -1;
-    }
-    free(raw_page);
-    *txt = lyr_txt;
-    
-    /* Making sure, that retrieved text has UTF-8 encoding,
-     * otherwise converting it. */
-    char *lyr_utf8 = NULL;
-    if (deadbeef->junk_detect_charset(lyr_txt)) {
-        if (convert_to_utf8(lyr_txt, &lyr_utf8) == 0) {
-            free(lyr_txt);
-            *txt = lyr_utf8;
-        }
-    }
-    return 0;
-}
-
 /* Fetches lyrics from "http://lyricsmania.com". */
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt) {
     
@@ -185,7 +195,7 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
     }
     free(url);
     
-    if (parse_common(raw_page, LM_EXP, txt) == -1) {
+    if (parse_common(raw_page, LM_EXP, HTML, txt) == -1) {
         free(raw_page);
         return -1;
     }
@@ -217,7 +227,7 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
     }
     free(url);
     
-    if (parse_common(raw_page, LT_EXP, txt) == -1) {
+    if (parse_common(raw_page, LT_EXP, HTML, txt) == -1) {
         free(raw_page);
         return -1;
     }
@@ -279,23 +289,29 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
     char *url = NULL;
     if (form_lyr_url(artist, title, LW_URL_TEMP, FALSE, &url) == -1)
         return -1;
-
+    
     char *raw_page = NULL;
-    if (fetch_lyrics(url, LW_XML_EXP, XML, &raw_page) == -1) {
+    if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
         return -1;
     }
     free(url);
     
+    if (parse_common(raw_page, LW_XML_EXP, XML, txt) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    
     /* Checking if we got a redirect. Read more about redirects 
      * here: "http://lyrics.wikia.com/Help:Redirect". */
-    if (is_redirect(raw_page)) {
+    if (is_redirect(*txt)) {
         
         char *rartist = NULL;
         char *rtitle = NULL;
         
-        if (get_redirect_info(raw_page, &rartist, &rtitle) == 0) {
-            free(raw_page);
+        if (get_redirect_info(*txt, &rartist, &rtitle) == 0) {
+            free(*txt);
             
             /* Retrieving lyrics again, using correct artist name and title. */
             url = NULL;
@@ -307,35 +323,27 @@ int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **
             free(rartist);
             free(rtitle);
             
-            raw_page = NULL;
-            if (fetch_lyrics(url, LW_XML_EXP, XML, &raw_page) == -1) {
+            char *raw_page = NULL;
+            if (retrieve_txt_content(url, &raw_page) == -1) {
                 free(url);
                 return -1;
             }
             free(url);
+            
+            if (parse_common(raw_page, LW_XML_EXP, XML, txt) == -1) {
+                free(raw_page);
+                return -1;
+            }
+            free(raw_page);
         }
     }
-    char *fst_lyr_txt = NULL;
-    char *snd_lyr_txt = NULL;
-
-    if (parse_content(raw_page, LW_HTML_EXP, &fst_lyr_txt, HTML, 0) == -1) {
-        free(raw_page);
+    char *lyr_txt = NULL;
+    if (parse_lyricswikia(*txt, &lyr_txt) == -1) {
+        free(*txt);
         return -1;
     }
-    *txt = fst_lyr_txt;
-    
-    /* Some tracks on lyrics wikia have multiply lyrics, so we gonna
-     * check this. */
-    char *multi_lyr = NULL;
-    if (parse_content(raw_page, LW_HTML_EXP, &snd_lyr_txt, HTML, 1) == 0) {
-        /* We got multiply lyrics, concatenating them into one. */
-        if (concat_lyrics(fst_lyr_txt, snd_lyr_txt, &multi_lyr) == 0) {
-            free(fst_lyr_txt);
-            *txt = multi_lyr;
-        }
-        free(snd_lyr_txt);
-    }
-    free(raw_page);
+    free(*txt);
+    *txt = lyr_txt;
     return 0;
 }
 

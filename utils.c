@@ -581,6 +581,9 @@ int del_nl(const char *txt, char **txt_wo_nl) {
 /* Concatenates two lyrics texts into one, using simple separator to visually divide them. */
 int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr) {
     
+    if (!fst_lyr || !snd_lyr)
+        return -1;
+    
     const char *sep = "\n**************\n";
     
     int fst_len = strlen(fst_lyr);
