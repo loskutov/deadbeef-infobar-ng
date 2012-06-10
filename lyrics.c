@@ -109,17 +109,17 @@ parse_megalyrics(const char *content, char **psd) {
     xmlXPathFreeObject(xpath);
     xmlFreeDoc(doc);
     
-    if (nb->size == 0) {
+    if (nb->use == 0) {
         xmlBufferFree(nb);
         return -1;
     }
     
-    *psd = calloc(nb->size + 1, sizeof(char));
+    *psd = calloc(nb->use + 1, sizeof(char));
     if (!*psd) {
         xmlBufferFree(nb);
         return -1;
     }
-    memcpy(*psd, nb->content, nb->size + 1);
+    memcpy(*psd, nb->content, nb->use + 1);
     xmlBufferFree(nb);
     return 0;
 }
