@@ -210,13 +210,28 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
     if (form_lyr_url(artist, title, LT_URL_TEMP, FALSE, &url) == -1)
         return -1;
     
-    char *lyr_txt = NULL;
-    if (fetch_lyrics(url, LT_EXP, HTML, &lyr_txt) == -1) {
+    char *raw_page = NULL;
+    if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
         return -1;
     }
     free(url);
-    *txt = lyr_txt;
+    
+    if (parse_common(raw_page, LT_EXP, txt) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    
+    /* Making sure, that retrieved text has UTF-8 encoding,
+     * otherwise converting it. */
+    char *lyr_utf8 = NULL;
+    if (deadbeef->junk_detect_charset(*txt)) {
+        if (convert_to_utf8(*txt, &lyr_utf8) == 0) {
+            free(*txt);
+            *txt = lyr_utf8;
+        }
+    }
     return 0;
 }
 
