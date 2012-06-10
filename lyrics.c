@@ -181,6 +181,28 @@ form_script_cmd(const char *artist, const char* title, const char *album,
     return 0;
 }
 
+static int
+fetch_xml_from_lyricswikia(const char *artist, const char *title, char **xml) {
+    
+    char *url = NULL;
+    if (form_lyr_url(artist, title, LW_URL_TEMP, FALSE, &url) == -1)
+        return -1;
+    
+    char *raw_page = NULL;
+    if (retrieve_txt_content(url, &raw_page) == -1) {
+        free(url);
+        return -1;
+    }
+    free(url);
+    
+    if (parse_common(raw_page, LW_XML_EXP, XML, xml) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    free(raw_page);
+    return 0;
+}
+
 /* Fetches lyrics from "http://lyricsmania.com". */
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt) {
     
@@ -256,64 +278,35 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
 /* Fetches lyrics from "http://lyrics.wikia.com". */
 int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt) {
     
-    char *url = NULL;
-    if (form_lyr_url(artist, title, LW_URL_TEMP, FALSE, &url) == -1)
+    char *xml = NULL;
+    if (fetch_xml_from_lyricswikia(artist, title, &xml) == -1)
         return -1;
-    
-    char *raw_page = NULL;
-    if (retrieve_txt_content(url, &raw_page) == -1) {
-        free(url);
-        return -1;
-    }
-    free(url);
-    
-    if (parse_common(raw_page, LW_XML_EXP, XML, txt) == -1) {
-        free(raw_page);
-        return -1;
-    }
-    free(raw_page);
     
     /* Checking if we got a redirect. Read more about redirects 
      * here: "http://lyrics.wikia.com/Help:Redirect". */
-    if (is_redirect(*txt)) {
+    if (is_redirect(xml)) {
         
-        char *rartist = NULL;
-        char *rtitle = NULL;
-        
-        if (get_redirect_info(*txt, &rartist, &rtitle) == 0) {
-            free(*txt);
+        char *rartist = NULL, *rtitle = NULL;
+        if (get_redirect_info(xml, &rartist, &rtitle) == 0) {
             
+            free(xml);
             /* Retrieving lyrics again, using correct artist name and title. */
-            url = NULL;
-            if (form_lyr_url(rartist, rtitle, LW_URL_TEMP, FALSE, &url) == -1) {
+            if (fetch_xml_from_lyricswikia(rartist, rtitle, &xml) == -1) {
                 free(rartist);
                 free(rtitle);
                 return -1;
             }
             free(rartist);
             free(rtitle);
-            
-            char *raw_page = NULL;
-            if (retrieve_txt_content(url, &raw_page) == -1) {
-                free(url);
-                return -1;
-            }
-            free(url);
-            
-            if (parse_common(raw_page, LW_XML_EXP, XML, txt) == -1) {
-                free(raw_page);
-                return -1;
-            }
-            free(raw_page);
         }
     }
-    char *lyr_txt = NULL;
-    if (parse_lyricswikia(*txt, &lyr_txt) == -1) {
-        free(*txt);
+    char *html = NULL;
+    if (parse_lyricswikia(xml, &html) == -1) {
+        free(xml);
         return -1;
     }
-    free(*txt);
-    *txt = lyr_txt;
+    free(xml);
+    *txt = html;
     return 0;
 }
 
