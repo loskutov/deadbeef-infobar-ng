@@ -25,13 +25,17 @@ static GtkWidget *infobar_toggles;
 
 static GtkWidget *lyr_toggle;
 static GtkWidget *bio_toggle;
+static GtkWidget *sim_toggle;
 static GtkWidget *dlt_toggle;
 
 static GtkWidget *lyr_tab;
 static GtkWidget *bio_tab;
+static GtkWidget *sim_tab;
 
+static GtkWidget *lyr_view;
 static GtkWidget *img_frame;
 static GtkWidget *bio_image;
+static GtkWidget *sim_list;
 static GdkPixbuf *bio_pixbuf;
 
 static GtkTextBuffer *lyr_buffer;
@@ -45,7 +49,7 @@ infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
     
     gboolean state = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item));
     state ? gtk_widget_show(infobar) : gtk_widget_hide(infobar); 
-    deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, (gint) state);
+    deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, (int) state);
     return FALSE;
 }
 
@@ -54,7 +58,7 @@ infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
 static gboolean
 infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
     
-    gint index = gtk_notebook_page_num(GTK_NOTEBOOK(infobar_tabs), widget);
+    int index = gtk_notebook_page_num(GTK_NOTEBOOK(infobar_tabs), widget);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(infobar_tabs), index);
     return FALSE;
 }
@@ -129,6 +133,41 @@ bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
     return FALSE;
 }
 
+/* Disables any keyboard events in the "Similar" list. */
+static gboolean
+sim_list_dis_key(GtkWidget *widget, GdkEvent *event, gpointer data) {
+    return TRUE;
+}
+
+/* Called when user double-clicks on similar list row. */
+static gboolean
+sim_list_row_active(GtkTreeView *view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer data) {
+    
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
+    if (model) {
+        GtkTreeIter it = {0};
+        if (gtk_tree_model_get_iter(model, &it, path)) {
+
+            GValue value = {0};
+            gtk_tree_model_get_value(model, &it, URL, &value);
+            
+            if (G_IS_VALUE(&value) && G_VALUE_HOLDS_STRING(&value)) {
+                
+                const char *url = g_value_get_string(&value);
+                if (url) {
+                    char *cmd = NULL;
+                    if (asprintf(&cmd, "xdg-open http://%s", url) != -1) {
+                        system(cmd);
+                        free(cmd);
+                    }
+                }
+                g_value_unset(&value);
+            }
+        }
+    }
+    return FALSE;
+}
+
 /* Called when user clicks on delete cache button. */
 static void
 delete_cache_clicked(void) {
@@ -138,7 +177,7 @@ delete_cache_clicked(void) {
             GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, 
             "Cache files for the current track will be removed. Continue?");
     
-    gint choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
+    int choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
     switch(choise) {
     case GTK_RESPONSE_YES:
     {
@@ -147,7 +186,7 @@ delete_cache_clicked(void) {
 
             char *artist = NULL, *title = NULL;
             
-            if (get_track_info(track, &artist, &title, FALSE) == 0) {
+            if (get_artist_and_title_info(track, &artist, &title) == 0) {
                 del_lyr_cache(artist, title);
                 del_bio_cache(artist);
                 
@@ -184,17 +223,17 @@ static int
 get_align_type(void) {
     
     int type = 0;
-    int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 1);
+    int align = deadbeef->conf_get_int(CONF_LYRICS_ALIGNMENT, 0);
     
     switch (align) {
-    case 1: type = GTK_JUSTIFY_LEFT; 
+    case 0: type = GTK_JUSTIFY_LEFT; 
         break;
-    case 2: type = GTK_JUSTIFY_CENTER; 
+    case 1: type = GTK_JUSTIFY_CENTER; 
         break;
-    case 3: type = GTK_JUSTIFY_RIGHT; 
+    case 2: type = GTK_JUSTIFY_RIGHT; 
         break;
     default:
-        type = GTK_JUSTIFY_CENTER;
+        break;
     }
     return type;
 } 
@@ -204,13 +243,60 @@ static void
 create_dlt_btn(void) {
     
     dlt_toggle = gtk_button_new();
-    gtk_widget_set_tooltip_text(dlt_toggle, "Remove current track cache");
+    gtk_widget_set_tooltip_text(dlt_toggle, "Remove cache of current track");
     
     GtkWidget *dlt_img = gtk_image_new_from_stock(GTK_STOCK_CLEAR, GTK_ICON_SIZE_SMALL_TOOLBAR); 
     gtk_button_set_image(GTK_BUTTON(dlt_toggle), dlt_img);
     
     g_signal_connect(dlt_toggle, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
-} 
+}
+
+/* Creates "Similar" tab. Should be called after the "Biography" tab
+ * was created. */
+static void
+create_sim_tab(void) {
+    
+    sim_toggle = gtk_radio_button_new_with_label_from_widget(
+            GTK_RADIO_BUTTON(bio_toggle), "Similar");
+    
+    gtk_toggle_button_set_mode(GTK_TOGGLE_BUTTON(sim_toggle), FALSE);
+    
+    sim_tab = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sim_tab),
+            GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    
+    GtkListStore *sim_store = gtk_list_store_new(3, G_TYPE_STRING, 
+            G_TYPE_STRING, G_TYPE_STRING);
+    
+    sim_list = gtk_tree_view_new_with_model(GTK_TREE_MODEL(sim_store));
+    gtk_tree_view_set_grid_lines(GTK_TREE_VIEW(sim_list), GTK_TREE_VIEW_GRID_LINES_BOTH);
+    
+    GtkCellRenderer *name_renderer = gtk_cell_renderer_text_new();
+    g_object_set(G_OBJECT(name_renderer), "style", PANGO_STYLE_OBLIQUE, NULL);
+
+    GtkCellRenderer *match_renderer = gtk_cell_renderer_text_new();
+    g_object_set(G_OBJECT(match_renderer), "weight", PANGO_WEIGHT_BOLD, NULL);
+    
+    GtkTreeViewColumn *name_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_expand(name_column, TRUE);
+    gtk_tree_view_column_set_title(name_column, "Artist name");
+    gtk_tree_view_column_pack_start(name_column, name_renderer, TRUE);
+    gtk_tree_view_column_add_attribute(name_column, name_renderer, "text", NAME);
+    
+    GtkTreeViewColumn *match_column = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_expand(match_column, FALSE);
+    gtk_tree_view_column_set_title(match_column, "Match");
+    gtk_tree_view_column_pack_start(match_column, match_renderer, TRUE);
+    gtk_tree_view_column_add_attribute(match_column, match_renderer, "text", MATCH);
+    
+    gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), name_column);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(sim_list), match_column);
+    gtk_container_add(GTK_CONTAINER(sim_tab), sim_list);
+
+    g_signal_connect(sim_toggle, "toggled", G_CALLBACK(infobar_tab_changed), sim_tab);
+    g_signal_connect(sim_list, "key-press-event", G_CALLBACK(sim_list_dis_key), NULL);
+    g_signal_connect(sim_list, "row-activated", G_CALLBACK(sim_list_row_active), NULL);
+}
 
 /* Creates "Biography" tab. Should be called after the "Lyrics" 
  * tab was created. */
@@ -252,7 +338,7 @@ create_bio_tab(void) {
     g_signal_connect(bio_image, "expose-event", G_CALLBACK(bio_image_expose), NULL);
     g_signal_connect(bio_toggle, "toggled", G_CALLBACK(infobar_tab_changed), bio_tab);
     
-    gint handle_width = 0;
+    int handle_width = 0;
     gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
     
     int height = deadbeef->conf_get_int(CONF_BIO_IMAGE_HEIGHT, 200);
@@ -270,8 +356,7 @@ create_lyr_tab(void) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(lyr_tab), 
             GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     
-    GtkWidget *lyr_view = gtk_text_view_new();
-    
+    lyr_view = gtk_text_view_new();
     gtk_text_view_set_editable(GTK_TEXT_VIEW(lyr_view), FALSE);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(lyr_view), GTK_WRAP_WORD);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(lyr_view), FALSE);
@@ -308,14 +393,17 @@ create_infobar(void) {
 
     create_lyr_tab();
     create_bio_tab();
+    create_sim_tab();
     create_dlt_btn();
 
     gtk_box_pack_start(GTK_BOX(infobar_toggles), lyr_toggle, FALSE, FALSE, 1);
     gtk_box_pack_start(GTK_BOX(infobar_toggles), bio_toggle, FALSE, FALSE, 1);
+    gtk_box_pack_start(GTK_BOX(infobar_toggles), sim_toggle, FALSE, FALSE, 1);
     gtk_box_pack_start(GTK_BOX(infobar_toggles), dlt_toggle, FALSE, FALSE, 1);
     
     gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), lyr_tab, NULL);
     gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), bio_tab, NULL);
+    gtk_notebook_append_page(GTK_NOTEBOOK(infobar_tabs), sim_tab, NULL);
 
     gtk_box_pack_start(GTK_BOX(infobar), infobar_toggles, FALSE, TRUE, 1);
     gtk_box_pack_start(GTK_BOX(infobar), infobar_tabs, TRUE, TRUE, 1);
@@ -357,7 +445,7 @@ create_infobar_interface(void) {
     gtk_container_add(GTK_CONTAINER(ddb_main), ddb_main_new);
     gtk_box_reorder_child(GTK_BOX(ddb_main), ddb_main_new, 2);
     
-    gint handle_width;
+    int handle_width = 0;
     gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
     
     int width = deadbeef->conf_get_int(CONF_INFOBAR_WIDTH, 250);
@@ -417,13 +505,16 @@ int init_ui_plugin(void) {
 void free_ui_plugin(void) {
     
     free_bio_pixbuf();
+    
+    if (gtkui_plugin) {
+        
+        int aw = infobar->allocation.width;
+        deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
+    
+        int ah = img_frame->allocation.height;
+        deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
+    }
     gtkui_plugin = NULL;
-    
-    int aw = infobar->allocation.width;
-    deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
-    
-    int ah = img_frame->allocation.height;
-    deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */
@@ -431,9 +522,9 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     
     char *artist = NULL, *title = NULL;
     
-    if (lyr_buffer && get_track_info(track, &artist, &title, FALSE) == 0) {
+    if (lyr_buffer && get_artist_and_title_info(track, &artist, &title) == 0) {
         
-        GtkTextIter begin, end;
+        GtkTextIter begin = {0}, end = {0};
         
         gtk_text_buffer_get_iter_at_line (lyr_buffer, &begin, 0);
         gtk_text_buffer_get_end_iter (lyr_buffer, &end);
@@ -476,7 +567,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
     /* Updating biography text. */
     if (bio_buffer) {
         
-        GtkTextIter begin, end;
+        GtkTextIter begin = {0}, end = {0};
         
         gtk_text_buffer_get_iter_at_line (bio_buffer, &begin, 0);
         gtk_text_buffer_get_end_iter (bio_buffer, &end);
@@ -487,11 +578,46 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
     }
 }
 
+/* Updates "Similar" tab with the new list of similar artists. */
+void update_similar_view(SimilarInfo *similar, size_t size) {
+    
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
+    GtkListStore *store = GTK_LIST_STORE(model);
+    if (store) {
+        /* Removing previous list from model. */
+        gtk_list_store_clear(store);
+        GtkTreeIter it = {0};
+        
+        if (similar) {
+            for (size_t i = 0; i < size; ++i) {
+                gtk_list_store_append(store, &it);
+                
+                if (similar[i].name) {
+                    gtk_list_store_set(store, &it, NAME, similar[i].name, -1);
+                }
+                if (similar[i].match) {
+                    /* Converting match value to percentage representation. */
+                    char perc[10] = {0};
+                    if (string_to_perc(similar[i].match, perc) != -1) {
+                        gtk_list_store_set(store, &it, MATCH, perc, -1);
+                    }
+                }
+                if (similar[i].url) {
+                    gtk_list_store_set(store, &it, URL, similar[i].url, -1);
+                }
+            }
+        } else {
+            gtk_list_store_append(store, &it);
+            gtk_list_store_set(store, &it, NAME, "Similar artists not found.", -1);
+        }
+    }
+}
+
 /* This function should be invoked, when some changes to the plug-in's 
  * configuration were made. It updates infobar view according to the 
  * new changes. */
 void infobar_config_changed(void) {
-
+    
     gboolean state = FALSE;
     
     /* Showing/hiding "Lyrics" tab. */
@@ -505,4 +631,14 @@ void infobar_config_changed(void) {
     if (bio_toggle && bio_tab) {
         set_tab_visible(bio_toggle, bio_tab, state);
     }
+    
+    /* Showing/hiding "Similar" tab. */
+    state = deadbeef->conf_get_int(CONF_SIM_ENABLED, 1);
+    if (sim_toggle && sim_tab) {
+        set_tab_visible(sim_toggle, sim_tab, state);
+    }
+    
+    /* Updating lyrics alignment. */
+    int type = get_align_type();
+    gtk_text_view_set_justification(GTK_TEXT_VIEW(lyr_view), type);
 }

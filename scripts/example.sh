@@ -25,6 +25,9 @@ ARTIST=$1
 # Encoded song title.
 TITLE=$2
 
+#Encoded album name.
+ALBUM=$3
+
 # By default, plugin encodes spaces using '_' character, you can use sed to
 # replace them with the character you need.
 

@@ -27,6 +27,7 @@
 #include <deadbeef/gtkui_api.h>
 
 #include "infobar.h"
+#include "types.h"
 #include "utils.h"
 
 /* Initializes reference to gtkui plug-in and creates infobar interface. 
@@ -36,6 +37,9 @@ int init_ui_plugin(void);
 /* Disposes reference to gtkui plug-in and saves ui settings. 
  * Should be called on plug-in shutdown. */
 void free_ui_plugin(void);
+
+/* Updates "Similar" tab with the new list of similar artists. */
+void update_similar_view(SimilarInfo *similar, size_t size);
 
 /* Updates "Biography" tab with the new artist's image and biography text. */
 void update_bio_view(const char *bio_txt, const char *img_file);

@@ -17,30 +17,20 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef INFOBAR_BIO_HEADER
-#define INFOBAR_BIO_HEADER
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <deadbeef/deadbeef.h>
 
-#include "infobar.h"
+#include "types.h"
 #include "utils.h"
 
-/* URL template to access artist's info on lastfm. */
-#define BIO_URL_TEMP "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
+/* URL template to access similar artists on lastfm. */
+#define SIM_URL_TEMPLATE "http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=%s&limit=%d&api_key=e5199cf790d46ad475bdda700b0dd6fb"
 
 /* XPath expressions. */
-#define BIO_TXT_HTML_EXP "/html/body"
-#define BIO_TXT_XML_EXP "/lfm/artist/bio/content"
-#define BIO_IMG_EXP "//image[@size=\"extralarge\"]"
+#define SIM_EXP "/lfm/similarartists/artist"
 
-/* Fetches artist's biography from lastfm. */
-int fetch_bio_txt(const char *artist, char **bio);
+/* Frees list of similar artists */
+void free_sim_list(SimilarInfo *similar, size_t size);
 
-/* Fetches artist's image from lastfm. Retrieved image will
- * be saved to the specified path. */
-int fetch_bio_image(const char *artist, const char *path);
-
-#endif
+/* Fetches the list of similar artists from lastfm. */
+int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *size);

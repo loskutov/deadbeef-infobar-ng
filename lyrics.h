@@ -34,7 +34,7 @@
 #define LM_URL_TEMP "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LT_URL_TEMP "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define ML_URL_TEMP "http://megalyrics.ru/lyric/%s/%s.htm"
-#define SR_CMD_TEMP "/bin/bash \"%s\" \"%s\" \"%s\" 2>&-"
+#define SR_CMD_TEMP "\"%s\" \"%s\" \"%s\" \"%s\" 2>&-"
 
 /* XPath expressions to parse lyrics from different sources. */
 #define LM_EXP "//*[@id=\"songlyrics_h\"]"
@@ -43,19 +43,23 @@
 #define LW_HTML_EXP "//lyrics"
 #define LW_XML_EXP "//rev"
 
+/* Lyrics parts. */
+#define ML_LYR_BEG "<pre class=\"lyric\"><h2>Текст песни</h2>"
+#define ML_LYR_END "</pre>"
+
 /* Fetches lyrics from "http://lyrics.wikia.com". */
-int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://megalyrics.ru".  */
-int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://lyricstime.com". */
-int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://lyricsmania.com". */
-int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics, using external bash script. */
-int fetch_lyrics_from_script(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_script(const char *artist, const char *title, const char *album, char **lyr);
 
 #endif

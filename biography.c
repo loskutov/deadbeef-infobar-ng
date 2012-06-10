@@ -19,22 +19,15 @@
 
 #include "biography.h"
 
-/* Forms URL, which is used to retrieve artists's biography and image. */
+/* Forms an URL, which is used to retrieve artists's biography and image. */
 static int 
 form_bio_url(const char *artist, char **url) {
     
-    int alen = strlen(artist) * 4;
-    
-    char *eartist = calloc(alen + 1, sizeof(char));
-    if (!eartist)
+    char *eartist = NULL;
+    if (encode_artist(artist, &eartist, '+') == -1)
         return -1;
     
-    if (uri_encode(eartist, alen, artist, '+') == -1) {
-        free(eartist);
-        return -1;
-    }
     deadbeef->conf_lock();
-    
     const char *locale = deadbeef->conf_get_str_fast(CONF_BIO_LOCALE, "en");
     
     if (asprintf(url, BIO_URL_TEMP, eartist, locale) == -1) {
@@ -48,7 +41,7 @@ form_bio_url(const char *artist, char **url) {
 }
 
 /* Fetches artist's biography from lastfm. */
-int fetch_bio_txt(const char *artist, char **txt) {
+int fetch_bio_txt(const char *artist, char **bio) {
     
     char *url = NULL;
     if (form_bio_url(artist, &url) == -1)
@@ -61,29 +54,20 @@ int fetch_bio_txt(const char *artist, char **txt) {
     }
     free(url);
 
-    char *html_txt = NULL;
-    if (parse_content(raw_page, BIO_TXT_XML_EXP, &html_txt, XML, 0) == -1) {
+    char *xml = NULL;
+    if (parse_common(raw_page, BIO_TXT_XML_EXP, XML, &xml) == -1) {
         free(raw_page);
         return -1;
     }
     free(raw_page);
     
-    char *bio_txt = NULL;
-    if (parse_content(html_txt, BIO_TXT_HTML_EXP, &bio_txt, HTML, 0) == -1) {
-        free(html_txt);
+    char *html = NULL;
+    if (parse_common(xml, BIO_TXT_HTML_EXP, HTML, &html) == -1) {
+        free(xml);
         return -1;
     }
-    *txt = bio_txt;
-    
-    /* Making sure, that retrieved text has UTF-8 encoding,
-     * otherwise converting it. */
-    char *bio_utf8 = NULL;
-    if (deadbeef->junk_detect_charset(bio_txt)) {
-        if (convert_to_utf8(bio_txt, &bio_utf8) == 0) {
-            free(bio_txt);
-            *txt = bio_utf8;
-        }
-    }
+    free(xml);
+    *bio = html;
     return 0;
 }
 
@@ -103,7 +87,7 @@ int fetch_bio_image(const char *artist, const char *path) {
     free(url);
     
     char *img_url = NULL;
-    if (parse_content(raw_page, BIO_IMG_EXP, &img_url, XML, 0) == -1) {
+    if (parse_common(raw_page, BIO_IMG_EXP, XML, &img_url) == -1) {
         free(raw_page);
         return -1;
     }

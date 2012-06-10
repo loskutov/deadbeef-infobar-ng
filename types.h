@@ -17,30 +17,35 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef INFOBAR_BIO_HEADER
-#define INFOBAR_BIO_HEADER
+#ifndef TYPES_HEADER
+#define TYPES_HEADER
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <deadbeef/deadbeef.h>
+/* Custom types. */
+typedef enum {
+    HTML = 0,
+    XML = 1,
+} ContentType;
 
-#include "infobar.h"
-#include "utils.h"
+typedef enum {
+    LYRICS = 0,
+    BIO = 1,
+} CacheType;
 
-/* URL template to access artist's info on lastfm. */
-#define BIO_URL_TEMP "http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=%s&lang=%s&api_key=e5199cf790d46ad475bdda700b0dd6fb"
+typedef enum {
+    NAME = 0,
+    MATCH = 1,
+    URL = 2,
+} SimColumnName;
 
-/* XPath expressions. */
-#define BIO_TXT_HTML_EXP "/html/body"
-#define BIO_TXT_XML_EXP "/lfm/artist/bio/content"
-#define BIO_IMG_EXP "//image[@size=\"extralarge\"]"
+typedef struct {
+    float width;
+    float height;
+} Res;
 
-/* Fetches artist's biography from lastfm. */
-int fetch_bio_txt(const char *artist, char **bio);
-
-/* Fetches artist's image from lastfm. Retrieved image will
- * be saved to the specified path. */
-int fetch_bio_image(const char *artist, const char *path);
+typedef struct {
+    char *name;
+    char *match;
+    char *url;
+} SimilarInfo;
 
 #endif
