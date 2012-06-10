@@ -79,11 +79,21 @@ retrieve_artist_bio(void *ctx) {
             free(artist);
             goto update;
         }
-    
+        
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
             /* There is no cache for artist's biography or it's 
             * too old, retrieving new one. */
             if (fetch_bio_txt(artist, &bio_txt) == 0) {
+                
+                /* Making sure, that retrieved text has UTF-8 encoding,
+                 * otherwise converting it. */
+                char *bio_utf8 = NULL;
+                if (deadbeef->junk_detect_charset(bio_txt)) {
+                    if (convert_to_utf8(bio_txt, &bio_utf8) == 0) {
+                        free(bio_txt);
+                        bio_txt = bio_utf8;
+                    }
+                }
                 /* Saving biography to reuse it later. */
                 save_txt_file(txt_cache, bio_txt);
             }

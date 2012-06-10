@@ -37,7 +37,7 @@
 #define BIO_IMG_EXP "//image[@size=\"extralarge\"]"
 
 /* Fetches artist's biography from lastfm. */
-int fetch_bio_txt(const char *artist, char **txt);
+int fetch_bio_txt(const char *artist, char **bio);
 
 /* Fetches artist's image from lastfm. Retrieved image will
  * be saved to the specified path. */
