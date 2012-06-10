@@ -48,18 +48,18 @@
 #define ML_LYR_END "</pre>"
 
 /* Fetches lyrics from "http://lyrics.wikia.com". */
-int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://megalyrics.ru".  */
-int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://lyricstime.com". */
-int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://lyricsmania.com". */
-int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **txt);
+int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics, using external bash script. */
-int fetch_lyrics_from_script(const char *artist, const char *title, const char *album, char **txt);
+int fetch_lyrics_from_script(const char *artist, const char *title, const char *album, char **lyr);
 
 #endif
