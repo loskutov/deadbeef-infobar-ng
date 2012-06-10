@@ -200,16 +200,6 @@ int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **
         return -1;
     }
     free(raw_page);
-    
-    /* Making sure, that retrieved text has UTF-8 encoding,
-     * otherwise converting it. */
-    char *lyr_utf8 = NULL;
-    if (deadbeef->junk_detect_charset(*txt)) {
-        if (convert_to_utf8(*txt, &lyr_utf8) == 0) {
-            free(*txt);
-            *txt = lyr_utf8;
-        }
-    }
     return 0;
 }
 
@@ -232,16 +222,6 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **t
         return -1;
     }
     free(raw_page);
-    
-    /* Making sure, that retrieved text has UTF-8 encoding,
-     * otherwise converting it. */
-    char *lyr_utf8 = NULL;
-    if (deadbeef->junk_detect_charset(*txt)) {
-        if (convert_to_utf8(*txt, &lyr_utf8) == 0) {
-            free(*txt);
-            *txt = lyr_utf8;
-        }
-    }
     return 0;
 }
 
@@ -269,16 +249,6 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **t
     if (format_megalyrics(*txt, &fmd_lyr) != -1) {
         free(*txt);
         *txt = fmd_lyr;
-    }
-    
-    /* Making sure, that retrieved text has UTF-8 encoding,
-     * otherwise converting it. */
-    char *lyr_utf8 = NULL;
-    if (deadbeef->junk_detect_charset(*txt)) {
-        if (convert_to_utf8(*txt, &lyr_utf8) == 0) {
-            free(*txt);
-            *txt = lyr_utf8;
-        }
     }
     return 0;
 }
@@ -365,15 +335,5 @@ int fetch_lyrics_from_script(const char *artist, const char *title, const char *
         return -1;
     }
     free(cmd);
-    
-    /* Making sure, that retrieved text has UTF-8 encoding,
-     * otherwise converting it. */
-    char *txt_utf8 = NULL;
-    if (deadbeef->junk_detect_charset(*txt)) {
-        if (convert_to_utf8(*txt, &txt_utf8) == 0) {
-            free(*txt);
-            *txt = txt_utf8;
-        }
-    }
     return 0;
 }

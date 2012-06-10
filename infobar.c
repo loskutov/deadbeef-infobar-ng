@@ -159,10 +159,20 @@ retrieve_track_lyrics(void *ctx) {
             if (lyr_txt) {
                 char *lyr_wo_nl = NULL;
                 /* Some lyrics contains new line characters at the 
-                * beginning of the file, so we gonna strip them. */
+                 * beginning of the text, so we gonna strip them. */
                 if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
                     free(lyr_txt);
                     lyr_txt = lyr_wo_nl;
+                }
+                
+                /* Making sure, that retrieved text has UTF-8 encoding,
+                 * otherwise converting it. */
+                char *lyr_utf8 = NULL;
+                if (deadbeef->junk_detect_charset(lyr_txt)) {
+                    if (convert_to_utf8(lyr_txt, &lyr_utf8) == 0) {
+                        free(lyr_txt);
+                        lyr_txt = lyr_utf8;
+                    }
                 }
                 /* Saving lyrics to reuse it later.*/
                 save_txt_file(txt_cache, lyr_txt);
