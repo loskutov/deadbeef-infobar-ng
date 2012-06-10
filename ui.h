@@ -39,7 +39,7 @@ int init_ui_plugin(void);
 void free_ui_plugin(void);
 
 /* Updates "Similar" tab with the new list of similar artists. */
-void update_similar_view(SimilarInfo *similar, int size);
+void update_similar_view(SimilarInfo *similar, size_t size);
 
 /* Updates "Biography" tab with the new artist's image and biography text. */
 void update_bio_view(const char *bio_txt, const char *img_file);

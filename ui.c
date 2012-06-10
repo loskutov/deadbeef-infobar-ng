@@ -49,7 +49,7 @@ infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
     
     gboolean state = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item));
     state ? gtk_widget_show(infobar) : gtk_widget_hide(infobar); 
-    deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, (gint) state);
+    deadbeef->conf_set_int(CONF_INFOBAR_VISIBLE, (int) state);
     return FALSE;
 }
 
@@ -58,7 +58,7 @@ infobar_menu_toggle(GtkMenuItem *item, gpointer data) {
 static gboolean
 infobar_tab_changed(GtkToggleButton *toggle, GtkWidget *widget) {
     
-    gint index = gtk_notebook_page_num(GTK_NOTEBOOK(infobar_tabs), widget);
+    int index = gtk_notebook_page_num(GTK_NOTEBOOK(infobar_tabs), widget);
     gtk_notebook_set_current_page(GTK_NOTEBOOK(infobar_tabs), index);
     return FALSE;
 }
@@ -177,7 +177,7 @@ delete_cache_clicked(void) {
             GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO, 
             "Cache files for the current track will be removed. Continue?");
     
-    gint choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
+    int choise = gtk_dialog_run(GTK_DIALOG(dlt_dlg));
     switch(choise) {
     case GTK_RESPONSE_YES:
     {
@@ -338,7 +338,7 @@ create_bio_tab(void) {
     g_signal_connect(bio_image, "expose-event", G_CALLBACK(bio_image_expose), NULL);
     g_signal_connect(bio_toggle, "toggled", G_CALLBACK(infobar_tab_changed), bio_tab);
     
-    gint handle_width = 0;
+    int handle_width = 0;
     gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
     
     int height = deadbeef->conf_get_int(CONF_BIO_IMAGE_HEIGHT, 200);
@@ -445,7 +445,7 @@ create_infobar_interface(void) {
     gtk_container_add(GTK_CONTAINER(ddb_main), ddb_main_new);
     gtk_box_reorder_child(GTK_BOX(ddb_main), ddb_main_new, 2);
     
-    gint handle_width;
+    int handle_width = 0;
     gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
     
     int width = deadbeef->conf_get_int(CONF_INFOBAR_WIDTH, 250);
@@ -579,7 +579,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
 }
 
 /* Updates "Similar" tab with the new list of similar artists. */
-void update_similar_view(SimilarInfo *similar, int size) {
+void update_similar_view(SimilarInfo *similar, size_t size) {
     
     GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
     GtkListStore *store = GTK_LIST_STORE(model);
@@ -589,7 +589,7 @@ void update_similar_view(SimilarInfo *similar, int size) {
         GtkTreeIter it = {0};
         
         if (similar) {
-            for (int i = 0; i < size; ++i) {
+            for (size_t i = 0; i < size; ++i) {
                 gtk_list_store_append(store, &it);
                 
                 if (similar[i].name) {

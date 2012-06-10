@@ -527,7 +527,6 @@ int convert_to_utf8(const char *str, char **str_utf8) {
 int del_nl(const char *txt, char **wo_nl) {
     
     size_t num = 0;
-    size_t len = strlen(txt);
     
     for (; *txt; ++txt) {
         if (*txt == '\n' ||
@@ -540,8 +539,11 @@ int del_nl(const char *txt, char **wo_nl) {
     }
     txt-=num;
     
+    /*No new line characters found. */
     if (num == 0)
         return -1;
+    
+    size_t len = strlen(txt);
     
     *wo_nl = calloc(len - num + 1, sizeof(char));
     if (!*wo_nl)
@@ -568,7 +570,7 @@ int concat_lyrics(const char *fst, const char *snd, char **lyr) {
     return 0;
 }
 
-/* Replaces each substring of this string with the given replacement. */
+/* Replaces each substring of the specified string with the given replacement. */
 int replace_all(const char *str, const char *orig, const char *with, char **repl) {
     
     size_t str_len = strlen(str);

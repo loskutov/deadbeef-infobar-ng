@@ -32,18 +32,17 @@ parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
         xmlFreeDoc(doc);
         return -1;
     }
-    xmlNodeSetPtr nodeSet = xpath->nodesetval;
-    
-    *similar = calloc(nodeSet->nodeNr, sizeof(SimilarInfo));
+    xmlNodeSetPtr ns = xpath->nodesetval;
+    *similar = calloc(ns->nodeNr, sizeof(SimilarInfo));
     if (!*similar) {
         xmlXPathFreeObject(xpath);
         xmlFreeDoc(doc);
         return -1;
     }
     
-    for (int i = 0; i < nodeSet->nodeNr; ++i) {
+    for (size_t i = 0; i < ns->nodeNr; ++i) {
         
-        xmlNodePtr root = nodeSet->nodeTab[i];
+        xmlNodePtr root = ns->nodeTab[i];
         xmlNodePtr child = root->children;
         
         for (; child; child = child->next) {
@@ -64,7 +63,7 @@ parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
             } 
         }
     }
-    *size = nodeSet->nodeNr;
+    *size = ns->nodeNr;
     xmlXPathFreeObject(xpath);
     xmlFreeDoc(doc);
     return 0;
@@ -106,7 +105,7 @@ void free_sim_list(SimilarInfo *similar, size_t size) {
 /* Fetches the list of similar artists from lastfm. */
 int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *size) {
     
-    int limit = deadbeef->conf_get_int(CONF_SIM_MAX_ARTISTS, 10);
+    size_t limit = deadbeef->conf_get_int(CONF_SIM_MAX_ARTISTS, 10);
     
     char *url = NULL;
     if (form_similar_url(artist, &url, limit) == -1)

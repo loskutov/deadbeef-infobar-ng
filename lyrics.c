@@ -69,8 +69,6 @@ format_megalyrics(const char *lyr, char **fmd) {
     if (replace_all(lyr, ML_LYR_BEG, "", &wo_bpre) == -1)
         return -1;
     
-    *fmd = wo_bpre;
-    
     /* Removing </pre> tag from the end. */
     char *wo_epre = NULL;
     if (replace_all(wo_bpre, ML_LYR_END, "", &wo_epre) == -1) {
@@ -78,7 +76,6 @@ format_megalyrics(const char *lyr, char **fmd) {
         return -1;
     }
     free(wo_bpre);
-    *fmd = wo_epre;
     
     /* Replacing <br/> tags with new line characters. */
     char *wo_br = NULL;
@@ -127,7 +124,7 @@ parse_megalyrics(const char *content, char **psd) {
     return 0;
 }
 
-/* Performs 2nd step of parsing lyrics from "http://lyricswikia.com". */
+/* Performs 2nd step of parsing lyrics from "http://lyrics.wikia.com". */
 static int
 parse_lyricswikia(const char *content, char **psd) {
     
@@ -170,7 +167,7 @@ parse_lyricswikia(const char *content, char **psd) {
     return 0;
 }
 
-/* Performs 1st step of fetching and parsing lyrics from "http://lyricswikia.com". */
+/* Performs 1st step of fetching and parsing lyrics from "http://lyrics.wikia.com". */
 static int
 fetch_xml_from_lyricswikia(const char *artist, const char *title, char **xml) {
     
