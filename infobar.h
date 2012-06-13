@@ -48,6 +48,7 @@
 #define CONF_LYRICS_SCRIPT_PATH "infobar.lyrics.script.path"
 #define CONF_BIO_IMAGE_HEIGHT "infobar.bio.image.height"
 #define CONF_INFOBAR_WIDTH "infobar.width"
+#define CONF_INFOBAR_SEPARATOR_POS "infobar.separator.pos"
 #define CONF_LYRICS_UPDATE_PERIOD "infobar.lyrics.cache.period"
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
 #define CONF_INFOBAR_VISIBLE "infobar.visible"
