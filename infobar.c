@@ -348,8 +348,11 @@ static DB_misc_t plugin = {
     .plugin.message = infobar_message,
 };
 
-DB_plugin_t *ddb_infobar_load(DB_functions_t *ddb) {
-    
+#if GTK_CHECK_VERSION(3, 0, 0)
+DB_plugin_t *ddb_infobar_gtk3_load(DB_functions_t *ddb) {
+#else
+DB_plugin_t *ddb_infobar_gtk2_load(DB_functions_t *ddb) {
+#endif
     deadbeef = ddb;
     return DB_PLUGIN(&plugin);
 }
