@@ -459,9 +459,13 @@ create_infobar_interface(void) {
     GtkWidget *ddb_main = lookup_widget(gtkui_plugin->get_mainwin(), "vbox1");
     GtkWidget *ddb_tabs= lookup_widget(gtkui_plugin->get_mainwin(), "tabstrip");
     GtkWidget *ddb_playlist = lookup_widget(gtkui_plugin->get_mainwin(), "frame1");
-
+    if (!ddb_playlist) {
+        // deadbeef 0.5.6 support
+        ddb_playlist = lookup_widget(gtkui_plugin->get_mainwin(), "playlist");
+    }
     g_object_ref(ddb_tabs);
     g_object_ref(ddb_playlist);
+    
 #if GTK_CHECK_VERSION(3, 0, 0)
     GtkWidget *playlist_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
