@@ -38,6 +38,10 @@ static GtkWidget *bio_image;
 static GtkWidget *sim_list;
 static GdkPixbuf *bio_pixbuf;
 
+#if GTK_CHECK_VERSION(3, 0, 0)
+static GtkWidget *ddb_main_new;
+#endif
+
 static GtkTextBuffer *lyr_buffer;
 static GtkTextBuffer *bio_buffer;
 
@@ -75,7 +79,11 @@ lookup_widget(GtkWidget *widget, const gchar *widget_name) {
         if (GTK_IS_MENU(widget)) {
             parent = gtk_menu_get_attach_widget(GTK_MENU (widget));
         } else {
+#if GTK_CHECK_VERSION(3, 0, 0)
+            parent = gtk_widget_get_parent(widget);
+#else
             parent = widget->parent;
+#endif
         }
         if (!parent)
             parent = (GtkWidget*) g_object_get_data(G_OBJECT (widget), "GladeParentKey");
@@ -96,16 +104,23 @@ lookup_widget(GtkWidget *widget, const gchar *widget_name) {
 /* Called when user resizes artist's image on "Biography" tab to redraw
  * the image with the new size. */
 static gboolean
+#if GTK_CHECK_VERSION(3, 0, 0)
+bio_image_expose(GtkWidget *image, cairo_t *ctx, gpointer data) {
+#else
 bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
+#endif
     
     if (bio_pixbuf) {
         
         float ww = gdk_pixbuf_get_width(bio_pixbuf);
         float wh = gdk_pixbuf_get_height(bio_pixbuf);
-    
+#if GTK_CHECK_VERSION(3, 0, 0)
+        float aw = gtk_widget_get_allocated_width(image);
+        float ah = gtk_widget_get_allocated_height(image);
+#else
         float aw = image->allocation.width;
         float ah = image->allocation.height;
-        
+#endif
         /* This is a workaround which prevents application
          * hanging when we make infobar width == 0 */
         if (aw < 10) aw = 10;
@@ -121,7 +136,12 @@ bio_image_expose(GtkWidget *image, GdkEventExpose *event, gpointer data) {
                 new_res.height, GDK_INTERP_BILINEAR);
                 
         if (sld) {
+#if GTK_CHECK_VERSION(3, 0, 0)
+            GdkWindow *window = gtk_widget_get_window(image);
+            cairo_t *cr = gdk_cairo_create(window);
+#else
             cairo_t *cr = gdk_cairo_create(image->window);
+#endif
             if (cr) {
                 gdk_cairo_set_source_pixbuf(cr, sld, pos_x, pos_y);
                 cairo_paint(cr);
@@ -319,13 +339,16 @@ create_bio_tab(void) {
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(bio_view), GTK_WRAP_WORD);
     gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(bio_view), FALSE);
     gtk_widget_set_can_focus(bio_view, FALSE);
-    
+#if GTK_CHECK_VERSION(3, 0, 0)
+    bio_tab = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+#else
     bio_tab = gtk_vpaned_new();
+#endif
     bio_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(bio_view));
     
     img_frame = gtk_frame_new(NULL);
     gtk_frame_set_shadow_type(GTK_FRAME(img_frame), GTK_SHADOW_IN);
-    
+
     bio_image = gtk_drawing_area_new();
     gtk_widget_set_app_paintable(bio_image, TRUE);
     
@@ -334,15 +357,22 @@ create_bio_tab(void) {
     
     gtk_paned_pack1(GTK_PANED(bio_tab), img_frame, FALSE, TRUE);
     gtk_paned_pack2(GTK_PANED(bio_tab), bio_scroll, TRUE, TRUE);
-    
+#if GTK_CHECK_VERSION(3, 0, 0)
+    g_signal_connect(bio_image, "draw", G_CALLBACK(bio_image_expose), NULL);
+#else
     g_signal_connect(bio_image, "expose-event", G_CALLBACK(bio_image_expose), NULL);
+#endif
     g_signal_connect(bio_toggle, "toggled", G_CALLBACK(infobar_tab_changed), bio_tab);
     
     int handle_width = 0;
     gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
     
-    int height = deadbeef->conf_get_int(CONF_BIO_IMAGE_HEIGHT, 200);
+    int height = deadbeef->conf_get_int(CONF_BIO_IMAGE_HEIGHT, 220);
+#if GTK_CHECK_VERSION(3, 0, 0)
+    gtk_paned_set_position(GTK_PANED(bio_tab), height + handle_width);
+#else
     gtk_widget_set_size_request(img_frame, -1, height + handle_width);
+#endif
 }
 
 /* Creates "Lyrics" tab. Should be created before the "Biography" tab. */
@@ -384,11 +414,18 @@ create_lyr_tab(void) {
 /* Creates infobar with all available tabs. */
 static void
 create_infobar(void) {
-    
+
+#if GTK_CHECK_VERSION(3, 0, 0)
+    infobar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     infobar = gtk_vbox_new(FALSE, 0);
+#endif
     infobar_tabs = gtk_notebook_new();
+#if GTK_CHECK_VERSION(3, 0, 0)
+    infobar_toggles = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+#else
     infobar_toggles = gtk_hbox_new(FALSE, 0);
-    
+#endif
     gtk_notebook_set_show_tabs(GTK_NOTEBOOK(infobar_tabs), FALSE);
 
     create_lyr_tab();
@@ -422,12 +459,18 @@ create_infobar_interface(void) {
     GtkWidget *ddb_main = lookup_widget(gtkui_plugin->get_mainwin(), "vbox1");
     GtkWidget *ddb_tabs= lookup_widget(gtkui_plugin->get_mainwin(), "tabstrip");
     GtkWidget *ddb_playlist = lookup_widget(gtkui_plugin->get_mainwin(), "frame1");
-
+    if (!ddb_playlist) {
+        // deadbeef 0.5.6 support
+        ddb_playlist = lookup_widget(gtkui_plugin->get_mainwin(), "playlist");
+    }
     g_object_ref(ddb_tabs);
     g_object_ref(ddb_playlist);
-
+    
+#if GTK_CHECK_VERSION(3, 0, 0)
+    GtkWidget *playlist_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#else
     GtkWidget *playlist_box = gtk_vbox_new(FALSE, 0);
-
+#endif
     gtk_container_remove(GTK_CONTAINER(ddb_main), ddb_tabs);
     gtk_container_remove(GTK_CONTAINER(ddb_main), ddb_playlist);
 
@@ -436,9 +479,11 @@ create_infobar_interface(void) {
 
     g_object_unref(ddb_tabs);
     g_object_unref(ddb_playlist);
-
+#if GTK_CHECK_VERSION(3, 0, 0)
+    ddb_main_new = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+#else
     GtkWidget *ddb_main_new = gtk_hpaned_new();
-
+#endif
     gtk_paned_pack1(GTK_PANED(ddb_main_new), playlist_box, TRUE, TRUE);
     gtk_paned_pack2(GTK_PANED(ddb_main_new), infobar, FALSE, TRUE);
 
@@ -448,9 +493,15 @@ create_infobar_interface(void) {
     int handle_width = 0;
     gtk_widget_style_get(bio_tab, "handle-size", &handle_width, NULL);
     
+#if GTK_CHECK_VERSION(3, 0, 0)
+    int pos = deadbeef->conf_get_int(CONF_INFOBAR_SEPARATOR_POS, -1);
+    if (pos > 0) {
+        gtk_paned_set_position(GTK_PANED(ddb_main_new), pos + handle_width);
+    }
+#else
     int width = deadbeef->conf_get_int(CONF_INFOBAR_WIDTH, 250);
     gtk_widget_set_size_request(infobar, width + handle_width, -1);
-    
+#endif
     gtk_widget_show(ddb_main_new);
     gtk_widget_show(playlist_box);
 
@@ -488,7 +539,11 @@ free_bio_pixbuf(void) {
  * Should be called on plug-in startup. */
 int init_ui_plugin(void) {
     
+#if GTK_CHECK_VERSION(3, 0, 0)
+    ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui3");
+#else
     ddb_gtkui_t* ui_plugin = (ddb_gtkui_t*) deadbeef->plug_get_for_id("gtkui");
+#endif
     if (!ui_plugin)
         return -1;
     
@@ -507,12 +562,19 @@ void free_ui_plugin(void) {
     free_bio_pixbuf();
     
     if (gtkui_plugin) {
+#if GTK_CHECK_VERSION(3, 0, 0)
+        int pos = gtk_paned_get_position(GTK_PANED(ddb_main_new));
+        int height = gtk_paned_get_position(GTK_PANED(bio_tab));
         
+        deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, height);
+        deadbeef->conf_set_int(CONF_INFOBAR_SEPARATOR_POS, pos);
+#else
         int aw = infobar->allocation.width;
-        deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
-    
         int ah = img_frame->allocation.height;
+        
+        deadbeef->conf_set_int(CONF_INFOBAR_WIDTH, aw);
         deadbeef->conf_set_int(CONF_BIO_IMAGE_HEIGHT, ah);
+#endif
     }
     gtkui_plugin = NULL;
 }
