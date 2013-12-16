@@ -46,16 +46,18 @@
 #define CONF_BIO_ENABLED "infobar.bio.enabled"
 #define CONF_BIO_LOCALE "infobar.bio.locale"
 #define CONF_LYRICS_SCRIPT_PATH "infobar.lyrics.script.path"
-#define CONF_BIO_IMAGE_HEIGHT "infobar.bio.image.height"
-#define CONF_INFOBAR_WIDTH "infobar.width"
-#define CONF_INFOBAR_SEPARATOR_POS "infobar.separator.pos"
 #define CONF_LYRICS_UPDATE_PERIOD "infobar.lyrics.cache.period"
 #define CONF_BIO_UPDATE_PERIOD "infobar.bio.cache.period"
-#define CONF_INFOBAR_VISIBLE "infobar.visible"
 #define CONF_SIM_ENABLED "infobar.similar.enabled"
 #define CONF_SIM_MAX_ARTISTS "infobar.similar.max.artists"
 
+#define WIDGET_ID "infobar"
+#define WIDGET_LABEL "Infobar"
+
 /* deadbeef API. */
 DB_functions_t *deadbeef;
+
+/* UI plugin. */
+ddb_gtkui_t *gtkui_plugin;
 
 #endif

@@ -21,33 +21,33 @@
 
 static void
 retrieve_similar_artists(void *ctx) {
-    
+
     trace("infobar: retrieving similar artists\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
-    
+
     size_t size = 0;
     char *artist = NULL;
     SimilarInfo *similar = NULL;
-    
+
     if (!is_track_changed(track)) {
-        
+
         SimilarInfo loading = {0};
         loading.name = "Loading...";
-        
+
         gdk_threads_enter();
         update_similar_view(&loading, 1);
         gdk_threads_leave();
-        
+
         if (get_artist_info(track, &artist) == -1)
             goto update;
-        
+
         if (fetch_similar_artists(artist, &similar, &size) == -1) {
             free(artist);
             goto update;
         }
         free(artist);
     }
-    
+
 update:
     if (!is_track_changed(track)) {
         gdk_threads_enter();
@@ -60,32 +60,32 @@ update:
 
 static void
 retrieve_artist_bio(void *ctx) {
-    
+
     trace("infobar: retrieving artist's biography\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
-    
+
     char *bio_txt = NULL, *artist = NULL, *img_cache = NULL;
-    
+
     if (!is_track_changed(track)) {
-        
+
         gdk_threads_enter();
         update_bio_view("Loading...", NULL);
         gdk_threads_leave();
-    
+
         if (get_artist_info(track, &artist) == -1)
             goto update;
-    
+
         char *txt_cache = NULL;
         if (create_bio_cache(artist, &txt_cache, &img_cache) == -1) {
             free(artist);
             goto update;
         }
-        
+
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, BIO)) {
-            /* There is no cache for artist's biography or it's 
+            /* There is no cache for artist's biography or it's
              * too old, retrieving new one. */
             if (fetch_bio_txt(artist, &bio_txt) == 0) {
-                
+
                 /* Making sure, that retrieved text has UTF-8 encoding,
                  * otherwise converting it. */
                 char *bio_utf8 = NULL;
@@ -103,44 +103,44 @@ retrieve_artist_bio(void *ctx) {
             load_txt_file(txt_cache, &bio_txt);
         }
         free(txt_cache);
-    
+
         /* Retrieving artist's image if we don't have a cached one. */
         if (!is_exists(img_cache) || is_old_cache(img_cache, BIO))
             fetch_bio_image(artist, img_cache);
-        
+
         free(artist);
     }
-    
+
 update:
     if (!is_track_changed(track)) {
         gdk_threads_enter();
         update_bio_view(bio_txt, img_cache);
         gdk_threads_leave();
     }
-    if (bio_txt) 
+    if (bio_txt)
         free(bio_txt);
-    
-    if (img_cache) 
+
+    if (img_cache)
         free(img_cache);
 }
 
 static void
 retrieve_track_lyrics(void *ctx) {
-    
+
     trace("infobar: retrieving track lyrics\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
-    
+
     char *lyr_txt = NULL, *artist = NULL, *title = NULL, *album = NULL;
-    
+
     if (!is_track_changed(track)) {
-        
+
         gdk_threads_enter();
         update_lyrics_view("Loading...", track);
         gdk_threads_leave();
-        
+
         if (get_full_track_info(track, &artist, &title, &album) == -1)
             goto update;
-        
+
         char *txt_cache = NULL;
         if (create_lyr_cache(artist, title, &txt_cache) == -1) {
             free(artist);
@@ -148,34 +148,34 @@ retrieve_track_lyrics(void *ctx) {
             free(album);
             goto update;
         }
-        
+
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
-            /* There is no cache for the current track or the previous cache 
+            /* There is no cache for the current track or the previous cache
              * is too old, so start retrieving new one. */
             if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
-            
+
             if (deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricsmania(artist, title, &lyr_txt);
-            
+
             if (deadbeef->conf_get_int(CONF_LYRICSTIME_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricstime(artist, title, &lyr_txt);
-            
+
             if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
-            
+
             if (deadbeef->conf_get_int(CONF_LYRICS_SCRIPT_ENABLED, 0) && !lyr_txt)
                 fetch_lyrics_from_script(artist, title, album, &lyr_txt);
-            
+
             if (lyr_txt) {
                 char *lyr_wo_nl = NULL;
-                /* Some lyrics contains new line characters at the 
+                /* Some lyrics contains new line characters at the
                  * beginning of the text, so we gonna strip them. */
                 if (del_nl(lyr_txt, &lyr_wo_nl) == 0) {
                     free(lyr_txt);
                     lyr_txt = lyr_wo_nl;
                 }
-                
+
                 /* Making sure, that retrieved text has UTF-8 encoding,
                  * otherwise converting it. */
                 char *lyr_utf8 = NULL;
@@ -197,32 +197,29 @@ retrieve_track_lyrics(void *ctx) {
         free(title);
         free(album);
     }
-    
+
 update:
     if (!is_track_changed(track)) {
         gdk_threads_enter();
         update_lyrics_view(lyr_txt, track);
         gdk_threads_leave();
     }
-    if (lyr_txt) 
+    if (lyr_txt)
         free(lyr_txt);
 }
 
 static void
 infobar_songstarted(ddb_event_track_t *ev) {
-    
+
     trace("infobar: infobar song started\n");
-    
-    /* Don't retrieve anything as infobar is not visible. */
-    if (!deadbeef->conf_get_int(CONF_INFOBAR_VISIBLE, 0))
-        return;
-        
+
     /* Don't retrieve anything as all tabs are invisible. */
     if (!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
         !deadbeef->conf_get_int(CONF_BIO_ENABLED, 1) &&
         !deadbeef->conf_get_int(CONF_SIM_ENABLED, 1)) {
         return;
     }
+
     if (deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1)) {
         intptr_t tid = deadbeef->thread_start(retrieve_track_lyrics, ev->track);
         deadbeef->thread_detach(tid);
@@ -238,17 +235,17 @@ infobar_songstarted(ddb_event_track_t *ev) {
 }
 
 static int
-infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
-    
+infobar_message(struct ddb_gtkui_widget_s *w, uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
+
     switch (id) {
     case DB_EV_SONGSTARTED:
     {
         trace("infobar: recieved songstarted message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
-        
-        if (!event->track) 
+
+        if (!event->track)
             return 0;
-        
+
         if (!is_stream(event->track))
             infobar_songstarted(event);
     }
@@ -257,10 +254,10 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
     {
         trace("infobar: recieved trackinfochanged message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
-        
-        if (!event->track) 
+
+        if (!event->track)
             return 0;
-            
+
         if (is_stream(event->track))
             infobar_songstarted(event);
     }
@@ -274,23 +271,41 @@ infobar_message(uint32_t id, uintptr_t ctx, uint32_t p1, uint32_t p2) {
     return 0;
 }
 
+static ddb_gtkui_widget_t
+*w_infobar_create (void) {
+    ddb_gtkui_widget_t *widget = malloc(sizeof(ddb_gtkui_widget_t));
+    memset(widget, 0, sizeof(ddb_gtkui_widget_t));
+
+    create_infobar();
+    widget->widget = infobar;
+    widget->init = infobar_init;
+    widget->destroy = infobar_destroy;
+    widget->message = infobar_message;
+
+    gtkui_plugin->w_override_signals(widget->widget, widget);
+    return widget;
+}
+
 static int
 infobar_connect(void) {
-    
+
     trace("infobar: connecting the plug-in\n");
-    
-    gdk_threads_enter();
-    int res = init_ui_plugin();
-    gdk_threads_leave();
-    
-    return res;
+    gtkui_plugin = (ddb_gtkui_t *)deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
+    if (!gtkui_plugin) {
+        fprintf(stderr, "infobar: can't find gtkui plugin\n");
+        return -1;
+    }
+    gtkui_plugin->w_reg_widget(WIDGET_LABEL, 0, w_infobar_create, WIDGET_ID, NULL);
+    return 0;
 }
 
 static int
 infobar_disconnect(void) {
-    
+
     trace("infobar: disconnecting the plug-in\n");
-    free_ui_plugin();
+    if (gtkui_plugin) {
+        gtkui_plugin->w_unreg_widget(WIDGET_ID);
+    }
     return 0;
 }
 
@@ -312,11 +327,11 @@ static const char settings_dlg[] =
 ;
 
 static DB_misc_t plugin = {
-    
+
     .plugin.api_vmajor = 1,
-    .plugin.api_vminor = 0,
+    .plugin.api_vminor = 5,
     .plugin.version_major = 1,
-    .plugin.version_minor = 2,
+    .plugin.version_minor = 4,
     .plugin.type = DB_PLUGIN_MISC,
     .plugin.name = "Infobar",
     .plugin.descr = "Infobar plugin for DeadBeeF audio player.\nFetches and shows:\n"
@@ -344,8 +359,7 @@ static DB_misc_t plugin = {
     .plugin.website = "https://bitbucket.org/dsimbiriatin/deadbeef-infobar",
     .plugin.connect = infobar_connect,
     .plugin.disconnect = infobar_disconnect,
-    .plugin.configdialog = settings_dlg,
-    .plugin.message = infobar_message,
+    .plugin.configdialog = settings_dlg
 };
 
 #if GTK_CHECK_VERSION(3, 0, 0)

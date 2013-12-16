@@ -30,13 +30,13 @@
 #include "types.h"
 #include "utils.h"
 
-/* Initializes reference to gtkui plug-in and creates infobar interface. 
- * Should be called on plug-in startup. */
-int init_ui_plugin(void);
+#define BIO_IMAGE_HEIGHT 220
 
-/* Disposes reference to gtkui plug-in and saves ui settings. 
- * Should be called on plug-in shutdown. */
-void free_ui_plugin(void);
+/* Infobar widget. */
+GtkWidget *infobar;
+
+/* Creates infobar with all available tabs. */
+void create_infobar(void);
 
 /* Updates "Similar" tab with the new list of similar artists. */
 void update_similar_view(SimilarInfo *similar, size_t size);
@@ -47,9 +47,15 @@ void update_bio_view(const char *bio_txt, const char *img_file);
 /* Updates "Lyrics" tab with the new lyrics. */
 void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track);
 
-/* This function should be invoked, when some changes to the plug-in's 
- * configuration were made. It updates infobar view according to the 
+/* This function should be invoked, when some changes to the plug-in's
+ * configuration were made. It updates infobar view according to the
  * new changes. */
 void infobar_config_changed(void);
+
+/* Callback function to initialize widget called during plug-in connect. */
+void infobar_init(struct ddb_gtkui_widget_s *widget);
+
+/* Callback function to destroy widget called during plug-in disconnect. */
+void infobar_destroy(struct ddb_gtkui_widget_s *widget);
 
 #endif
