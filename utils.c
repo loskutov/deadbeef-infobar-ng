@@ -700,13 +700,14 @@ int get_full_track_info(DB_playItem_t *track, char **artist, char **title, char 
         return -1;
     
     deadbeef->pl_lock();
-    
+
+    /* Album info is optional. Leaving empty string
+       if there is no album info available. */
     const char *cur_album = deadbeef->pl_find_meta(track, "album");
     if (!cur_album) {
         deadbeef->pl_unlock();
-        free(*artist);
-        free(*title);
-        return -1;
+        *album = calloc(1, sizeof(char));
+        return 0;
     }
     size_t alen = strlen(cur_album);
     
