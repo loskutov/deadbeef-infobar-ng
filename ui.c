@@ -416,33 +416,33 @@ void infobar_destroy(struct ddb_gtkui_widget_s *widget) {
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */
-void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
-
+void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {    
+    GtkTextIter begin = {0}, end = {0};
+    
+    gtk_text_buffer_get_iter_at_line (lyr_buffer, &begin, 0);
+    gtk_text_buffer_get_end_iter (lyr_buffer, &end);
+    gtk_text_buffer_delete (lyr_buffer, &begin, &end);
+    
     char *artist = NULL, *title = NULL;
+    int info = get_artist_and_title_info(track, &artist, &title);
 
-    if (lyr_buffer && get_artist_and_title_info(track, &artist, &title) == 0) {
+    /* Setting "bold" style for the song title. */
+    const char *title_up = (info == 0) ? title : TITLE_UNKNOWN;
+    gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+            &begin, title_up, -1, "bold", "large", NULL);
 
-        GtkTextIter begin = {0}, end = {0};
+    gtk_text_buffer_insert(lyr_buffer, &begin, "\n", -1);
 
-        gtk_text_buffer_get_iter_at_line (lyr_buffer, &begin, 0);
-        gtk_text_buffer_get_end_iter (lyr_buffer, &end);
-        gtk_text_buffer_delete (lyr_buffer, &begin, &end);
+    /* Setting "italic" style for the artist name. */
+    const char *artist_up = (info == 0) ? artist : ARTIST_UNKNOWN;
+    gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+            &begin, artist_up, -1, "italic", NULL);
 
-        /* Setting "bold" style for the song title. */
-        gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
-                &begin, title, -1, "bold", "large", NULL);
+    const char *lyr_up = lyr_txt ? lyr_txt : LYR_NOT_FOUND;
+    gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
+    gtk_text_buffer_insert(lyr_buffer, &begin, lyr_up, strlen(lyr_up));
 
-        gtk_text_buffer_insert(lyr_buffer, &begin, "\n", -1);
-
-        /* Setting "italic" style for the artist name. */
-        gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
-                &begin, artist, -1, "italic", NULL);
-
-        gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
-
-        const char *txt = lyr_txt ? lyr_txt : "Lyrics not found.";
-        gtk_text_buffer_insert(lyr_buffer, &begin, txt, strlen(txt));
-
+    if (info == 0) {
         free(artist);
         free(title);
     }
