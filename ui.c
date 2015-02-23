@@ -441,27 +441,38 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     const char *lyr_up = lyr_txt ? lyr_txt : LYR_NOT_FOUND;
     gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
 
-    if (*lyr_up) {
-        gboolean is_italic = FALSE;
-        const char* prev = lyr_up;
-        for (const char* c = lyr_up + 1; *c; ++c) {
-            if (*c == '\'' && *(c-1) == '\'') {
-                if (is_italic) {
-                    gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
-                                                &begin, prev, c - prev - 1, "italic", NULL);
-                } else {
-                    gtk_text_buffer_insert(lyr_buffer, &begin, prev, c - prev - 1);
-                }
-                prev = c + 1;
-                is_italic = !is_italic;
+    gboolean is_italic = FALSE;
+    gboolean is_bold   = FALSE;
+    const char* prev = lyr_up;
+    for (const char* c = lyr_up; *c; ++c) {
+        if (*c == '\'' && *(c+1) == '\'' && *(c+2) == '\'') {
+            if (is_bold) {
+                gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                            &begin, prev, c - prev, "bold", (is_italic ? "italic" : NULL), NULL);
+            } else {
+                gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                            &begin, prev, c - prev, (is_italic ? "italic" : NULL), NULL);
             }
+            prev = (c += 3);
+            is_bold = !is_bold;
+        } else if (*c == '\'' && *(c+1) == '\'') {
+            if (is_italic) {
+                gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                            &begin, prev, c - prev, "italic", (is_bold ? "bold" : NULL), NULL);
+            } else {
+                gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                            &begin, prev, c - prev, (is_bold ? "bold" : NULL), NULL);
+            }
+            prev = (c += 2);
+            is_italic = !is_italic;
         }
-        if (is_italic) {
-            gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
-                                                &begin, prev, -1, "italic", NULL);
-        } else {
-            gtk_text_buffer_insert(lyr_buffer, &begin, prev, -1);
-        }
+    }
+    if (is_italic) {
+        gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                            &begin, prev, -1, "italic", (is_bold ? "bold" : NULL), NULL);
+    } else {
+        gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                            &begin, prev, -1, (is_bold ? "bold" : NULL), NULL);
     }
 
     if (info == 0) {
