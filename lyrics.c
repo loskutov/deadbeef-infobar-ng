@@ -126,7 +126,7 @@ parse_megalyrics(const char *content, char **psd) {
 
 /* Performs 2nd step of parsing lyrics from "http://lyrics.wikia.com". */
 static int
-parse_lyricswikia(const char *content, char **psd) {
+parse_lyricwiki(const char *content, char **psd) {
 
     xmlDocPtr doc = NULL;
     if (init_doc_obj(content, HTML, &doc) == -1)
@@ -146,7 +146,7 @@ parse_lyricswikia(const char *content, char **psd) {
     }
     *psd = fst;
 
-    /* Some tracks on lyricswikia have multiply lyrics,
+    /* Some tracks on lyricwiki have multiply lyrics,
      * so we gonna check this. */
     if (xpath->nodesetval->nodeNr > 1) {
 
@@ -167,15 +167,41 @@ parse_lyricswikia(const char *content, char **psd) {
     return 0;
 }
 
-/* Performs 1st step of fetching and parsing lyrics from "http://lyrics.wikia.com". */
 static int
-fetch_xml_from_lyricswikia(const char *artist, const char *title, char **xml) {
-
-    char *url = NULL;
-    if (form_lyr_url(artist, title, LW_URL_TEMP, FALSE, &url) == -1)
+get_lyricwiki_url(const char *artist, const char *title, char **url) {
+    char *api_url = NULL;
+    if (form_lyr_url(artist, title, LW_URL_TEMP1, FALSE, &api_url) == -1)
         return -1;
 
     char *raw_page = NULL;
+    if (retrieve_txt_content(api_url, &raw_page) == -1) {
+        free(api_url);
+        return -1;
+    }
+    free(api_url);
+
+    char *psd = NULL;
+    if (parse_common(raw_page, LW_API_EXP, XML, &psd) == -1) {
+        free(raw_page);
+        return -1;
+    }
+    char *ans = NULL;
+    if (asprintf(&ans, LW_URL_TEMP, psd + 24) == -1) {
+        free(psd);
+        return -1;
+    }
+    free(psd);
+    *url = ans;
+    return 0;
+}
+
+/* Performs 1st step of fetching and parsing lyrics from "http://lyrics.wikia.com". */
+static int
+fetch_xml_from_lyricwiki(const char *artist, const char *title, char **xml) {
+    char *url = NULL;
+    if (get_lyricwiki_url(artist, title, &url) == -1)
+        return -1;
+    char* raw_page = NULL;
     if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
         return -1;
@@ -271,32 +297,14 @@ int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **l
 }
 
 /* Fetches lyrics from "http://lyrics.wikia.com". */
-int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **lyr) {
+int fetch_lyrics_from_lyricwiki(const char *artist, const char *title, char **lyr) {
 
     char *xml = NULL;
-    if (fetch_xml_from_lyricswikia(artist, title, &xml) == -1)
+    if (fetch_xml_from_lyricwiki(artist, title, &xml) == -1)
         return -1;
 
-    /* Checking if we got a redirect. Read more about redirects
-     * here: "http://lyrics.wikia.com/Help:Redirect". */
-    if (is_redirect(xml)) {
-
-        char *rartist = NULL, *rtitle = NULL;
-        if (get_redirect_info(xml, &rartist, &rtitle) == 0) {
-
-            free(xml);
-            /* Retrieving lyrics again, using correct artist name and song title. */
-            if (fetch_xml_from_lyricswikia(rartist, rtitle, &xml) == -1) {
-                free(rartist);
-                free(rtitle);
-                return -1;
-            }
-            free(rartist);
-            free(rtitle);
-        }
-    }
     char *psd = NULL;
-    if (parse_lyricswikia(xml, &psd) == -1) {
+    if (parse_lyricwiki(xml, &psd) == -1) {
         free(xml);
         return -1;
     }

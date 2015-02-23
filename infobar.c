@@ -151,8 +151,8 @@ retrieve_track_lyrics(void *ctx) {
         if (!is_exists(txt_cache) || is_old_cache(txt_cache, LYRICS)) {
             /* There is no cache for the current track or the previous cache
              * is too old, so start retrieving new one. */
-            if (deadbeef->conf_get_int(CONF_LYRICSWIKIA_ENABLED, 1) && !lyr_txt)
-                fetch_lyrics_from_lyricswikia(artist, title, &lyr_txt);
+            if (deadbeef->conf_get_int(CONF_LYRICWIKI_ENABLED, 1) && !lyr_txt)
+                fetch_lyrics_from_lyricwiki(artist, title, &lyr_txt);
 
             if (deadbeef->conf_get_int(CONF_LYRICSMANIA_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_lyricsmania(artist, title, &lyr_txt);
@@ -310,7 +310,7 @@ infobar_disconnect(void) {
 
 static const char settings_dlg[] =
     "property \"Enable lyrics\" checkbox infobar.lyrics.enabled 1;"
-    "property \"Fetch from Lyricswikia\" checkbox infobar.lyrics.lyricswikia 1;"
+    "property \"Fetch from LyricWiki\" checkbox infobar.lyrics.lyricwiki 1;"
     "property \"Fetch from Lyricsmania\" checkbox infobar.lyrics.lyricsmania 1;"
     "property \"Fetch from Lyricstime\" checkbox infobar.lyrics.lyricstime 1;"
     "property \"Fetch from Megalyrics\" checkbox infobar.lyrics.megalyrics 1;"

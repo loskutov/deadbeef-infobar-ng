@@ -37,7 +37,7 @@
 
 /* Predefined names of infobar properties. */
 #define CONF_LYRICS_ENABLED "infobar.lyrics.enabled"
-#define CONF_LYRICSWIKIA_ENABLED "infobar.lyrics.lyricswikia"
+#define CONF_LYRICWIKI_ENABLED "infobar.lyrics.lyricwiki"
 #define CONF_LYRICSMANIA_ENABLED "infobar.lyrics.lyricsmania"
 #define CONF_LYRICSTIME_ENABLED "infobar.lyrics.lyricstime"
 #define CONF_MEGALYRICS_ENABLED "infobar.lyrics.megalyrics"

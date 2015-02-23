@@ -101,11 +101,6 @@ uri_encode(char *out, size_t outl, const char *str, char space) {
     return l - outl;
 }
 
-/* Checks if the specified text contains redirect information. */
-gboolean is_redirect(const char *str) {
-    return strstr(str, "#REDIRECT") ||
-           strstr(str, "#redirect");
-}
 
 /* Checks if specified file or directory is exists. */
 gboolean is_exists(const char *obj) {
@@ -615,32 +610,6 @@ int replace_all(const char *str, const char *orig, const char *with, char **repl
         if (--count == 0) break;
     }
     memcpy(to, str, repl_len - copied);
-    return 0;
-}
-
-/* Parses redirect information and retrieves correct artist name and song title. */
-int get_redirect_info(const char *str, char **artist, char **title) {
-
-    char *bp = strchr(str, '[');
-    char *mp = strchr(str, ':');
-    char *ep = strchr(str, ']');
-
-    int bi = bp - str + 2;
-    int mi = mp - str + 1;
-    int ei = ep - str + 1;
-
-    *artist = calloc((mi - bi) + 1, sizeof(char));
-    if (!*artist)
-        return -1;
-
-    *title = calloc((ei - mi) + 1, sizeof(char));
-    if (!*title) {
-        free(*artist);
-        return -1;
-    }
-
-    memcpy(*artist, str + bi, (mi - bi) - 1);
-    memcpy(*title, str + mi, (ei - mi) - 1);
     return 0;
 }
 

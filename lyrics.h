@@ -30,7 +30,8 @@
 #include "utils.h"
 
 /* URL templates to retrieve lyrics from different sources. */
-#define LW_URL_TEMP "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s:%s"
+#define LW_URL_TEMP "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s"
+#define LW_URL_TEMP1 "http://lyrics.wikia.com/api.php?fmt=xml&artist=%s&song=%s"
 #define LM_URL_TEMP "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LT_URL_TEMP "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define ML_URL_TEMP "http://megalyrics.ru/lyric/%s/%s.htm"
@@ -42,13 +43,14 @@
 #define ML_EXP "//pre[@class=\"lyric\"]"
 #define LW_HTML_EXP "//lyrics"
 #define LW_XML_EXP "//rev"
+#define LW_API_EXP "//url"
 
 /* Lyrics parts. */
 #define ML_LYR_BEG "<pre class=\"lyric\"><h2>Текст песни</h2>"
 #define ML_LYR_END "</pre>"
 
 /* Fetches lyrics from "http://lyrics.wikia.com". */
-int fetch_lyrics_from_lyricswikia(const char *artist, const char *title, char **lyr);
+int fetch_lyrics_from_lyricwiki(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics from "http://megalyrics.ru".  */
 int fetch_lyrics_from_megalyrics(const char *artist, const char *title, char **lyr);
