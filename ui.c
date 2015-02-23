@@ -416,7 +416,7 @@ void infobar_destroy(struct ddb_gtkui_widget_s *widget) {
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */
-void update_lyrics_view(char *lyr_txt, DB_playItem_t *track) {
+void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     GtkTextIter begin = {0}, end = {0};
 
     gtk_text_buffer_get_iter_at_line (lyr_buffer, &begin, 0);
@@ -438,13 +438,13 @@ void update_lyrics_view(char *lyr_txt, DB_playItem_t *track) {
     gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
                                                 &begin, artist_up, -1, "italic", NULL);
 
-    char *lyr_up = lyr_txt ? lyr_txt : LYR_NOT_FOUND;
+    const char *lyr_up = lyr_txt ? lyr_txt : LYR_NOT_FOUND;
     gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
 
-    gboolean is_italic = FALSE;
-    char* prev = lyr_up;
-    if (lyr_up) {
-        for (char* c = lyr_up + 1; *c; ++c) {
+    if (*lyr_up) {
+        gboolean is_italic = FALSE;
+        const char* prev = lyr_up;
+        for (const char* c = lyr_up + 1; *c; ++c) {
             if (*c == '\'' && *(c-1) == '\'') {
                 if (is_italic) {
                     gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
