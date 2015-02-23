@@ -60,7 +60,6 @@ update:
 
 static void
 retrieve_artist_bio(void *ctx) {
-
     trace("infobar: retrieving artist's biography\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 

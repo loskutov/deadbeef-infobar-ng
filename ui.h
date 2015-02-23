@@ -51,7 +51,7 @@ void update_similar_view(SimilarInfo *similar, size_t size);
 void update_bio_view(const char *bio_txt, const char *img_file);
 
 /* Updates "Lyrics" tab with the new lyrics. */
-void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track);
+void update_lyrics_view(char *lyr_txt, DB_playItem_t *track);
 
 /* This function should be invoked, when some changes to the plug-in's
  * configuration were made. It updates infobar view according to the

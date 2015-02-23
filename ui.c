@@ -416,13 +416,13 @@ void infobar_destroy(struct ddb_gtkui_widget_s *widget) {
 }
 
 /* Updates "Lyrics" tab with the new lyrics. */
-void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {    
+void update_lyrics_view(char *lyr_txt, DB_playItem_t *track) {
     GtkTextIter begin = {0}, end = {0};
-    
+
     gtk_text_buffer_get_iter_at_line (lyr_buffer, &begin, 0);
     gtk_text_buffer_get_end_iter (lyr_buffer, &end);
     gtk_text_buffer_delete (lyr_buffer, &begin, &end);
-    
+
     char *artist = NULL, *title = NULL;
     int info = get_artist_and_title_info(track, &artist, &title);
 
@@ -436,11 +436,33 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
     /* Setting "italic" style for the artist name. */
     const char *artist_up = (info == 0) ? artist : ARTIST_UNKNOWN;
     gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
-            &begin, artist_up, -1, "italic", NULL);
+                                                &begin, artist_up, -1, "italic", NULL);
 
-    const char *lyr_up = lyr_txt ? lyr_txt : LYR_NOT_FOUND;
+    char *lyr_up = lyr_txt ? lyr_txt : LYR_NOT_FOUND;
     gtk_text_buffer_insert(lyr_buffer, &begin, "\n\n", -1);
-    gtk_text_buffer_insert(lyr_buffer, &begin, lyr_up, strlen(lyr_up));
+
+    gboolean is_italic = FALSE;
+    char* prev = lyr_up;
+    if (lyr_up) {
+        for (char* c = lyr_up + 1; *c; ++c) {
+            if (*c == '\'' && *(c-1) == '\'') {
+                if (is_italic) {
+                    gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                                                &begin, prev, c - prev - 1, "italic", NULL);
+                } else {
+                    gtk_text_buffer_insert(lyr_buffer, &begin, prev, c - prev - 1);
+                }
+                prev = c + 1;
+                is_italic = !is_italic;
+            }
+        }
+        if (is_italic) {
+            gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
+                                                &begin, prev, -1, "italic", NULL);
+        } else {
+            gtk_text_buffer_insert(lyr_buffer, &begin, prev, -1);
+        }
+    }
 
     if (info == 0) {
         free(artist);
