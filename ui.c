@@ -453,7 +453,8 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
                 gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
                             &begin, prev, c - prev, (is_italic ? "italic" : NULL), NULL);
             }
-            prev = (c += 3);
+            c += 2;
+            prev = c + 1;
             is_bold = !is_bold;
         } else if (*c == '\'' && *(c+1) == '\'') {
             if (is_italic) {
@@ -463,7 +464,8 @@ void update_lyrics_view(const char *lyr_txt, DB_playItem_t *track) {
                 gtk_text_buffer_insert_with_tags_by_name(GTK_TEXT_BUFFER(lyr_buffer),
                             &begin, prev, c - prev, (is_bold ? "bold" : NULL), NULL);
             }
-            prev = (c += 2);
+            c++;
+            prev = c + 1;
             is_italic = !is_italic;
         }
     }
