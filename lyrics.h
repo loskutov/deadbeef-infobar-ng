@@ -31,7 +31,7 @@
 
 /* URL templates to retrieve lyrics from different sources. */
 #define LW_URL_TEMP "http://lyrics.wikia.com/api.php?action=query&prop=revisions&rvprop=content&format=xml&titles=%s"
-#define LW_URL_TEMP1 "http://lyrics.wikia.com/api.php?fmt=xml&artist=%s&song=%s"
+#define LW_URL_TEMP1 "http://lyrics.wikia.com/api.php?action=lyrics&fmt=xml&artist=%s&song=%s"
 #define LM_URL_TEMP "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LT_URL_TEMP "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define ML_URL_TEMP "http://megalyrics.ru/lyric/%s/%s.htm"
