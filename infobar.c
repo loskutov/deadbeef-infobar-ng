@@ -1,5 +1,6 @@
 /*
     Infobar plugin for DeaDBeeF music player
+    Copyright (C) 2015 Ignat Loskutov <ignat.loskutov@gmail.com>
     Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>
 
     This program is free software; you can redistribute it and/or
@@ -22,7 +23,7 @@
 static void
 retrieve_similar_artists(void *ctx) {
 
-    trace("infobar: retrieving similar artists\n");
+    trace("infobar-ng: retrieving similar artists\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 
     size_t size = 0;
@@ -60,7 +61,7 @@ update:
 
 static void
 retrieve_artist_bio(void *ctx) {
-    trace("infobar: retrieving artist's biography\n");
+    trace("infobar-ng: retrieving artist's biography\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 
     char *bio_txt = NULL, *artist = NULL, *img_cache = NULL;
@@ -126,7 +127,7 @@ update:
 static void
 retrieve_track_lyrics(void *ctx) {
 
-    trace("infobar: retrieving track lyrics\n");
+    trace("infobar-ng: retrieving track lyrics\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 
     char *lyr_txt = NULL, *artist = NULL, *title = NULL, *album = NULL;
@@ -210,7 +211,7 @@ update:
 static void
 infobar_songstarted(ddb_event_track_t *ev) {
 
-    trace("infobar: infobar song started\n");
+    trace("infobar-ng: infobar-ng song started\n");
 
     /* Don't retrieve anything as all tabs are invisible. */
     if (!deadbeef->conf_get_int(CONF_LYRICS_ENABLED, 1) &&
@@ -239,7 +240,7 @@ infobar_message(struct ddb_gtkui_widget_s *w, uint32_t id, uintptr_t ctx, uint32
     switch (id) {
     case DB_EV_SONGSTARTED:
     {
-        trace("infobar: recieved songstarted message\n");
+        trace("infobar-ng: recieved songstarted message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
 
         if (!event->track)
@@ -251,7 +252,7 @@ infobar_message(struct ddb_gtkui_widget_s *w, uint32_t id, uintptr_t ctx, uint32
         break;
     case DB_EV_TRACKINFOCHANGED:
     {
-        trace("infobar: recieved trackinfochanged message\n");
+        trace("infobar-ng: recieved trackinfochanged message\n");
         ddb_event_track_t* event = (ddb_event_track_t*) ctx;
 
         if (!event->track)
@@ -288,10 +289,10 @@ static ddb_gtkui_widget_t
 static int
 infobar_connect(void) {
 
-    trace("infobar: connecting the plug-in\n");
+    trace("infobar-ng: connecting the plug-in\n");
     gtkui_plugin = (ddb_gtkui_t *)deadbeef->plug_get_for_id(DDB_GTKUI_PLUGIN_ID);
     if (!gtkui_plugin) {
-        fprintf(stderr, "infobar: can't find gtkui plugin\n");
+        fprintf(stderr, "infobar-ng: can't find gtkui plugin\n");
         return -1;
     }
     gtkui_plugin->w_reg_widget(WIDGET_LABEL, 0, w_infobar_create, WIDGET_ID, NULL);
@@ -301,7 +302,7 @@ infobar_connect(void) {
 static int
 infobar_disconnect(void) {
 
-    trace("infobar: disconnecting the plug-in\n");
+    trace("infobar-ng: disconnecting the plug-in\n");
     if (gtkui_plugin) {
         gtkui_plugin->w_unreg_widget(WIDGET_ID);
     }
@@ -332,13 +333,14 @@ static DB_misc_t plugin = {
     .plugin.version_major = 1,
     .plugin.version_minor = 4,
     .plugin.type = DB_PLUGIN_MISC,
-    .plugin.name = "Infobar",
-    .plugin.descr = "Infobar plugin for DeadBeeF audio player.\nFetches and shows:\n"
+    .plugin.name = "Infobar-ng",
+    .plugin.descr = "Infobar-ng plugin for DeadBeeF audio player.\nFetches and shows:\n"
                     "- song's lyrics;\n- artist's biography;\n- list of similar artists.\n\n"
                     "To change the biography's locale, set an appropriate\nISO 639-2 locale code.\n"
                     "See http://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\nfor more infomation.\n\n"
                     "You can set cache update period to 0 if you don't want to update\nthe cache at all.",
     .plugin.copyright =
+        "Copyright (C) 2015 Ignat Loskutov <ignat.loskutov@gmail.com>\n"
         "Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>\n"
         "\n"
         "This program is free software; you can redistribute it and/or\n"
@@ -355,7 +357,7 @@ static DB_misc_t plugin = {
         "along with this program; if not, write to the Free Software\n"
         "Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.\n"
     ,
-    .plugin.website = "https://bitbucket.org/dsimbiriatin/deadbeef-infobar",
+    .plugin.website = "https://bitbucket.org/IgnatLoskutov/deadbeef-infobar-ng",
     .plugin.connect = infobar_connect,
     .plugin.disconnect = infobar_disconnect,
     .plugin.configdialog = settings_dlg

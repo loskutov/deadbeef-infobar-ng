@@ -1,5 +1,6 @@
 /*
     Infobar plugin for DeaDBeeF music player
+    Copyright (C) 2015 Ignat Loskutov <ignat.loskutov@gmail.com>
     Copyright (C) 2011-2012 Dmitriy Simbiriatin <dmitriy.simbiriatin@gmail.com>
 
     This program is free software; you can redistribute it and/or
@@ -18,6 +19,7 @@
 */
 
 #include "ui.h"
+#include <sys/wait.h>
 
 static GtkWidget *infobar_tabs;
 static GtkWidget *infobar_toggles;
@@ -124,11 +126,13 @@ sim_list_row_active(GtkTreeView *view, GtkTreePath *path, GtkTreeViewColumn *col
 
                 const char *url = g_value_get_string(&value);
                 if (url) {
-                    char *cmd = NULL;
-                    if (asprintf(&cmd, "xdg-open http://%s", url) != -1) {
-                        system(cmd);
-                        free(cmd);
+                    pid_t pid = fork();
+                    if (pid == 0) {
+                        execlp("xdg-open", "xdg-open", url, NULL);
+                        /* execlp should not normally return */
+                        fprintf(stderr, "infobar: can't execute xdg-open\n");
                     }
+                    wait(NULL);
                 }
                 g_value_unset(&value);
             }
