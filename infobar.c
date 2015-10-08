@@ -334,6 +334,11 @@ static DB_misc_t plugin = {
     .plugin.version_minor = 4,
     .plugin.type = DB_PLUGIN_MISC,
     .plugin.name = "Infobar-ng",
+    #if GTK_CHECK_VERSION(3, 0, 0)
+    .plugin.id = "infobar-gtk3",
+    #else
+    .plugin.id = "infobar-gtk2",
+    #endif
     .plugin.descr = "Infobar-ng plugin for DeadBeeF audio player.\nFetches and shows:\n"
                     "- song's lyrics;\n- artist's biography;\n- list of similar artists.\n\n"
                     "To change the biography's locale, set an appropriate\nISO 639-2 locale code.\n"
