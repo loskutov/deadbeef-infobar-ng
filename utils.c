@@ -19,6 +19,16 @@
 
 #include "utils.h"
 
+static char *
+escape_name(const char * s) {
+    char * ans = strdup(s);
+    for (char * c = ans; *c; ++c) {
+        if (*c == '/')
+            *c = '_';
+    }
+    return ans;
+}
+
 /* Retrieves a path to the lyrics or biography cache directory. */
 static int
 get_cache_path(char **path, ContentType type) {
@@ -311,11 +321,18 @@ int del_lyr_cache(const char *artist, const char *title) {
     if (get_cache_path(&cache_path, LYRICS) == -1)
         return -1;
 
-    char *txt_cache = NULL;
-    if (asprintf(&txt_cache, "%s/%s-%s", cache_path, artist, title) == -1) {
+    char * txt_cache = NULL;
+    char * escaped_artist = escape_name(artist);
+    char * escaped_title = escape_name(title);
+    if (!escaped_artist || !escaped_title ||
+            asprintf(&txt_cache, "%s/%s-%s", cache_path, escaped_artist, escaped_title) == -1) {
+        free(escaped_artist);
+        free(escaped_title);
         free(cache_path);
         return -1;
     }
+    free(escaped_artist);
+    free(escaped_title);
     free(cache_path);
 
     if (remove(txt_cache) != 0) {
@@ -333,8 +350,11 @@ int del_bio_cache(const char *artist) {
     if (get_cache_path(&cache_path, BIO) == -1)
         return -1;
 
-    char *txt_cache = NULL;
-    if (asprintf(&txt_cache, "%s/%s", cache_path, artist) == -1) {
+    char * txt_cache = NULL;
+    char * escaped_artist = escape_name(artist);
+    if (!escaped_artist ||
+            asprintf(&txt_cache, "%s/%s", cache_path, escaped_artist) == -1) {
+        free(escaped_artist);
         free(cache_path);
         return -1;
     }
@@ -347,10 +367,11 @@ int del_bio_cache(const char *artist) {
     free(txt_cache);
 
     char *img_cache = NULL;
-    if (asprintf(&img_cache, "%s/%s_img", cache_path, artist) == -1) {
+    if (asprintf(&img_cache, "%s/%s_img", cache_path, escaped_artist) == -1) {
         free(cache_path);
         return -1;
     }
+    free(escaped_artist);
 
     if (remove(img_cache) != 0) {
         free(cache_path);
@@ -376,10 +397,17 @@ int create_lyr_cache(const char *artist, const char *title, char **txt_cache) {
         }
     }
 
-    if (asprintf(txt_cache, "%s/%s-%s", cache_path, artist, title) == -1) {
+    char * escaped_artist = escape_name(artist);
+    char * escaped_title = escape_name(title);
+    if (!escaped_artist || !escaped_title ||
+            asprintf(txt_cache, "%s/%s-%s", cache_path, escaped_artist, escaped_title) == -1) {
+        free(escaped_artist);
+        free(escaped_title);
         free(cache_path);
         return -1;
     }
+    free(escaped_artist);
+    free(escaped_title);
     free(cache_path);
     return 0;
 }
@@ -398,16 +426,21 @@ int create_bio_cache(const char *artist, char **txt_cache, char **img_cache) {
         }
     }
 
-    if (asprintf(txt_cache, "%s/%s", cache_path, artist) == -1) {
+    char * escaped_artist = escape_name(artist);
+    if (!escaped_artist ||
+            asprintf(txt_cache, "%s/%s", cache_path, escaped_artist) == -1) {
+        free(escaped_artist);
         free(cache_path);
         return -1;
     }
 
-    if (asprintf(img_cache, "%s/%s_img", cache_path, artist) == -1) {
+    if (asprintf(img_cache, "%s/%s_img", cache_path, escaped_artist) == -1) {
+        free(escaped_artist);
         free(cache_path);
         free(*txt_cache);
         return -1;
     }
+    free(escaped_artist);
     free(cache_path);
     return 0;
 }
