@@ -31,7 +31,7 @@ escape_name(const char * s) {
 
 /* Retrieves a path to the lyrics or biography cache directory. */
 static int
-get_cache_path(char **path, ContentType type) {
+get_cache_path(char **path, CacheType type) {
 
     int res = -1;
     const char *home_cache = getenv("XDG_CACHE_HOME");
