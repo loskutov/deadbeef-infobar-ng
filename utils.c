@@ -22,6 +22,8 @@
 static char *
 escape_name(const char * s) {
     char * ans = strdup(s);
+    if (!ans)
+        return NULL;
     for (char * c = ans; *c; ++c) {
         if (*c == '/')
             *c = '_';
