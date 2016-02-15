@@ -164,8 +164,16 @@ retrieve_track_lyrics(void *ctx) {
             if (deadbeef->conf_get_int(CONF_MEGALYRICS_ENABLED, 1) && !lyr_txt)
                 fetch_lyrics_from_megalyrics(artist, title, &lyr_txt);
 
-            if (deadbeef->conf_get_int(CONF_LYRICS_SCRIPT_ENABLED, 0) && !lyr_txt)
-                fetch_lyrics_from_script(artist, title, album, &lyr_txt);
+            if (deadbeef->conf_get_int(CONF_LYRICS_SCRIPT_ENABLED, 0) && !lyr_txt) {
+
+                deadbeef->pl_lock();
+                char *fname = strdup(deadbeef->pl_find_meta_raw(track, ":URI"));
+                deadbeef->pl_unlock();
+
+                fetch_lyrics_from_script(artist, title, album, fname, &lyr_txt);
+
+                free(fname);
+            }
 
             if (lyr_txt) {
                 char *lyr_wo_nl = NULL;
@@ -258,7 +266,7 @@ infobar_message(struct ddb_gtkui_widget_s *w, uint32_t id, uintptr_t ctx, uint32
         if (!event->track)
             return 0;
 
-        if (is_stream(event->track))
+        if (!is_stream(event->track))
             infobar_songstarted(event);
     }
         break;

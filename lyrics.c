@@ -41,14 +41,14 @@ form_lyr_url(const char *artist, const char* title, const char* templ, gboolean 
 
 /* Forms command string, which is used to execute external lyrics fetch script. */
 static int
-form_script_cmd(const char *artist, const char* title, const char *album,
+form_script_cmd(const char *artist, const char* title, const char *album, const char *fname,
                 const char *script, const char* templ, char **cmd) {
 
     char *eartist = NULL, *etitle = NULL, *ealbum = NULL;
     if (encode_full(artist, title, album, &eartist, &etitle, &ealbum) == -1)
         return -1;
 
-    if (asprintf(cmd, templ, script, eartist, etitle, ealbum) == -1) {
+    if (asprintf(cmd, templ, script, eartist, etitle, ealbum, fname) == -1) {
         free(eartist);
         free(etitle);
         free(ealbum);
@@ -314,13 +314,16 @@ int fetch_lyrics_from_lyricwiki(const char *artist, const char *title, char **ly
 }
 
 /* Fetches lyrics, using external script. */
-int fetch_lyrics_from_script(const char *artist, const char *title, const char *album, char **lyr) {
+int fetch_lyrics_from_script(const char *artist, const char *title, const char *album,
+                             const char *fname, char **lyr) {
 
     deadbeef->conf_lock();
     const char *path = deadbeef->conf_get_str_fast(CONF_LYRICS_SCRIPT_PATH, "");
 
     char *cmd = NULL;
-    if (form_script_cmd(artist, title, album, path, SR_CMD_TEMP, &cmd) == -1) {
+    if (!fname)
+        fname = ""; // don't fail if no filename passed -- just pass it empty for the script
+    if (form_script_cmd(artist, title, album, fname, path, SR_CMD_TEMP, &cmd) == -1) {
         deadbeef->conf_unlock();
         return -1;
     }

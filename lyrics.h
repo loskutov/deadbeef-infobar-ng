@@ -35,7 +35,7 @@
 #define LM_URL_TEMP "http://www.lyricsmania.com/%s_lyrics_%s.html"
 #define LT_URL_TEMP "http://www.lyricstime.com/%s-%s-lyrics.html"
 #define ML_URL_TEMP "http://megalyrics.ru/lyric/%s/%s.htm"
-#define SR_CMD_TEMP "\"%s\" \"%s\" \"%s\" \"%s\" 2>&-"
+#define SR_CMD_TEMP "\"%s\" \"%s\" \"%s\" \"%s\" \"%s\" 2>&-"
 
 /* XPath expressions to parse lyrics from different sources. */
 #define LM_EXP "//*[@id=\"songlyrics_h\"]"
@@ -62,6 +62,7 @@ int fetch_lyrics_from_lyricstime(const char *artist, const char *title, char **l
 int fetch_lyrics_from_lyricsmania(const char *artist, const char *title, char **lyr);
 
 /* Fetches lyrics, using external bash script. */
-int fetch_lyrics_from_script(const char *artist, const char *title, const char *album, char **lyr);
+int fetch_lyrics_from_script(const char *artist, const char *title, const char *album,
+                             const char *fname, char **lyr);
 
 #endif
