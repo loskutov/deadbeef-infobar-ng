@@ -218,7 +218,7 @@ create_dlt_btn(void) {
     dlt_toggle = gtk_button_new();
     gtk_widget_set_tooltip_text(dlt_toggle, "Remove cache of current track");
 
-    GtkWidget *dlt_img = gtk_image_new_from_stock(GTK_STOCK_CLEAR, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    GtkWidget *dlt_img = gtk_image_new_from_icon_name("edit-clear", GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_button_set_image(GTK_BUTTON(dlt_toggle), dlt_img);
 
     g_signal_connect(dlt_toggle, "clicked", G_CALLBACK(delete_cache_clicked), NULL);
