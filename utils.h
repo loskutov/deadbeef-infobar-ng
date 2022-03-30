@@ -74,14 +74,14 @@ int convert_to_utf8(const char *str, char **str_utf8);
 /* Deletes new lines at the beginning of specified text data. */
 int del_nl(const char *txt, char **wo_nl);
 
-/* Concatenates two lyrics texts into one, using simple separator 
+/* Concatenates two lyrics texts into one, using simple separator
  * to visually divide them. */
 int concat_lyrics(const char *fst_lyr, const char *snd_lyr, char **lyr);
 
 /* Replaces each substring of the specified string with the given replacement. */
 int replace_all(const char *str, const char *orig, const char *with, char **repl);
 
-/* Parses redirect information and retrieves correct artist name 
+/* Parses redirect information and retrieves correct artist name
  * and song title. */
 int get_redirect_info(const char *str, char **artist, char **title);
 

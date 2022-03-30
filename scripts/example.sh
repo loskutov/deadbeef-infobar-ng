@@ -31,7 +31,7 @@ ALBUM=$3
 # By default, plugin encodes spaces using '_' character, you can use sed to
 # replace them with the character you need.
 
-# Lyrics.com uses '-' to encode the spaces, so we gonna replace default '_' 
+# Lyrics.com uses '-' to encode the spaces, so we gonna replace default '_'
 # characters with them.
 ARTIST=`echo $ARTIST | sed 's/_/-/g'`
 
@@ -44,9 +44,9 @@ EXP="//div[@id=\"lyric_space\"]"
 # URL template.
 URL_TEMP="http://www.lyrics.com/$TITLE-lyrics-$ARTIST.html"
 
-# I'm using xml_grep utility from "xml twig" package here (you can easily find 
+# I'm using xml_grep utility from "xml twig" package here (you can easily find
 # this package in your favorite distro) to parse an html page, and "w3m" to form
-# a pretty-looking lyrics text. 
+# a pretty-looking lyrics text.
 xml_grep -html $EXP $URL_TEMP | w3m -dump -T text/html;
 
 exit 0;

@@ -20,16 +20,16 @@
 #include "biography.h"
 
 /* Forms an URL, which is used to retrieve artists's biography and image. */
-static int 
+static int
 form_bio_url(const char *artist, char **url) {
-    
+
     char *eartist = NULL;
     if (encode_artist(artist, &eartist, '+') == -1)
         return -1;
-    
+
     deadbeef->conf_lock();
     const char *locale = deadbeef->conf_get_str_fast(CONF_BIO_LOCALE, "en");
-    
+
     if (asprintf(url, BIO_URL_TEMP, eartist, locale) == -1) {
         deadbeef->conf_unlock();
         free(eartist);
@@ -42,11 +42,11 @@ form_bio_url(const char *artist, char **url) {
 
 /* Fetches artist's biography from lastfm. */
 int fetch_bio_txt(const char *artist, char **bio) {
-    
+
     char *url = NULL;
     if (form_bio_url(artist, &url) == -1)
         return -1;
-    
+
     char *raw_page = NULL;
     if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
@@ -60,7 +60,7 @@ int fetch_bio_txt(const char *artist, char **bio) {
         return -1;
     }
     free(raw_page);
-    
+
     char *html = NULL;
     if (parse_common(xml, BIO_TXT_HTML_EXP, HTML, &html) == -1) {
         free(xml);
@@ -74,7 +74,7 @@ int fetch_bio_txt(const char *artist, char **bio) {
 /* Fetches artist's image from lastfm. Retrieved image will
  * be saved to the specified path. */
 int fetch_bio_image(const char *artist, const char *path) {
-    
+
     char *url = NULL;
     if (form_bio_url(artist, &url) == -1)
         return -1;
@@ -85,14 +85,14 @@ int fetch_bio_image(const char *artist, const char *path) {
         return -1;
     }
     free(url);
-    
+
     char *img_url = NULL;
     if (parse_common(raw_page, BIO_IMG_EXP, XML, &img_url) == -1) {
         free(raw_page);
         return -1;
     }
     free(raw_page);
-    
+
     if (retrieve_img_content(img_url, path) == -1) {
         free(img_url);
         return -1;

@@ -22,11 +22,11 @@
 /* Parses XML from lastfm and forms list of similar artists. */
 static int
 parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
-    
+
     xmlDocPtr doc = NULL;
     if (init_doc_obj(content, XML, &doc) == -1)
         return -1;
-    
+
     xmlXPathObjectPtr xpath = NULL;
     if (get_xpath_obj(doc, SIM_EXP, &xpath) == -1) {
         xmlFreeDoc(doc);
@@ -39,28 +39,28 @@ parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
         xmlFreeDoc(doc);
         return -1;
     }
-    
+
     for (size_t i = 0; i < ns->nodeNr; ++i) {
-        
+
         xmlNodePtr root = ns->nodeTab[i];
         xmlNodePtr child = root->children;
-        
+
         for (; child; child = child->next) {
-           
+
             if (child->type == XML_ELEMENT_NODE) {
-                
+
                 if (xmlStrcasecmp(child->name, (xmlChar*) "name") == 0) {
                     (*similar)[i].name = (char*) xmlNodeGetContent(child);
                 }
-                
+
                 if (xmlStrcasecmp(child->name, (xmlChar*) "match") == 0) {
                     (*similar)[i].match = (char*) xmlNodeGetContent(child);
                 }
-                
+
                 if (xmlStrcasecmp(child->name, (xmlChar*) "url") == 0) {
                     (*similar)[i].url = (char*) xmlNodeGetContent(child);
                 }
-            } 
+            }
         }
     }
     *size = ns->nodeNr;
@@ -73,29 +73,29 @@ parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
 /* Forms an URL, which is used to retrieve the list of similar artists. */
 static int
 form_similar_url(const char *artist, char **url, size_t limit) {
-    
+
     char *eartist = NULL;
     if (encode_artist(artist, &eartist, '+') == -1)
         return -1;
-    
+
     if (asprintf(url, SIM_URL_TEMPLATE, eartist, (int) limit) == -1) {
         free(eartist);
         return -1;
     }
     free(eartist);
     return 0;
-} 
+}
 
 /* Frees list of similar artists */
 void free_sim_list(SimilarInfo *similar, size_t size) {
-    
+
     for (size_t i = 0; i < size; ++i) {
-        if (similar[i].name) 
+        if (similar[i].name)
             free(similar[i].name);
 
-        if (similar[i].match) 
+        if (similar[i].match)
             free(similar[i].match);
-        
+
         if (similar[i].url)
             free(similar[i].url);
     }
@@ -104,20 +104,20 @@ void free_sim_list(SimilarInfo *similar, size_t size) {
 
 /* Fetches the list of similar artists from lastfm. */
 int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *size) {
-    
+
     size_t limit = deadbeef->conf_get_int(CONF_SIM_MAX_ARTISTS, 10);
-    
+
     char *url = NULL;
     if (form_similar_url(artist, &url, limit) == -1)
         return -1;
-    
+
     char *raw_page = NULL;
     if (retrieve_txt_content(url, &raw_page) == -1) {
         free(url);
         return -1;
     }
     free(url);
-    
+
     if (parse_similar(raw_page, similar, size) == -1) {
         free(raw_page);
         return -1;

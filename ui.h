@@ -34,7 +34,7 @@
 #define TITLE_UNKNOWN "Unknown title"
 #define ARTIST_UNKNOWN "Unknown artist"
 #define LYR_NOT_FOUND "Lyrics not found."
- 
+
 /* Properties. */
 #define BIO_IMAGE_HEIGHT 220
 

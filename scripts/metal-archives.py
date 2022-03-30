@@ -39,6 +39,6 @@ lyrics = content.replace("\n","").replace("\t","").replace("\r","").replace("<br
 
 if lyrics == "<em>(lyrics not available)</em>":
     exit(1)
-    
+
 print(lyrics)
 exit(0)
