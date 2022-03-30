@@ -516,7 +516,7 @@ void update_bio_view(const char *bio_txt, const char *img_file) {
 }
 
 /* Updates "Similar" tab with the new list of similar artists. */
-void update_similar_view(SimilarInfo *similar, size_t size) {
+void update_similar_view(const SimilarInfoList *similar) {
 
     GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(sim_list));
     GtkListStore *store = GTK_LIST_STORE(model);
@@ -526,21 +526,21 @@ void update_similar_view(SimilarInfo *similar, size_t size) {
         GtkTreeIter it = {0};
 
         if (similar) {
-            for (size_t i = 0; i < size; ++i) {
+            for (size_t i = 0; i < similar->size; ++i) {
                 gtk_list_store_append(store, &it);
 
-                if (similar[i].name) {
-                    gtk_list_store_set(store, &it, NAME, similar[i].name, -1);
+                if (similar->data[i].name) {
+                    gtk_list_store_set(store, &it, NAME, similar->data[i].name, -1);
                 }
-                if (similar[i].match) {
+                if (similar->data[i].match) {
                     /* Converting match value to percentage representation. */
                     char perc[10] = {0};
-                    if (string_to_perc(similar[i].match, perc) != -1) {
+                    if (string_to_perc(similar->data[i].match, perc) != -1) {
                         gtk_list_store_set(store, &it, MATCH, perc, -1);
                     }
                 }
-                if (similar[i].url) {
-                    gtk_list_store_set(store, &it, URL, similar[i].url, -1);
+                if (similar->data[i].url) {
+                    gtk_list_store_set(store, &it, URL, similar->data[i].url, -1);
                 }
             }
         } else {

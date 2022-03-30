@@ -20,29 +20,76 @@
 
 #include "infobar.h"
 
+static int
+similar_view_loading(void) {
+    static const SimilarInfoList list = {
+            .size = 1,
+            .data = { { .name = "Loading..." } },
+    };
+    update_similar_view(&list);
+    return G_SOURCE_REMOVE;
+}
+
+static int
+lyrics_view_loading(DB_playItem_t *track) {
+    update_lyrics_view("Loading...", track);
+    return G_SOURCE_REMOVE;
+}
+
+static int
+bio_view_loading(void) {
+    update_bio_view("Loading...", NULL);
+    return G_SOURCE_REMOVE;
+}
+
+static int
+display_similar_artists(SimilarInfoList *similar) {
+    update_similar_view(similar);
+    free_sim_list(similar);
+    return G_SOURCE_REMOVE;
+}
+
+typedef struct {
+    char *text;
+    void *data;
+} Pair;
+
+static int
+display_bio(Pair *txt_img) {
+    char *bio_txt = txt_img->text;
+    char *img_cache = txt_img->data;
+    update_bio_view(bio_txt, img_cache);
+    free(bio_txt);
+    free(img_cache);
+    free(txt_img);
+    return G_SOURCE_REMOVE;
+}
+
+static int
+display_lyrics(Pair *txt_track) {
+    char *lyr_txt = txt_track->text;
+    DB_playItem_t *track = txt_track->data;
+    update_lyrics_view(lyr_txt, track);
+    free(lyr_txt);
+    return G_SOURCE_REMOVE;
+}
+
 static void
 retrieve_similar_artists(void *ctx) {
 
     trace("infobar-ng: retrieving similar artists\n");
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 
-    size_t size = 0;
     char *artist = NULL;
-    SimilarInfo *similar = NULL;
+    SimilarInfoList *similar = NULL;
 
     if (!is_track_changed(track)) {
-
-        SimilarInfo loading = {0};
-        loading.name = "Loading...";
-
-        gdk_threads_enter();
-        update_similar_view(&loading, 1);
-        gdk_threads_leave();
+        g_idle_add(&similar_view_loading, NULL);
 
         if (get_artist_info(track, &artist) == -1)
             goto update;
 
-        if (fetch_similar_artists(artist, &similar, &size) == -1) {
+        if (fetch_similar_artists(artist, &similar) == -1) {
             free(artist);
             goto update;
         }
@@ -51,12 +98,10 @@ retrieve_similar_artists(void *ctx) {
 
 update:
     if (!is_track_changed(track)) {
-        gdk_threads_enter();
-        update_similar_view(similar, size);
-        gdk_threads_leave();
+        g_idle_add(&display_similar_artists, similar);
+    } else {
+        free_sim_list(similar);
     }
-    if (similar)
-        free_sim_list(similar, size);
 }
 
 static void
@@ -65,12 +110,11 @@ retrieve_artist_bio(void *ctx) {
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 
     char *bio_txt = NULL, *artist = NULL, *img_cache = NULL;
+    Pair *pair = NULL;
 
     if (!is_track_changed(track)) {
 
-        gdk_threads_enter();
-        update_bio_view("Loading...", NULL);
-        gdk_threads_leave();
+        g_idle_add(&bio_view_loading, NULL);
 
         if (get_artist_info(track, &artist) == -1)
             goto update;
@@ -112,16 +156,13 @@ retrieve_artist_bio(void *ctx) {
     }
 
 update:
-    if (!is_track_changed(track)) {
-        gdk_threads_enter();
-        update_bio_view(bio_txt, img_cache);
-        gdk_threads_leave();
-    }
-    if (bio_txt)
+    if (!is_track_changed(track) && (pair = malloc(sizeof(*pair)))) {
+        *pair = (Pair) { .text = bio_txt, .data = img_cache };
+        g_idle_add(&display_bio, pair);
+    } else {
         free(bio_txt);
-
-    if (img_cache)
         free(img_cache);
+    }
 }
 
 static void
@@ -131,12 +172,11 @@ retrieve_track_lyrics(void *ctx) {
     DB_playItem_t *track = (DB_playItem_t*) ctx;
 
     char *lyr_txt = NULL, *artist = NULL, *title = NULL, *album = NULL;
+    Pair *pair = NULL;
 
     if (!is_track_changed(track)) {
 
-        gdk_threads_enter();
-        update_lyrics_view("Loading...", track);
-        gdk_threads_leave();
+        g_idle_add(&lyrics_view_loading, track);
 
         if (get_full_track_info(track, &artist, &title, &album) == -1)
             goto update;
@@ -207,13 +247,12 @@ retrieve_track_lyrics(void *ctx) {
     }
 
 update:
-    if (!is_track_changed(track)) {
-        gdk_threads_enter();
-        update_lyrics_view(lyr_txt, track);
-        gdk_threads_leave();
-    }
-    if (lyr_txt)
+    if (!is_track_changed(track) && (pair = malloc(sizeof(*pair)))) {
+        *pair = (Pair) { .text = lyr_txt, .data = track };
+        g_idle_add(&display_lyrics, pair);
+    } else {
         free(lyr_txt);
+    }
 }
 
 static void
@@ -271,9 +310,7 @@ infobar_message(struct ddb_gtkui_widget_s *w, uint32_t id, uintptr_t ctx, uint32
     }
         break;
     case DB_EV_CONFIGCHANGED:
-        gdk_threads_enter();
-        infobar_config_changed();
-        gdk_threads_leave();
+        g_idle_add(&infobar_config_changed, NULL);
         break;
     }
     return 0;

@@ -45,7 +45,7 @@ GtkWidget *infobar;
 void create_infobar(void);
 
 /* Updates "Similar" tab with the new list of similar artists. */
-void update_similar_view(SimilarInfo *similar, size_t size);
+void update_similar_view(const SimilarInfoList *similar);
 
 /* Updates "Biography" tab with the new artist's image and biography text. */
 void update_bio_view(const char *bio_txt, const char *img_file);

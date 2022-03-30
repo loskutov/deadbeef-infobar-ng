@@ -77,7 +77,7 @@ $(GTK2_DIR)/%.o: %.c
 	@$(call compile, $(LIBXML2_CFLAGS), $(GTK2_CFLAGS))
 
 $(GTK3_DIR)/%.o: %.c
-	@echo "Compiling $(subst $(GTK3_DIR)/,,$@)" 
+	@echo "Compiling $(subst $(GTK3_DIR)/,,$@)"
 	@$(call compile, $(LIBXML2_CFLAGS), $(GTK3_CFLAGS))
 
 clean:

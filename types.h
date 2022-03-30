@@ -48,4 +48,9 @@ typedef struct {
     char *url;
 } SimilarInfo;
 
+typedef struct {
+    size_t size;
+    SimilarInfo data[];
+} SimilarInfoList;
+
 #endif

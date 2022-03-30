@@ -21,7 +21,7 @@
 
 /* Parses XML from lastfm and forms list of similar artists. */
 static int
-parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
+parse_similar(const char *content, SimilarInfoList **similar) {
 
     xmlDocPtr doc = NULL;
     if (init_doc_obj(content, XML, &doc) == -1)
@@ -33,7 +33,7 @@ parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
         return -1;
     }
     xmlNodeSetPtr ns = xpath->nodesetval;
-    *similar = calloc(ns->nodeNr, sizeof(SimilarInfo));
+    *similar = malloc(sizeof(**similar) + ns->nodeNr * sizeof((*similar)->data[0]));
     if (!*similar) {
         xmlXPathFreeObject(xpath);
         xmlFreeDoc(doc);
@@ -50,20 +50,20 @@ parse_similar(const char *content, SimilarInfo **similar, size_t *size) {
             if (child->type == XML_ELEMENT_NODE) {
 
                 if (xmlStrcasecmp(child->name, (xmlChar*) "name") == 0) {
-                    (*similar)[i].name = (char*) xmlNodeGetContent(child);
+                    (*similar)->data[i].name = (char*) xmlNodeGetContent(child);
                 }
 
                 if (xmlStrcasecmp(child->name, (xmlChar*) "match") == 0) {
-                    (*similar)[i].match = (char*) xmlNodeGetContent(child);
+                    (*similar)->data[i].match = (char*) xmlNodeGetContent(child);
                 }
 
                 if (xmlStrcasecmp(child->name, (xmlChar*) "url") == 0) {
-                    (*similar)[i].url = (char*) xmlNodeGetContent(child);
+                    (*similar)->data[i].url = (char*) xmlNodeGetContent(child);
                 }
             }
         }
     }
-    *size = ns->nodeNr;
+    (*similar)->size = ns->nodeNr;
     xmlXPathFreeObject(xpath);
     xmlFreeDoc(doc);
     return 0;
@@ -87,23 +87,21 @@ form_similar_url(const char *artist, char **url, size_t limit) {
 }
 
 /* Frees list of similar artists */
-void free_sim_list(SimilarInfo *similar, size_t size) {
-
+void free_sim_list(SimilarInfoList *similar) {
+    if (!similar) {
+        return;
+    }
+    size_t size = similar->size;
     for (size_t i = 0; i < size; ++i) {
-        if (similar[i].name)
-            free(similar[i].name);
-
-        if (similar[i].match)
-            free(similar[i].match);
-
-        if (similar[i].url)
-            free(similar[i].url);
+        free(similar->data[i].name);
+        free(similar->data[i].match);
+        free(similar->data[i].url);
     }
     free(similar);
 }
 
 /* Fetches the list of similar artists from lastfm. */
-int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *size) {
+int fetch_similar_artists(const char *artist, SimilarInfoList **similar) {
 
     size_t limit = deadbeef->conf_get_int(CONF_SIM_MAX_ARTISTS, 10);
 
@@ -118,7 +116,7 @@ int fetch_similar_artists(const char *artist, SimilarInfo **similar, size_t *siz
     }
     free(url);
 
-    if (parse_similar(raw_page, similar, size) == -1) {
+    if (parse_similar(raw_page, similar) == -1) {
         free(raw_page);
         return -1;
     }
