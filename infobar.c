@@ -71,6 +71,7 @@ display_lyrics(Pair *txt_track) {
     DB_playItem_t *track = txt_track->data;
     update_lyrics_view(lyr_txt, track);
     free(lyr_txt);
+    free(txt_track);
     return G_SOURCE_REMOVE;
 }
 
