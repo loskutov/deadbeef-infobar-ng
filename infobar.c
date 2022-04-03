@@ -20,6 +20,10 @@
 
 #include "infobar.h"
 
+DB_functions_t *deadbeef;
+
+ddb_gtkui_t *gtkui_plugin;
+
 static int
 similar_view_loading(void) {
     static const SimilarInfoList list = {

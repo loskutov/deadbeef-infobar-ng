@@ -21,6 +21,8 @@
 #include "ui.h"
 #include <sys/wait.h>
 
+GtkWidget *infobar;
+
 static GtkWidget *infobar_tabs;
 static GtkWidget *infobar_toggles;
 

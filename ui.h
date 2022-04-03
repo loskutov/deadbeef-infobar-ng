@@ -39,7 +39,7 @@
 #define BIO_IMAGE_HEIGHT 220
 
 /* Infobar widget. */
-GtkWidget *infobar;
+extern GtkWidget *infobar;
 
 /* Creates infobar with all available tabs. */
 void create_infobar(void);

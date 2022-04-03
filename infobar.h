@@ -55,9 +55,9 @@
 #define WIDGET_LABEL "Infobar"
 
 /* deadbeef API. */
-DB_functions_t *deadbeef;
+extern DB_functions_t *deadbeef;
 
 /* UI plugin. */
-ddb_gtkui_t *gtkui_plugin;
+extern ddb_gtkui_t *gtkui_plugin;
 
 #endif
